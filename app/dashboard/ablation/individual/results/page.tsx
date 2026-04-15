@@ -1,4 +1,5 @@
 'use client';
+export const dynamic = 'force-dynamic';
 
 import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -280,8 +281,10 @@ function ChartSection({ title, description, icon: Icon, children }: {
     );
 }
 
+import { Suspense } from 'react';
+
 /* ── Página ───────────────────────────────────────────────────────────────── */
-export default function IndividualResultsPage() {
+function IndividualResultsInner() {
     const searchParams = useSearchParams();
     const batch = searchParams.get('batch') ?? '';
 
@@ -399,3 +402,16 @@ export default function IndividualResultsPage() {
         </div>
     );
 }
+
+export default function IndividualResultsPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center h-64">
+                <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+            </div>
+        }>
+            <IndividualResultsInner />
+        </Suspense>
+    );
+}
+
