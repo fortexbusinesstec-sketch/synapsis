@@ -31,10 +31,6 @@ export async function DELETE(_req: Request, { params }: RouteContext) {
 
   // Borrar en orden para garantizar integridad referencial
   await client.execute({
-    sql:  `DELETE FROM chat_metrics  WHERE session_id = ?`,
-    args: [id],
-  });
-  await client.execute({
     sql:  `DELETE FROM chat_messages WHERE session_id = ?`,
     args: [id],
   });

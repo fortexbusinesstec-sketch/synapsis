@@ -12,7 +12,9 @@ import {
   documents, 
   documentChunks, 
   extractedImages, 
-  agentLogs 
+  agentLogs,
+  indexingMetrics,
+  enrichments
 } from '@/lib/db/schema';
 
 export async function cleanupDocument(documentId: string) {
@@ -48,6 +50,8 @@ export async function cleanupDocument(documentId: string) {
     await db.delete(documentChunks).where(eq(documentChunks.documentId, documentId));
     await db.delete(extractedImages).where(eq(extractedImages.documentId, documentId));
     await db.delete(agentLogs).where(eq(agentLogs.documentId, documentId));
+    await db.delete(indexingMetrics).where(eq(indexingMetrics.documentId, documentId));
+    await db.delete(enrichments).where(eq(enrichments.documentId, documentId));
     await db.delete(documents).where(eq(documents.id, documentId));
 
     console.log(`[cleanup] Limpieza completada con éxito.`);

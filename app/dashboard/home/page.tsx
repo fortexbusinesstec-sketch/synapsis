@@ -31,7 +31,7 @@ export default async function HomePage() {
 
   const totalModels = totalModelsRes[0]?.count ?? 0;
   const readyModels = readyModelsRes[0]?.count ?? 0;
-  const totalDocs   = totalDocsRes[0]?.count ?? 0;
+  const totalDocs = totalDocsRes[0]?.count ?? 0;
   const totalImages = totalImagesRes[0]?.count ?? 0;
   const totalChunks = totalChunksRes[0]?.count ?? 0;
   const totalEnrich = totalEnrichRes[0]?.count ?? 0;
@@ -131,7 +131,7 @@ export default async function HomePage() {
               <Zap className="w-7 h-7 text-amber-600 fill-amber-600/10" />
             </div>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-widest">
-              Beta
+              Producción
             </span>
           </div>
 

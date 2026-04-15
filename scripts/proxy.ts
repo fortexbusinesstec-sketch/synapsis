@@ -6,7 +6,7 @@ import type { NextRequest } from 'next/server';
  * Protege todas las rutas internas. Si no hay sesión, redirige al Login.
  */
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // Simulación de verificación de sesión (buscando una cookie)
   const isAuthenticated = request.cookies.get('schindler_session');
   const isLoginPage = request.nextUrl.pathname.startsWith('/login');

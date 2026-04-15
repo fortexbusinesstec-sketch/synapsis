@@ -72,6 +72,7 @@ export async function GET(
     costChunker:      doc.costChunker,
     costEmbedder:     doc.costEmbedder,
     totalCost:        doc.totalCost,
+    auditorRecommendations: doc.auditorRecommendations,
     agentLogs:    agentLogsSummary,
   });
 }

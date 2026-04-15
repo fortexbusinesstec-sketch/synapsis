@@ -113,9 +113,6 @@ export async function PATCH(req: Request, { params }: RouteContext) {
     value: textToEmbed,
   });
 
-  // Convertir a Buffer para almacenar como F32_BLOB
-  const embeddingBuffer = Buffer.from(new Float32Array(embedding).buffer) as unknown as number[];
-
   // Estimación de tokens: ~4 chars por token (válido para español/inglés técnico)
   const answerLengthTokens = Math.round(expertAnswer.trim().length / 4);
 
@@ -127,7 +124,7 @@ export async function PATCH(req: Request, { params }: RouteContext) {
       expertAnswer:        expertAnswer.trim(),
       answerSource:        'expert',
       isVerified:          1,
-      embedding:           embeddingBuffer,
+      embedding:           embedding,
       reviewedAt:          new Date().toISOString(),
       answerLengthTokens,
     })

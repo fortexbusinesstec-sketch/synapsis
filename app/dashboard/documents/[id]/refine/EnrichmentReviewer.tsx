@@ -194,18 +194,65 @@ export function EnrichmentReviewer({ documentId, initialPending, initialInherite
         }
 
         const savedSet = new Set(idsToSave);
-        const newPending = pending.filter(p => !savedSet.has(p.id));
         const answerLengthTokens = Math.round(answer.trim().length / 4);
 
-        const newAnswered: EnrichmentRow[] = pending
-          .filter(p => savedSet.has(p.id))
-          .map(p => ({ ...p, expertAnswer: answer.trim(), isVerified: 1, answerSource: 'expert', answerLengthTokens }));
+        // 1. Identificar si venían de pending o eran ediciones
+        const wasInPending = pending.some(p => savedSet.has(p.id));
 
-        setPending(newPending);
-        setAnswered(prev => [...newAnswered, ...prev]);
+        // 2. Actualizar estados locales (Pendings)
+        const newAnsweredItems: EnrichmentRow[] = [];
+        const nextPending = pending.filter(p => {
+          if (savedSet.has(p.id)) {
+            newAnsweredItems.push({ 
+              ...p, 
+              expertAnswer: answer.trim(), 
+              isVerified: 1, 
+              answerSource: 'expert', 
+              answerLengthTokens,
+              reviewedAt: new Date().toISOString()
+            });
+            return false;
+          }
+          return true;
+        });
+
+        // 3. Actualizar estados locales (Already Answered)
+        const nextAnswered = answered.map(a => {
+          if (savedSet.has(a.id)) {
+            return { 
+              ...a, 
+              expertAnswer: answer.trim(), 
+              isVerified: 1, 
+              answerSource: 'expert', 
+              answerLengthTokens,
+              reviewedAt: new Date().toISOString()
+            };
+          }
+          return a;
+        });
+
+        // Unir todo y guardar
+        const finalAnswered = newAnsweredItems.length > 0 
+          ? [...newAnsweredItems, ...nextAnswered]
+          : nextAnswered;
+
+        setPending(nextPending);
+        setAnswered(finalAnswered);
         setCheckedIds(new Set());
-        setAnswer('');
-        setSelected(newPending[0] ?? null);
+        
+        // FLUJO DE SELECCIÓN AUTOMÁTICA (WORKFLOW BOOST)
+        if (wasInPending) {
+          // Si respondimos una pendiente, pasamos a la SIGUIENTE pendiente
+          const nextSelected = nextPending[0] ?? null;
+          setSelected(nextSelected);
+          setAnswer(nextSelected?.expertAnswer ?? '');
+        } else {
+          // Si editamos una ya respondida, nos quedamos ahí pero con el resumen actualizado
+          const currentUpdated = finalAnswered.find(a => savedSet.has(a.id)) ?? null;
+          setSelected(currentUpdated);
+          setAnswer(currentUpdated?.expertAnswer ?? '');
+        }
+
       } catch (err) {
         setError((err as Error).message);
       }
@@ -222,20 +269,33 @@ export function EnrichmentReviewer({ documentId, initialPending, initialInherite
     <div className="space-y-4">
       <CoverageBar answered={answeredCount} inherited={inheritedCount} total={total} />
 
-      {/*
-        Layout de dos columnas.
-        La columna derecha usa sticky con top calculado para el TopBar (64px) + padding (24px) = 88px.
-        max-h limita la altura al viewport disponible para que el panel no desborde y sea scrolleable internamente.
-      */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
         {/* ── Columna izquierda: lista de lagunas ── */}
         <div className="space-y-3">
           {pending.length > 0 && (
             <>
-              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide px-1">
-                Pendientes ({pending.length})
-              </h2>
+              <div className="flex items-center justify-between px-1">
+                <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                  Pendientes ({pending.length})
+                </h2>
+                <button
+                  onClick={async () => {
+                    const text = pending
+                      .map((p, i) => `#${i + 1}\nPregunta: ${p.generatedQuestion}${p.questionContext ? `\nContexto: ${p.questionContext}` : ''}`)
+                      .join('\n\n');
+                    try {
+                      await navigator.clipboard.writeText(text);
+                      alert('Todas las preguntas pendientes copiadas al portapapeles');
+                    } catch (e) {
+                      console.error('Error al copiar:', e);
+                    }
+                  }}
+                  className="text-[10px] font-semibold text-blue-600 hover:text-blue-700 hover:underline transition-all"
+                >
+                  Copiar todas las pendientes
+                </button>
+              </div>
 
               {/* Tip "Unificar y Responder" */}
               <div className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-700 leading-relaxed">
@@ -248,19 +308,10 @@ export function EnrichmentReviewer({ documentId, initialPending, initialInherite
             </>
           )}
 
-          {pending.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-12 bg-white border border-slate-200 rounded-2xl text-slate-400 gap-2">
-              <svg className="h-8 w-8 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <p className="text-sm">Todas las lagunas han sido respondidas</p>
-            </div>
-          )}
-
           {pending.map(item => (
             <button
               key={item.id}
-              onClick={() => { setSelected(item); setAnswer(''); setError(null); }}
+              onClick={() => { setSelected(item); setAnswer(item.expertAnswer ?? ''); setError(null); }}
               className={cn(
                 'w-full text-left p-4 rounded-2xl border transition-all space-y-2.5',
                 checkedIds.has(item.id)
@@ -272,7 +323,6 @@ export function EnrichmentReviewer({ documentId, initialPending, initialInherite
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  {/* Checkbox "Unificar" */}
                   <span
                     role="checkbox"
                     aria-checked={checkedIds.has(item.id)}
@@ -327,9 +377,15 @@ export function EnrichmentReviewer({ documentId, initialPending, initialInherite
                 Auto-respondidas ({inherited.length})
               </h2>
               {inherited.map(item => (
-                <div
+                <button
                   key={item.id}
-                  className="w-full p-4 rounded-2xl border border-emerald-200 bg-emerald-50/30 space-y-2"
+                  onClick={() => { setSelected(item); setAnswer(item.expertAnswer ?? ''); setError(null); }}
+                  className={cn(
+                    "w-full text-left p-4 rounded-2xl border transition-all space-y-2",
+                    selected?.id === item.id
+                      ? 'border-blue-400 bg-blue-50 shadow-sm ring-1 ring-blue-200'
+                      : 'border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50'
+                  )}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5">
@@ -348,13 +404,10 @@ export function EnrichmentReviewer({ documentId, initialPending, initialInherite
                   <p className="text-sm font-semibold text-slate-700 leading-snug">
                     {item.generatedQuestion}
                   </p>
-                  <p className="text-xs text-slate-500 leading-relaxed italic">
+                  <p className="text-xs text-slate-500 leading-relaxed italic line-clamp-2">
                     {item.expertAnswer}
                   </p>
-                  <p className="text-[10px] text-emerald-600">
-                    Respuesta heredada automáticamente de otro documento
-                  </p>
-                </div>
+                </button>
               ))}
             </>
           )}
@@ -365,9 +418,15 @@ export function EnrichmentReviewer({ documentId, initialPending, initialInherite
                 Respondidas ({answered.length})
               </h2>
               {answered.map(item => (
-                <div
+                <button
                   key={item.id}
-                  className="w-full p-4 rounded-2xl border border-emerald-200 bg-emerald-50/40 space-y-2"
+                  onClick={() => { setSelected(item); setAnswer(item.expertAnswer ?? ''); setError(null); }}
+                  className={cn(
+                    "w-full text-left p-4 rounded-2xl border transition-all space-y-2",
+                    selected?.id === item.id
+                      ? 'border-blue-400 bg-blue-50 shadow-sm ring-1 ring-blue-200'
+                      : 'border-emerald-200 bg-emerald-50/40 hover:bg-emerald-50'
+                  )}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5">
@@ -395,19 +454,16 @@ export function EnrichmentReviewer({ documentId, initialPending, initialInherite
                   <p className="text-sm font-semibold text-slate-700 leading-snug">
                     {item.generatedQuestion}
                   </p>
-                  <p className="text-xs text-slate-500 leading-relaxed">
+                  <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">
                     {item.expertAnswer}
                   </p>
-                </div>
+                </button>
               ))}
             </>
           )}
         </div>
 
-        {/* ── Columna derecha: panel sticky ──────────────────────────────────
-            top-[88px] = TopBar (64px) + padding de página (24px)
-            max-h limita al viewport disponible → el panel hace scroll interno
-            si su contenido es más alto que la pantalla.                     */}
+        {/* ── Columna derecha: panel sticky ── */}
         <div className="sticky top-[88px] max-h-[calc(100vh-100px)] overflow-y-auto rounded-2xl">
           {selected ? (
             <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
@@ -463,7 +519,7 @@ export function EnrichmentReviewer({ documentId, initialPending, initialInherite
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold text-slate-700 uppercase tracking-wide">
-                      Tu respuesta técnica experta
+                      {selected.isVerified ? 'Editar respuesta técnica experta' : 'Tu respuesta técnica experta'}
                     </label>
                     {answer.length > 0 && (
                       <span className={cn(
@@ -494,10 +550,10 @@ export function EnrichmentReviewer({ documentId, initialPending, initialInherite
 
                 <button
                   onClick={handleSave}
-                  disabled={!answer.trim() || isPending}
+                  disabled={!answer.trim() || isPending || (!!selected.isVerified && answer === selected.expertAnswer)}
                   className={cn(
                     'w-full py-2.5 px-4 rounded-xl text-sm font-semibold transition-all',
-                    !answer.trim() || isPending
+                    !answer.trim() || isPending || (!!selected.isVerified && answer === selected.expertAnswer)
                       ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                       : isUnifyMode
                       ? 'bg-violet-600 text-white hover:bg-violet-700 active:scale-[0.98] shadow-sm'
@@ -506,6 +562,8 @@ export function EnrichmentReviewer({ documentId, initialPending, initialInherite
                 >
                   {isPending
                     ? 'Vectorizando…'
+                    : selected.isVerified
+                    ? 'Actualizar y re-vectorizar'
                     : isUnifyMode
                     ? `Unificar y Responder (${checkedIds.size} seleccionadas)`
                     : 'Guardar y vectorizar'

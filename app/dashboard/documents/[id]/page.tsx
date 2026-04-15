@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 import { db } from "@/lib/db";
-import { documents, documentChunks, extractedImages, agentLogs, enrichments } from "@/lib/db/schema";
+import { documents, documentChunks, extractedImages, agentLogs, enrichments, indexingMetrics } from "@/lib/db/schema";
 import { cn } from "@/lib/utils";
 import { AuditTabs } from "./AuditTabs";
 import { DeleteDocumentButton } from "@/components/DeleteDocumentButton";
@@ -155,7 +155,7 @@ export default async function DocumentObservabilityPage({ params }: PageProps) {
   if (!doc) notFound();
 
   // ── Parallel: counts + data rows + agent logs (sin embedding blobs) ────────
-  const [chunksCountResult, imagesCountResult, enrichmentCountResult, chunks, images, logsRaw] =
+  const [chunksCountResult, imagesCountResult, enrichmentCountResult, chunks, images, logsRaw, metricsResult] =
     await Promise.all([
       db
         .select({ count: count() })
@@ -193,8 +193,12 @@ export default async function DocumentObservabilityPage({ params }: PageProps) {
           pageNumber:  extractedImages.pageNumber,
           imageUrl:    extractedImages.imageUrl,
           imageType:   extractedImages.imageType,
+          confidence:  extractedImages.confidence,
           description: extractedImages.description,
           isCritical:  extractedImages.isCritical,
+          isDiscarded: extractedImages.isDiscarded,
+          isUseful:    extractedImages.isUseful,
+          userComment: extractedImages.userComment,
         })
         .from(extractedImages)
         .where(eq(extractedImages.documentId, id)),
@@ -216,11 +220,18 @@ export default async function DocumentObservabilityPage({ params }: PageProps) {
         .from(agentLogs)
         .where(eq(agentLogs.documentId, id))
         .orderBy(agentLogs.startedAt),
+
+      db
+        .select()
+        .from(indexingMetrics)
+        .where(eq(indexingMetrics.documentId, id))
+        .limit(1),
     ]);
 
   const chunksCount       = chunksCountResult[0]?.count ?? 0;
   const imagesCount       = imagesCountResult[0]?.count ?? 0;
   const enrichmentCount   = enrichmentCountResult[0]?.count ?? 0;
+  const docMetrics        = metricsResult[0];
   const isError           = doc.status === "error";
   const initialAgentLogs = logsRaw.map((l) => ({
     id:            l.id,
@@ -343,6 +354,105 @@ export default async function DocumentObservabilityPage({ params }: PageProps) {
           bg="bg-emerald-50"
           border="border-emerald-100"
         />
+      </div>
+
+      {/* ── 2.5 MÉTRICAS ACADÉMICAS (PAPER Q1) ─────────────────────────── */}
+      <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 relative overflow-hidden">
+        {/* Decorative background elements */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 blur-[80px] pointer-events-none opacity-50" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-violet-50 blur-[80px] pointer-events-none opacity-50" />
+
+        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest border border-blue-100 mb-4 shadow-sm">
+              <Sparkles className="w-3.5 h-3.5" />
+              Métricas de Indexación (Paper Q1)
+            </div>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-none">
+              Resiliencia y Transferencia <span className="text-blue-600">de Conocimiento</span>
+            </h2>
+            <p className="text-slate-500 text-sm mt-2 max-w-xl">
+              Análisis del pipeline basado en indicadores de herencia y robustez del sistema experto.
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-6 bg-slate-50/80 backdrop-blur-sm p-5 rounded-2xl border border-slate-100 shadow-inner">
+            <div className="text-center min-w-[70px]">
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Mismatch</p>
+              <p className={cn(
+                "text-2xl font-black mt-1",
+                (docMetrics?.agentMismatchCount ?? 0) > 0 ? "text-amber-500" : "text-emerald-500"
+              )}>
+                {docMetrics?.agentMismatchCount ?? 0}
+              </p>
+            </div>
+            <div className="w-px h-10 bg-slate-200" />
+            <div className="text-center min-w-[70px]">
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Gaps</p>
+              <p className="text-2xl font-black text-blue-600 mt-1">{docMetrics?.detectedGaps ?? 0}</p>
+            </div>
+            <div className="w-px h-10 bg-slate-200" />
+            <div className="text-center min-w-[70px]">
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Inherited</p>
+              <p className="text-2xl font-black text-violet-600 mt-1">
+                {(docMetrics?.inheritedL1 ?? 0) + (docMetrics?.inheritedL2 ?? 0) + (docMetrics?.inheritedL3 ?? 0)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-6">
+          {/* L1 Card */}
+          <div className="bg-white border-2 border-slate-50 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-emerald-100 transition-all group">
+            <div className="flex items-center justify-between mb-5">
+              <div className="p-2 bg-emerald-50 rounded-lg group-hover:scale-110 transition-transform">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+              </div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nivel 1: Exacto</span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <p className="text-4xl font-black text-slate-800">{docMetrics?.inheritedL1 ?? 0}</p>
+              <p className="text-xs text-slate-400 font-bold uppercase tracking-tighter">Hits</p>
+            </div>
+            <p className="text-xs text-slate-500 mt-4 leading-relaxed font-medium">
+              Herencia por coincidencia exacta de términos clave en el corpus global.
+            </p>
+          </div>
+
+          {/* L2 Card */}
+          <div className="bg-white border-2 border-slate-50 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-blue-100 transition-all group">
+            <div className="flex items-center justify-between mb-5">
+              <div className="p-2 bg-blue-50 rounded-lg group-hover:scale-110 transition-transform">
+                <Layers className="w-5 h-5 text-blue-600" />
+              </div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nivel 2: Meta</span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <p className="text-4xl font-black text-slate-800">{docMetrics?.inheritedL2 ?? 0}</p>
+              <p className="text-xs text-slate-400 font-bold uppercase tracking-tighter">Hits</p>
+            </div>
+            <p className="text-xs text-slate-500 mt-4 leading-relaxed font-medium">
+              Inferencia basada en el modelo <span className="text-blue-600 font-bold">{doc.equipmentModel ?? 'Gral'}</span>.
+            </p>
+          </div>
+
+          {/* L3 Card */}
+          <div className="bg-white border-2 border-slate-50 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-violet-100 transition-all group">
+            <div className="flex items-center justify-between mb-5">
+              <div className="p-2 bg-violet-50 rounded-lg group-hover:scale-110 transition-transform">
+                <Sparkles className="w-5 h-5 text-violet-600" />
+              </div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nivel 3: Vector</span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <p className="text-4xl font-black text-slate-800">{docMetrics?.inheritedL3 ?? 0}</p>
+              <p className="text-xs text-slate-400 font-bold uppercase tracking-tighter">Hits</p>
+            </div>
+            <p className="text-xs text-slate-500 mt-4 leading-relaxed font-medium">
+              Transferencia semántica detectada mediante <span className="text-violet-600 font-bold">VSS</span>.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* ── 3. PESTAÑAS DE AUDITORÍA ───────────────────────────────────── */}

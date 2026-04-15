@@ -27,6 +27,9 @@ const mistral = new Mistral({ apiKey: process.env.MISTRAL_API_KEY! });
 export type ImageType =
   | 'diagram'
   | 'schematic'
+  | 'flow'
+  | 'layout'
+  | 'graph'
   | 'warning'
   | 'table'
   | 'photo'
@@ -34,15 +37,45 @@ export type ImageType =
   | 'cover'
   | 'logo';
 
-/** Salida del triaje Pixtral — sin cambios respecto a versión anterior */
+export type StructureType =
+  | 'electrical'
+  | 'communication'
+  | 'mechanical'
+  | 'layout'
+  | 'flow'
+  | 'architecture'
+  | 'table'
+  | 'unknown';
+
+export interface StructuralComponent {
+  id:   string;
+  type: 'relay' | 'motor' | 'cpu' | 'sensor' | 'module' | 'node' | 'block' | 'unknown';
+}
+
+export interface StructuralConnection {
+  from: string;
+  to:   string;
+  type: 'electrical' | 'logic' | 'bus' | 'mechanical' | 'spatial' | 'unknown';
+}
+
+export interface StructuralAnalysis {
+  structure_type: StructureType;
+  components:     StructuralComponent[];
+  connections:    StructuralConnection[];
+  flows:          string[];
+  relationships:  string[];
+  zones:          string[];
+}
+
+/** Salida del triaje Pixtral — clasificación + análisis estructural opcional */
 export interface VisionOutput {
   type:                 ImageType;
-  confidence:           number;       // 0.0–1.0 (certeza de clasificación)
-  classification_layer: 1 | 2 | 3;   // 1=blacklist, 2=whitelist, 3=zona gris
+  confidence:           number;             // 0.0–1.0 (certeza de clasificación)
+  classification_layer: 1 | 2 | 3;         // 1=blacklist, 2=whitelist, 3=zona gris
   description:          string;
-  reason:               string;
   has_warning:          boolean;
   technical_elements:   string[];
+  structural_analysis:  StructuralAnalysis | null;
 }
 
 /** Contexto de página para inyección de markdown */
@@ -77,20 +110,12 @@ export interface ImageResult {
   };
 }
 
-/* ── Filtro de 3 capas (sin cambios) ───────────────────────────────────── */
+/* ── Tipos que requieren análisis estructural ───────────────────────────── */
 
-const DISCARD_TYPES = new Set<ImageType>(['decorative', 'cover', 'logo']);
+/** Tipos que requieren análisis estructural (si Pixtral los detecta) */
+const STRUCTURAL_TYPES = new Set<ImageType>(['diagram', 'schematic', 'flow', 'layout', 'graph', 'table']);
 
-export function shouldDiscard(result: VisionOutput): boolean {
-  if (result.classification_layer === 1) return true;
-  if (result.classification_layer === 2) return false;
-  if (DISCARD_TYPES.has(result.type))    return true;
-  if (result.confidence < 0.75)          return true;
-  if (result.description.trim().length < 20) return true;
-  return false;
-}
-
-/* ── PIXTRAL — Triaje (función original sin cambios de lógica) ──────────── */
+/* ── PIXTRAL — Clasificación + Análisis Estructural ────────────────────── */
 
 export async function analyzeImage(
   imageBase64: string,
@@ -106,47 +131,77 @@ export async function analyzeImage(
   ].filter(Boolean).join('\n\n');
 
   const prompt =
-    `Eres un ingeniero experto en ascensores Schindler. ` +
+    `Eres un ingeniero experto en ascensores Schindler, electrónica industrial y sistemas de control.\n` +
     `Analiza esta imagen extraída de un documento técnico.\n\n` +
-    `CONTEXTO DE LAS PÁGINAS CIRCUNDANTES:\n${contextText}\n\n` +
+    `Tu tarea tiene DOS FASES:\n` +
+    `1. Clasificación (capas 1–3)\n` +
+    `2. Análisis estructural (si aplica)\n\n` +
+    `---\n\n` +
+    `CONTEXTO DE LAS PÁGINAS CIRCUNDANTES:\n\n` +
+    `${contextText}\n\n` +
+    `---\n\n` +
     `SISTEMA DE CLASIFICACIÓN EN 3 CAPAS:\n\n` +
     `CAPA 1 — BLACKLIST ABSOLUTA (classification_layer: 1, descartar SIEMPRE):\n` +
-    `Aplica si la imagen es UNO de estos:\n` +
-    `- Únicamente un logotipo corporativo sin ningún componente técnico\n` +
-    `- Página completamente en blanco o casi en blanco\n` +
-    `- Fotografía de edificio o instalación sin esquemas superpuestos\n` +
-    `- Una mano o dedo humano señalando/apuntando SIN que haya ningún componente\n` +
-    `  técnico visible (sin circuitos, sin displays, sin esquemas).\n` +
-    `  Si la mano TOCA o está JUNTO A un componente real → NO es Capa 1.\n` +
-    `- Flecha decorativa aislada sin contexto de diagrama\n` +
-    `- Fotografía de persona sin equipo técnico visible\n` +
-    `- Texto puro sin ningún elemento gráfico\n\n` +
-    `CAPA 2 — WHITELIST TÉCNICA REFORZADA (classification_layer: 2, conservar SIEMPRE):\n` +
-    `Solo marca como Capa 2 si la imagen es un diagrama técnico (líneas de conexión, bloques o tablas)\n` +
-    `que contenga al menos UNA de estas siglas o identificadores:\n\n` +
-    `1. PLACAS/CPUs: SCIC, SMIC, SDIC, GCIO, ASIX, LONIC, NWIOC, NWIOE, CIM, LIM, SNGL, BIM, SEM, SLIN, LCUX\n\n` +
-    `2. TRACCIÓN/POTENCIA: ACVF, GSV, MGB, VCA, SCPOW, PDM, Variodyn, Yaskawa, VF122BR\n\n` +
-    `3. SENSORES/SEGURIDAD: KSE, KNE, KSKB, KSS, KTC, KTS, KTZ, PHS, PHUET, JHC, SIS, SGRW, RKPH, SIH, JH, KTHM\n\n` +
-    `4. INTERFACES/BUS: SMLCD, HMI, COP, LOP, SCOP, DBV, TIC, HTIC, LON, CAN, BIO\n\n` +
-    `5. CÓDIGOS DE PLANO: formatos como '220_000...', 'K 612089...' o 'EJ 4141...'\n\n` +
-    `REGLA DE ORO DE PRECISIÓN:\n` +
-    `- Si la imagen es un logo, una advertencia genérica (mano, casco) o texto sin gráficos: ES CAPA 1 (DESCARTAR).\n` +
-    `- En caso de duda entre Capa 2 y Capa 3, elige Capa 2.\n\n` +
+    `- Logotipo corporativo sin elementos técnicos\n` +
+    `- Página en blanco\n` +
+    `- Fotografía decorativa sin diagramas\n` +
+    `- Mano señalando sin equipo técnico visible\n` +
+    `- Flecha decorativa aislada\n` +
+    `- Persona sin equipo técnico\n` +
+    `- Texto puro sin gráficos\n` +
+    `- Imagen ornamental o portada\n\n` +
+    `CAPA 2 — WHITELIST TÉCNICA (classification_layer: 2, conservar SIEMPRE):\n` +
+    `Cualquier imagen que contenga:\n` +
+    `- Diagramas eléctricos, esquemas de control, bloques funcionales\n` +
+    `- Grafos de comunicación (CAN, LON), diagramas de flujo\n` +
+    `- Arquitectura de sistema, plano de ascensor, layout de gabinete\n` +
+    `- Cableado, topología de red, tabla técnica con estructura visual\n` +
+    `- Esquema mecánico, hidráulico, de puertas o de tracción\n` +
+    `O que contenga siglas técnicas como:\n` +
+    `SCIC, SMIC, SDIC, GCIO, ACVF, KSE, KNE, KSS, KTC, KTS, KTZ, PHS, PHUET, JHC,\n` +
+    `SIS, SGRW, RKPH, SIH, JH, KTHM, CAN, LON, COP, LOP, SCOP, SMLCD, HMI, DBV,\n` +
+    `TIC, HTIC, BIO, GSV, MGB, VCA, SCPOW, PDM, Variodyn, Yaskawa, VF122BR,\n` +
+    `ASIX, LONIC, NWIOC, NWIOE, CIM, LIM, SNGL, BIM, SEM, SLIN, LCUX,\n` +
+    `M1, M2, K1, K2, y formatos de código de plano como 220_000..., K 612089..., EJ 4141...\n\n` +
     `CAPA 3 — ZONA GRIS (classification_layer: 3): todo lo que no sea Capa 1 ni Capa 2.\n\n` +
-    `REGLAS FINALES:\n` +
-    `- En Capa 2, confidence = certeza de TU clasificación, no decide el descarte.\n` +
-    `- Ante la duda entre Capa 1 y Capa 2, elige SIEMPRE Capa 2.\n` +
-    `- La descripción debe nombrar todos los componentes y siglas que veas en la imagen.\n\n` +
-    `Responde SOLO con JSON estricto (sin texto adicional, sin bloques de código):\n` +
+    `---\n\n` +
+    `ANÁLISIS ESTRUCTURAL (OBLIGATORIO si type = "diagram" | "schematic" | "flow" | "layout" | "graph" | "table")\n\n` +
+    `TIPOS DE ESTRUCTURAS POSIBLES: electrical | communication | mechanical | layout | flow | architecture | table | unknown\n\n` +
+    `Identifica:\n` +
+    `COMPONENTES: placas, relés, motores, sensores, módulos, puertas, cabina, variador, CPU, IO, nodos\n` +
+    `CONEXIONES: líneas eléctricas, flechas, buses, cables — cada una con from/to/type\n` +
+    `RELACIONES: "A controla B", "A alimenta B", "A comunica con B", "A depende de B"\n` +
+    `FLUJOS: eléctrico, lógico, mecánico, comunicación, datos\n` +
+    `ZONAS: cabina, cuarto de máquinas, control, foso, etc.\n\n` +
+    `REGLAS DE INTERPRETACIÓN:\n` +
+    `- Las líneas representan conexiones; las flechas representan flujo o dirección\n` +
+    `- Las cajas representan módulos; las etiquetas representan componentes\n` +
+    `- La proximidad espacial indica relación; los planos indican relaciones físicas\n` +
+    `- NO ignorar: líneas finas, punteadas, buses horizontales, flechas pequeñas, conexiones indirectas\n\n` +
+    `---\n\n` +
+    `RESPONDE SOLO CON JSON ESTRICTO (sin texto adicional, sin bloques de código):\n` +
     `{\n` +
-    `  "type": "diagram"|"schematic"|"warning"|"table"|"photo"|"decorative"|"cover"|"logo",\n` +
+    `  "type": "diagram"|"schematic"|"flow"|"layout"|"graph"|"warning"|"table"|"photo"|"decorative"|"logo",\n` +
     `  "confidence": <0.0–1.0>,\n` +
     `  "classification_layer": <1|2|3>,\n` +
-    `  "description": "<descripción técnica densa>",\n` +
-    `  "reason": "<motivo; vacío si se conserva>",\n` +
+    `  "description": "<descripción técnica breve>",\n` +
     `  "has_warning": <true|false>,\n` +
-    `  "technical_elements": <siglas y etiquetas que LEES DENTRO DE LA IMAGEN; [] si ninguna>\n` +
-    `}`;
+    `  "technical_elements": ["siglas y etiquetas visibles en la imagen; [] si ninguna"],\n` +
+    `  "structural_analysis": {\n` +
+    `    "structure_type": "electrical"|"communication"|"mechanical"|"layout"|"flow"|"architecture"|"table"|"unknown",\n` +
+    `    "components": [{"id": "etiqueta", "type": "relay"|"motor"|"cpu"|"sensor"|"module"|"node"|"block"|"unknown"}],\n` +
+    `    "connections": [{"from": "A", "to": "B", "type": "electrical"|"logic"|"bus"|"mechanical"|"spatial"|"unknown"}],\n` +
+    `    "flows": ["texto corto describiendo flujo"],\n` +
+    `    "relationships": ["A controla B"],\n` +
+    `    "zones": ["cabina", "cuarto de maquinas"]\n` +
+    `  }\n` +
+    `}\n\n` +
+    `REGLAS FINALES:\n` +
+    `- Si no es diagrama/schematic/flow/layout/graph/table → structural_analysis = null\n` +
+    `- No inventar componentes; solo los visibles en la imagen\n` +
+    `- Seguir líneas visualmente; usar etiquetas visibles\n` +
+    `- Ser conservador si no es claro\n` +
+    `- JSON válido únicamente`;
 
   try {
     const res = await mistral.chat.complete({
@@ -177,18 +232,35 @@ export async function analyzeImage(
     if (!jsonMatch) return { data: null, usage };
 
     const parsed = JSON.parse(jsonMatch[0]) as Partial<VisionOutput>;
+    const parsedType = (parsed.type ?? 'decorative') as ImageType;
+
+    // Validar structural_analysis solo si el tipo lo requiere
+    const rawSA = (parsed as any).structural_analysis;
+    let structuralAnalysis: StructuralAnalysis | null = null;
+
+    if (STRUCTURAL_TYPES.has(parsedType) && rawSA && typeof rawSA === 'object') {
+      structuralAnalysis = {
+        structure_type: rawSA.structure_type ?? 'unknown',
+        components:     Array.isArray(rawSA.components)    ? rawSA.components    : [],
+        connections:    Array.isArray(rawSA.connections)   ? rawSA.connections   : [],
+        flows:          Array.isArray(rawSA.flows)         ? rawSA.flows         : [],
+        relationships:  Array.isArray(rawSA.relationships) ? rawSA.relationships : [],
+        zones:          Array.isArray(rawSA.zones)         ? rawSA.zones         : [],
+      };
+    }
+
     return {
       data: {
-        type:                 (parsed.type                ?? 'decorative') as ImageType,
+        type:                 parsedType,
         confidence:           parsed.confidence           ?? 0,
         classification_layer: ([1, 2, 3].includes(parsed.classification_layer as number)
                                 ? parsed.classification_layer : 3) as 1 | 2 | 3,
         description:          parsed.description          ?? '',
-        reason:               parsed.reason               ?? '',
         has_warning:          parsed.has_warning          ?? false,
         technical_elements:   Array.isArray(parsed.technical_elements)
                                 ? (parsed.technical_elements as unknown[]).filter((e): e is string => typeof e === 'string')
                                 : [],
+        structural_analysis:  structuralAnalysis,
       },
       usage,
     };
@@ -239,7 +311,7 @@ async function analyzeWithGPT4o(
     `5. Si hay valores eléctricos (voltajes, frecuencias, resistencias), recítalos\n\n` +
     `Responde en JSON estricto sin markdown:\n` +
     `{\n` +
-    `  "type": "diagram"|"schematic"|"warning"|"table"|"photo",\n` +
+    `  "type": "diagram"|"schematic"|"flow"|"layout"|"graph"|"warning"|"table"|"photo",\n` +
     `  "description": "<descripción técnica exhaustiva en español, mínimo 100 palabras>",\n` +
     `  "technical_elements": ["siglas", "y", "componentes"],\n` +
     `  "connections": ["LDU conecta con ACVF via bus CAN", ...],\n` +
@@ -328,12 +400,24 @@ export async function processImage(
 
   const pixtralTokens = pixtralUsage.prompt_tokens + pixtralUsage.completion_tokens;
 
-  // Capa 1: descarte inmediato
-  if (!triage || triage.classification_layer === 1) {
-    console.log(
-      `[Vision] Descartada Capa 1 | tipo: ${triage?.type ?? 'null'} | img:${image.id}`,
-    );
-    return null;
+  // Pixtral no pudo parsear nada — error real, no hay imagen que guardar
+  if (!triage) return null;
+
+  // Capa 1: AI sugiere que no es técnica (logo, portada, decorativa…)
+  // NO descartamos — el humano decide. Guardamos con classification_layer=1 como pista.
+  if (triage.classification_layer === 1) {
+    console.log(`[Vision] Capa 1 (guardada para revisión humana) | tipo: ${triage.type} | img:${image.id}`);
+    return {
+      type:                 triage.type,
+      confidence:           triage.confidence,
+      description:          triage.description || `Imagen ${triage.type} — revisar`,
+      has_warning:          false,
+      technical_elements:   triage.technical_elements,
+      visionModel:          'pixtral-12b' as const,
+      route:                'pixtral_direct' as const,
+      classification_layer: 1 as const,
+      usage: { pixtral_tokens: pixtralTokens, gpt4o_tokens: 0 },
+    };
   }
 
   // Capa 2: diagrama técnico → escalar a GPT-4o
@@ -369,16 +453,8 @@ export async function processImage(
     };
   }
 
-  // Capa 3: zona gris → aplicar umbral
-  if (shouldDiscard(triage)) {
-    console.log(
-      `[Vision] Descartada Capa 3 | conf: ${triage.confidence} | tipo: ${triage.type} | img:${image.id}`,
-    );
-    return null;
-  }
-
-  // Capa 3 pasa el umbral → guardar con Pixtral directamente
-  console.log(`[Vision] Guardada Capa 3 con Pixtral | tipo: ${triage.type} | img:${image.id}`);
+  // Capa 3: zona gris → guardar siempre, el humano decide
+  console.log(`[Vision] Capa 3 guardada para revisión humana | conf: ${triage.confidence} | tipo: ${triage.type} | img:${image.id}`);
   return {
     type:                 triage.type,
     confidence:           triage.confidence,

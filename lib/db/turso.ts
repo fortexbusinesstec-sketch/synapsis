@@ -46,6 +46,7 @@ export async function getDocumentById(id: string) {
       costChunker:      documents.costChunker,
       costEmbedder:     documents.costEmbedder,
       totalCost:        documents.totalCost,
+      auditorRecommendations: documents.auditorRecommendations,
     })
     .from(documents)
     .where(eq(documents.id, id))

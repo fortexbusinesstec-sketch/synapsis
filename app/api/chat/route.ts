@@ -30,9 +30,8 @@ import { createId } from '@paralleldrive/cuid2';
 import type { Message } from 'ai';
 import { client }  from '@/lib/db';
 
-import { runClarifier } from '@/lib/agents/clarifier';
-import { validateImages }                   from '@/lib/agents/image-validator';
-import { saveMetrics }                      from '@/lib/agents/metrifier';
+import { runClarifier }    from '@/lib/agents/clarifier';
+import { saveChatMessage } from '@/lib/agents/metrifier';
 
 export const maxDuration = 60;
 
@@ -410,14 +409,11 @@ export async function POST(req: Request) {
   ──────────────────────────────────────────────────────────────────────── */
   let enrichedQuery = userQuery;
   let queryIntent = 'troubleshooting';
-  const isFirstMessage = messages.length === 1;
-
   try {
     const clarification = await runClarifier(userQuery, equipmentModel);
-    if (clarification?.enriched_query) {
-      enrichedQuery = clarification.enriched_query;
-      queryIntent = clarification.intent;
-    }
+    // enrichedQuery se mantiene como la query original (política del clarificador v2)
+    // solo tomamos el intent detectado para guiar el retrieval
+    queryIntent = clarification.intent;
   } catch (e) {
     console.error(`[${timestamp}][chat:fase0] Clarificador falló:`, (e as Error).message);
   }
@@ -473,10 +469,12 @@ export async function POST(req: Request) {
   const t1end = Date.now();
 
   /* ────────────────────────────────────────────────────────────────────────
-     AGENTE 4 — VALIDADOR DE IMÁGENES
-     Filtra imágenes del Bibliotecario antes de enviarlas al frontend.
+     AGENTE 4 — VALIDADOR DE IMÁGENES (filtro inline)
+     Conserva solo imágenes con descripción real; descarta decorativas/logo.
   ──────────────────────────────────────────────────────────────────────── */
-  const validatedImages = validateImages(retrievedImages, enrichedQuery, groundTruth);
+  const validatedImages = retrievedImages.filter(
+    (img) => img.description && img.description.trim().length > 10,
+  );
 
   /* ────────────────────────────────────────────────────────────────────────
      FASE 2 — ANALISTA: Internal monologue (nunca detiene la Fase 3)
@@ -499,6 +497,11 @@ export async function POST(req: Request) {
   /* ────────────────────────────────────────────────────────────────────────
      FASE 3 — INGENIERO JEFE: Streaming response
   ──────────────────────────────────────────────────────────────────────── */
+  // Variables de closure para capturar telemetría de Fase 3 desde onFinish
+  let phase3MsCapture         = 0;
+  let phase3InputToksCapture  = 0;
+  let phase3OutputToksCapture = 0;
+
   try {
     // Ya no usamos hipótesis individuales
     const contextBlock = groundTruth.trim()
@@ -551,23 +554,15 @@ export async function POST(req: Request) {
 
       // AGENTE 5 — METRIFICADOR: Persistir métricas al finalizar el stream
       onFinish: async ({ usage }) => {
+        // Capturar telemetría de Fase 3 en variables de closure para los headers
+        phase3MsCapture          = Date.now() - t3start;
+        phase3InputToksCapture   = usage.promptTokens ?? 0;
+        phase3OutputToksCapture  = usage.completionTokens ?? 0;
+
+        // En modo 'record': persistir el mensaje del asistente en chat_messages
         if (sessionId && sessionMode === 'record') {
-          const phase3Ms = Date.now() - t3start;
-          saveMetrics(sessionId, messageId, {
-            phase0Used:         true,
-            phase1Ms:           t1end - t1start,
-            phase2Ms:           t2end - t2start,
-            phase2Tokens,
-            phase3Ms,
-            phase3InputTokens:  usage.promptTokens,
-            phase3OutputTokens: usage.completionTokens,
-            chunksRetrieved,
-            imagesRetrieved:    retrievedImages.length,
-            imagesShown:        validatedImages.length,
-            enrichmentsUsed:    hasEnrichments ? 1 : 0,
-          }, 'record').catch(err =>
-            console.error('[chat:metrifier] Error guardando métricas:', err.message),
-          );
+          saveChatMessage(sessionId, 'assistant', '[stream completado]', 'record')
+            .catch((err: Error) => console.error('[chat:metrifier] Error guardando mensaje:', err.message));
         }
       },
     });
@@ -582,19 +577,28 @@ export async function POST(req: Request) {
 
     return result.toDataStreamResponse({
       headers: {
-        'x-retrieved-images':  encodeURIComponent(JSON.stringify(imagesForHeader)),
-        'x-urgency-level':     analista.urgency,
-        'x-analyst-reasoning': encodeURIComponent(analista.mentor_guidance),
-        'x-session-id':        sessionId ?? '',
-        'x-message-id':        messageId,
-        'x-phase0-used':       '1',
-        'x-phase1-ms':         String(t1end - t1start),
-        'x-phase2-ms':         String(t2end - t2start),
-        'x-phase2-tokens':     String(phase2Tokens),
-        'x-chunks-retrieved':  String(chunksRetrieved),
-        'x-images-retrieved':  String(retrievedImages.length),
-        'x-images-shown':      String(validatedImages.length),
-        'x-enrichments-used':  hasEnrichments ? '1' : '0',
+        'x-retrieved-images':       encodeURIComponent(JSON.stringify(imagesForHeader)),
+        'x-urgency-level':          analista.urgency,
+        'x-analyst-reasoning':      encodeURIComponent(analista.mentor_guidance),
+        'x-session-id':             sessionId ?? '',
+        'x-message-id':             messageId,
+        'x-phase0-used':            '1',
+        // Latencias por fase
+        'x-phase1-ms':              String(t1end - t1start),
+        'x-phase2-ms':              String(t2end - t2start),
+        'x-phase3-ms':              String(phase3MsCapture),
+        // Tokens por fase
+        'x-phase2-tokens':          String(phase2Tokens),
+        'x-phase3-input-tokens':    String(phase3InputToksCapture),
+        'x-phase3-output-tokens':   String(phase3OutputToksCapture),
+        // Trazabilidad RAG
+        'x-chunks-retrieved':       String(chunksRetrieved),
+        'x-images-retrieved':       String(retrievedImages.length),
+        'x-images-shown':           String(validatedImages.length),
+        'x-enrichments-used':       String(hasEnrichments ? 1 : 0),
+        // Telemetría de agentes
+        'x-enriched-query':         encodeURIComponent(enrichedQuery),
+        'x-detected-intent':        queryIntent,
       },
     });
 

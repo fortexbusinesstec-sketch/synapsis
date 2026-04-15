@@ -49,56 +49,18 @@ export function calculateCost(
   return { phase2, phase3, total: phase2 + phase3 };
 }
 
-/* ── saveMetrics ────────────────────────────────────────────────────────── */
+/* ── saveChatMessage ────────────────────────────────────────────────────── */
 
-export async function saveMetrics(
+export async function saveChatMessage(
   sessionId: string,
-  messageId: string,
-  metrics:   MetricsPayload,
+  role:      'user' | 'assistant',
+  content:   string,
   mode:      'test' | 'record',
 ): Promise<void> {
   if (mode !== 'record') return;
 
-  const cost = calculateCost(
-    metrics.phase2Tokens,
-    metrics.phase3InputTokens,
-    metrics.phase3OutputTokens,
-  );
-  const totalTokens =
-    metrics.phase2Tokens + metrics.phase3InputTokens + metrics.phase3OutputTokens;
-
   await client.execute({
-    sql: `
-      INSERT INTO chat_metrics (
-        id, session_id, message_id,
-        phase0_used, phase1_ms, phase2_ms, phase2_tokens,
-        phase3_ms, phase3_input_tokens, phase3_output_tokens,
-        total_tokens, cost_phase2_usd, cost_phase3_usd, total_cost_usd,
-        chunks_retrieved, images_retrieved, images_shown, enrichments_used
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `,
-    args: [
-      createId(), sessionId, messageId,
-      metrics.phase0Used ? 1 : 0,
-      metrics.phase1Ms,  metrics.phase2Ms,  metrics.phase2Tokens,
-      metrics.phase3Ms,  metrics.phase3InputTokens, metrics.phase3OutputTokens,
-      totalTokens, cost.phase2, cost.phase3, cost.total,
-      metrics.chunksRetrieved, metrics.imagesRetrieved,
-      metrics.imagesShown, metrics.enrichmentsUsed,
-    ],
-  });
-}
-
-/* ── saveRating ─────────────────────────────────────────────────────────── */
-
-export async function saveRating(
-  messageId: string,
-  rating:    number,
-  mode:      'test' | 'record',
-): Promise<void> {
-  if (mode !== 'record') return;
-  await client.execute({
-    sql:  `UPDATE chat_metrics SET rating = ?, rating_at = CURRENT_TIMESTAMP WHERE message_id = ?`,
-    args: [rating, messageId],
+    sql: `INSERT INTO chat_messages (id, session_id, role, content) VALUES (?, ?, ?, ?)`,
+    args: [createId(), sessionId, role, content],
   });
 }

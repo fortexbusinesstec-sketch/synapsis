@@ -2,40 +2,44 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { 
-  Zap, 
-  LogOut, 
-  ChevronDown, 
-  Home, 
-  FileText, 
+import {
+  Zap,
+  LogOut,
+  ChevronDown,
+  Home,
+  FileText,
   Activity,
+  FlaskConical,
   Menu,
-  X 
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import { logoutAction } from '@/app/login/actions';
 
 const NAV_LINKS = [
   { label: 'Home',          href: '/dashboard/home',           Icon: Home },
   { label: 'Documentación', href: '/dashboard/documentacion',  Icon: FileText },
   { label: 'Synapsis Go',   href: '/dashboard/go',             Icon: Activity },
+  { label: 'Ablación',      href: '/dashboard/ablation',       Icon: FlaskConical },
 ];
 
 export function TopBar() {
   const pathname = usePathname();
   const router = useRouter();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const handleLogout = () => {
-    // Aquí iría la lógica de borrar cookies/sesión
-    router.push('/');
+  const handleLogout = async () => {
+    await logoutAction();
+    router.push('/login');
   };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/60 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_4px_6px_-2px_rgba(0,0,0,0.05)]">
 
       {/* ── Main strip ─────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between h-[64px] px-8">
+      <div className="flex items-center justify-between h-[64px] px-4 sm:px-8">
 
         {/* Logo Section */}
         <Link href="/dashboard/home" className="flex items-center gap-3 group transition-all">
@@ -75,7 +79,7 @@ export function TopBar() {
         </nav>
 
         {/* Right Section: User & Actions */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           
           <div className="h-8 w-px bg-slate-200/60 hidden sm:block" />
 
@@ -84,11 +88,11 @@ export function TopBar() {
             <button 
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
               className={cn(
-                "flex items-center gap-3 pl-1 pr-2 py-1 rounded-xl transition-all group",
+                "flex items-center gap-2 sm:gap-3 pl-1 pr-2 py-1 rounded-xl transition-all group",
                 isUserMenuOpen ? "bg-slate-100" : "hover:bg-slate-50"
               )}
             >
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-700 flex items-center justify-center text-white text-[12px] font-black shadow-md shadow-blue-500/10">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-700 flex items-center justify-center text-white text-[12px] font-black shadow-md shadow-blue-500/10 shrink-0">
                 AH
               </div>
               <div className="hidden sm:flex flex-col leading-none text-left">
@@ -121,8 +125,48 @@ export function TopBar() {
               </div>
             )}
           </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="flex md:hidden p-2 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors border border-slate-200/50"
+          >
+            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Navigation Menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden border-t border-slate-100 bg-white animate-in slide-in-from-top duration-300">
+          <nav className="flex flex-col p-4 gap-2">
+            {NAV_LINKS.map(({ label, href, Icon }) => {
+              const active = pathname === href || pathname.startsWith(href + '/');
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={cn(
+                    "flex items-center gap-4 px-4 py-4 rounded-2xl text-[14px] font-bold transition-all",
+                    active
+                      ? "bg-blue-50 text-blue-600 border border-blue-100 shadow-sm"
+                      : "text-slate-600 hover:bg-slate-50 border border-transparent"
+                  )}
+                >
+                  <div className={cn(
+                    "w-8 h-8 rounded-xl flex items-center justify-center transition-all",
+                    active ? "bg-white text-blue-500 shadow-sm" : "bg-slate-100 text-slate-400"
+                  )}>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  {label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      )}
     </header>
   );
 }

@@ -59,3 +59,8 @@ export async function loginAction(
     return { success: false, message: "Error en el servidor" };
   }
 }
+
+export async function logoutAction() {
+  const cookieStore = await cookies();
+  cookieStore.delete("schindler_session");
+}

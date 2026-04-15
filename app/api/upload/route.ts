@@ -26,10 +26,11 @@ import { runOcr }              from '@/lib/agents/ocr';
 import type { OcrPage }        from '@/lib/agents/ocr';
 import { processImage as visionRoute, type ImageInput, type ImageResult } from '@/lib/agents/vision';
 import { runVectorScanner }    from '@/lib/agents/vector-scanner';
+import { runDiagramReasoner, isDiagramEligible, serializeDiagramKnowledge } from '@/lib/agents/diagram-reasoner';
 import { chunkAllPages }       from '@/lib/agents/chunker';
 import { embedAll }            from '@/lib/agents/embedder';
 import { logAgentStart, logAgentEnd, logAgentError } from '@/lib/agents/logger';
-import { runCuriousAgent }     from '@/lib/agents/curious';
+import { runCuriousAgent, updateIndexingMetricsSnapshot } from '@/lib/agents/curious';
 
 /* ── Vercel: permitir hasta 5 minutos (función de larga duración) ──────── */
 export const maxDuration = 300;
@@ -99,167 +100,27 @@ interface PreparedImage {
   metadata?:   string;    // JSON — presente solo en imágenes del VectorScanner
 }
 
-async function prepareImages(
-  documentId:    string,
-  pages:         OcrPage[],
-  imageMetadata: Map<string, string> = new Map(),
-): Promise<{ data: PreparedImage[]; usage: { pixtral_tokens: number; gpt4o_tokens: number } }> {
-  const totalImages = pages.reduce((sum, p) => sum + p.images.length, 0);
-  const vsCount     = [...imageMetadata.keys()].length;
-  const logId = await logAgentStart(
-    documentId,
-    'vision',
-    `${totalImages} imágenes (${vsCount} VectorScanner→GPT-4o, ${totalImages - vsCount} OCR→Pixtral triaje)`,
-  );
+/* 
+   PREPARE IMAGES HAS BEEN DECOMMISSIONED 
+   All image processing is now 100% HITL via scan-recommendations API.
+*/
 
-  const finalImages: PreparedImage[] = [];
+/* ── Inyección de conocimiento de diagramas en el markdown de las páginas ── */
 
-  // Contadores por ruta — FinOps + auditoría
-  let route1Count         = 0;   // Ruta 1: VectorScanner → GPT-4o
-  let layer1Discarded     = 0;   // Ruta 2: Pixtral Capa 1 descartadas
-  let layer2Escalated     = 0;   // Ruta 2: Pixtral Capa 2 → GPT-4o
-  let layer3Kept          = 0;   // Ruta 2: Pixtral Capa 3 guardadas
-  let layer3Discarded     = 0;   // Ruta 2: Pixtral Capa 3 rechazadas
-  let errors              = 0;
+function enrichPagesWithDiagramKnowledge(
+  pages:            OcrPage[],
+  diagramKnowledge: Map<number, string[]>,
+): OcrPage[] {
+  if (diagramKnowledge.size === 0) return pages;
 
-  // Tokens separados por modelo (FinOps)
-  let pixtralTokensTotal  = 0;
-  let gpt4oTokensTotal    = 0;
-
-  const allTechnicalElements: string[] = [];
-
-  const CONCURRENCY = 8;
-  const imageQueue: Array<{ img: any; page: OcrPage }> = [];
-  for (const page of pages) {
-    for (const img of page.images) {
-      if (img.imageBase64) imageQueue.push({ img, page });
-    }
-  }
-
-  const processTask = async (task: { img: any; page: OcrPage }) => {
-    const { img, page } = task;
-    try {
-      const imgInput: ImageInput = {
-        id:          img.id,
-        imageBase64: img.imageBase64,
-        metadata:    imageMetadata.get(img.id),
-      };
-
-      const result: ImageResult | null = await visionRoute(imgInput, {
-        prev:    pages[page.index - 1]?.markdown,
-        current: page.markdown,
-        next:    pages[page.index + 1]?.markdown,
-      });
-
-      if (!result) {
-        // Determinar tipo de descarte para el log
-        const vsSource = imageMetadata.has(img.id);
-        if (!vsSource) layer1Discarded++; // Pixtral Capa 1 o Capa 3 rechazada
-        else layer3Discarded++;           // no debería ocurrir en Ruta 1, pero por seguridad
-        return;
-      }
-
-      // Actualizar contadores de ruta y tokens
-      pixtralTokensTotal += result.usage.pixtral_tokens;
-      gpt4oTokensTotal   += result.usage.gpt4o_tokens;
-
-      if (result.route === 'vector_scanner') {
-        route1Count++;
-      } else if (result.route === 'escalated_from_pixtral') {
-        layer2Escalated++;
-      } else {
-        // pixtral_direct (Capa 3 guardada)
-        if (result.classification_layer === 3) layer3Kept++;
-        else layer2Escalated++;  // fallback de GPT-4o que terminó con pixtral
-      }
-
-      if (result.technical_elements.length > 0) {
-        allTechnicalElements.push(...result.technical_elements);
-      }
-
-      // Subir al storage solo si pasa el filtro
-      const hasPrefix = img.imageBase64.includes(';base64,');
-      const mimeType  = hasPrefix
-        ? (img.imageBase64.match(/^data:(image\/\w+);base64,/)?.[1] ?? 'image/png')
-        : 'image/png';
-      const ext       = mimeType.split('/')[1] ?? 'png';
-      const rawBase64 = hasPrefix ? img.imageBase64.split(',')[1] : img.imageBase64;
-      const buffer    = Buffer.from(rawBase64, 'base64');
-
-      const imageUrl = await uploadImage(`${documentId}/${img.id}.${ext}`, buffer, mimeType);
-
-      // Construir metadata enriquecida: origen VS + análisis de visión
-      const vsMeta = imageMetadata.has(img.id)
-        ? JSON.parse(imageMetadata.get(img.id)!)
-        : {};
-      const richMetadata = JSON.stringify({
-        ...vsMeta,
-        vision_model:         result.visionModel,
-        route:                result.route,
-        classification_layer: result.classification_layer,
-        ...(result.connections?.length       ? { connections:       result.connections }       : {}),
-        ...(result.electrical_values?.length ? { electrical_values: result.electrical_values } : {}),
-      });
-
-      finalImages.push({
-        imageUrl,
-        pageNumber:  page.index + 1,
-        imageType:   result.type,
-        confidence:  result.confidence,
-        description: result.description,
-        isCritical:  result.has_warning,
-        metadata:    richMetadata,
-      });
-
-    } catch (imgError) {
-      console.error(`[vision] Error img pág.${page.index + 1}:`, imgError);
-      errors++;
-    }
-  };
-
-  // Worker pool — ejecución en paralelo controlada
-  try {
-    const workers = [];
-    for (let i = 0; i < CONCURRENCY; i++) {
-      const worker = (async () => {
-        while (imageQueue.length > 0) {
-          const task = imageQueue.shift();
-          if (task) await processTask(task);
-        }
-      })();
-      workers.push(worker);
-    }
-    await Promise.all(workers);
-
-    const kept      = route1Count + layer2Escalated + layer3Kept;
-    const discarded = layer1Discarded + layer3Discarded;
-    const techSummary = allTechnicalElements.length > 0
-      ? [...new Set(allTechnicalElements)].join(', ')
-      : 'ninguno';
-
-    await logAgentEnd(
-      logId,
-      `RUTA 1 (VectorScanner→GPT-4o): ${route1Count} | ` +
-      `RUTA 2 Pixtral→Capa1 descartadas: ${layer1Discarded} | ` +
-      `RUTA 2 Pixtral→Capa2→GPT-4o: ${layer2Escalated} | ` +
-      `RUTA 2 Pixtral→Capa3 guardadas: ${layer3Kept} | ` +
-      `Total conservadas: ${kept} | Total descartadas: ${discarded} | ` +
-      `elementos: ${techSummary}`,
-      { input: pixtralTokensTotal, output: gpt4oTokensTotal },
-      {
-        kept, discarded, errors, total: totalImages,
-        route1Count, layer1Discarded, layer2Escalated, layer3Kept, layer3Discarded,
-        pixtral_tokens: pixtralTokensTotal,
-        gpt4o_tokens:   gpt4oTokensTotal,
-      },
-    );
-
-    return { data: finalImages, usage: { pixtral_tokens: pixtralTokensTotal, gpt4o_tokens: gpt4oTokensTotal } };
-
-  } catch (fatalError) {
-    await logAgentError(logId, fatalError as Error);
-    throw fatalError;
-  }
+  return pages.map((page) => {
+    const blocks = diagramKnowledge.get(page.index + 1);
+    if (!blocks || blocks.length === 0) return page;
+    return {
+      ...page,
+      markdown: page.markdown + blocks.join('\n'),
+    };
+  });
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -314,89 +175,25 @@ async function processDocumentPipeline(
 
     await logAgentEnd(orchLogId, `Estrategia: ${orch.strategy}`, { input: orchUsage.prompt_tokens, output: orchUsage.completion_tokens });
 
-    /* ── 3. VectorScanner — segunda pasada sobre páginas sin imágenes raster ── */
-    await updateDocumentStatus(documentId, 'scanning_vectors', 'Escaneando vectores SVG…');
-    const vsLogId = await logAgentStart(
-      documentId,
-      'vector_scanner',
-      `${pagesWithoutImages} páginas sin imágenes raster de ${ocr.pageCount} totales`,
-    );
+    /* ── 4a. Chunker (Solo Texto) ── */
+    await updateDocumentStatus(documentId, 'processing', 'Chunking semántico de texto…');
 
-    const vsResult = await runVectorScanner(pdfUrl, ocr.pages);
-
-    // Enriquecer las páginas OCR con las imágenes recuperadas por el VectorScanner.
-    // Se usa un Map imageId→metadata para propagar el origen sin modificar OcrImage.
-    const imageMetadata = new Map<string, string>();
-    let vectorImagesTotal = 0;
-
-    for (const scannedPage of vsResult.pages) {
-      const originalPage = ocr.pages.find(p => p.index + 1 === scannedPage.pageNumber);
-      if (!originalPage) continue;
-
-      for (const img of scannedPage.images) {
-        if (!img.imageBase64) continue;
-        originalPage.images.push(img);
-        imageMetadata.set(img.id, JSON.stringify({
-          source:                    'vector_scanner',
-          extraction_method:         'page_range_rerender',
-          original_page_had_images:  false,
-        }));
-        vectorImagesTotal++;
-      }
-    }
-
-    // Costo estimado: misma tarifa que OCR (mismo modelo), ~800 tokens por página
-    const costVectorScanner = calculateAgentCost('ocr', { pages: vsResult.stats.scanned });
-    await db.update(documents)
-      .set({ totalCost: sql`${documents.totalCost} + ${costVectorScanner}` })
-      .where(eq(documents.id, documentId));
-
-    await logAgentEnd(
-      vsLogId,
-      `${vectorImagesTotal} nuevas imágenes vectoriales encontradas en ${vsResult.stats.found} páginas | ${vsResult.stats.nullPages} páginas confirmadas sin contenido visual`,
-      { input: vsResult.stats.scanned * 800, output: 0 },
-      {
-        ...vsResult.stats,
-        newImages:          vectorImagesTotal,
-        costVectorScanner,
-      },
-    );
-
-    /* ── 4. Chunker & Vision (Paralelo) ── */
-    await updateDocumentStatus(documentId, 'processing', 'Chunking y Visión…');
-
-    const [chunkResult, visionResult] = await Promise.all([
-      prepareTextChunks(documentId, ocr.pages),
-      prepareImages(documentId, ocr.pages, imageMetadata),
-    ]);
-
+    const chunkResult = await prepareTextChunks(documentId, ocr.pages);
     const costChunker = calculateAgentCost('chunker', chunkResult.usage);
-
-    // FinOps: costos separados por modelo de visión
-    // Pixtral  $0.15 / 1M tokens  (triaje masivo, barato)
-    // GPT-4o   $2.50 / 1M tokens  (análisis profundo, solo imágenes técnicas)
-    const PIXTRAL_RATE = 0.15 / 1_000_000;
-    const GPT4O_RATE   = 2.50 / 1_000_000;
-    const costVision   =
-      (visionResult.usage.pixtral_tokens * PIXTRAL_RATE) +
-      (visionResult.usage.gpt4o_tokens   * GPT4O_RATE);
 
     await db.update(documents)
       .set({
         costChunker,
-        costVision,
-        totalCost: sql`${documents.totalCost} + ${costChunker} + ${costVision}`,
+        totalCost: sql`${documents.totalCost} + ${costChunker}`,
       })
       .where(eq(documents.id, documentId));
+
 
     /* ── 5. Embedder ── */
     await updateDocumentStatus(documentId, 'embedding', 'Vectorizando…');
     const embedLogId = await logAgentStart(documentId, 'embedder', 'Generando vectores');
 
-    const totalTexts = [
-      ...chunkResult.data.map(c => c.content),
-      ...visionResult.data.map(v => v.description)
-    ].filter(t => typeof t === 'string' && t.trim().length > 0);
+    const totalTexts = chunkResult.data.map(c => c.content).filter(t => t && t.trim().length > 0);
 
     if (totalTexts.length === 0) {
       console.warn(`[pipeline] No hay textos para vectorizar en ${documentId}`);
@@ -412,11 +209,8 @@ async function processDocumentPipeline(
     await logAgentEnd(embedLogId, `${embeddings.length} vectores`, { input: embedUsage.total_tokens, output: 0 });
 
     /* ── 6. Inserción Final ── */
-    const chunkEmbeds = embeddings.slice(0, chunkResult.data.length);
-    const imageEmbeds = embeddings.slice(chunkResult.data.length);
-
-    await Promise.allSettled([
-      ...chunkResult.data.map((c, i) => db.insert(documentChunks).values({
+    await Promise.allSettled(
+      chunkResult.data.map((c, i) => db.insert(documentChunks).values({
         id: createId(),
         documentId,
         content: c.content,
@@ -426,23 +220,14 @@ async function processDocumentPipeline(
         chunkType: c.chunkType,
         hasWarning: c.hasWarning ? 1 : 0,
         contentTokens: c.tokenEstimate,
-        embedding: chunkEmbeds[i],
-      })),
-      ...visionResult.data.map((img, i) => db.insert(extractedImages).values({
-        id: createId(),
-        documentId,
-        pageNumber:  img.pageNumber,
-        imageUrl:    img.imageUrl,
-        imageType:   img.imageType,
-        confidence:  img.confidence,
-        description: img.description,
-        isCritical:  img.isCritical ? 1 : 0,
-        embedding:   imageEmbeds[i],
-        ...(img.metadata ? { metadata: img.metadata } : {}),
+        embedding: embeddings[i],
       }))
-    ]);
+    );
 
-    await updateDocumentStatus(documentId, 'ready', `Listo: ${chunkResult.data.length} chunks y ${visionResult.data.length} imágenes`);
+    await updateDocumentStatus(documentId, 'ready', `Listo: ${chunkResult.data.length} chunks de texto vectorizados.`);
+    
+    // Inicializar snapshot de métricas (chunks registrados)
+    await updateIndexingMetricsSnapshot(documentId);
 
     // Lanzar el Agente Curioso en background (no bloquear el ready)
     // El documento ya está listo para usar mientras esto corre en paralelo

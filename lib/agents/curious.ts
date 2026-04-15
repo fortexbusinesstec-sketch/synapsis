@@ -37,7 +37,7 @@ interface ExistingAnswer {
   generatedQuestion: string;
   expertAnswer:      string;
   answerSource:      string;
-  level:             1 | 2 | 3;  // cascada que lo encontró
+  level:             0 | 1 | 2 | 3;  // 0 = mismo documento (redundancia)
 }
 
 /* ── System prompt ───────────────────────────────────────────────────────── */
@@ -113,6 +113,30 @@ async function findExistingAnswer(
 ): Promise<ExistingAnswer | null> {
   const keyTerm = extractKeyTerm(question);
 
+  // ── Nivel 0: Redundancia en el MISMO documento (evitar preguntar lo mismo 2 veces) ──
+  try {
+    const l0 = await client.execute({
+      sql: `SELECT id, generated_question, expert_answer, answer_source, is_verified
+            FROM enrichments
+            WHERE document_id = ?
+              AND (generated_question LIKE ? OR question_context LIKE ?)
+            LIMIT 1`,
+      args: [documentId, `%${keyTerm}%`, `%${keyTerm}%`],
+    });
+    if (l0.rows.length > 0) {
+      const row = l0.rows[0] as any;
+      return {
+        id:                row.id,
+        generatedQuestion: row.generated_question,
+        expertAnswer:      row.expert_answer || '',
+        answerSource:      row.answer_source,
+        level:             0,
+      };
+    }
+  } catch (err) {
+    console.error('[curious] Error en búsqueda L0:', (err as Error).message);
+  }
+
   // ── Nivel 1: coincidencia exacta de término clave (todos los documentos) ──
   try {
     const l1 = await client.execute({
@@ -179,7 +203,8 @@ async function findExistingAnswer(
       model: openai.embedding('text-embedding-3-small'),
       value: question,
     });
-    const queryVector = Buffer.from(new Float32Array(embedding).buffer);
+    // Turso vector32 expects a blob of the floats.
+    const queryVector = new Uint8Array(new Float32Array(embedding).buffer);
 
     const l3 = await client.execute({
       sql: `SELECT id, generated_question, expert_answer, answer_source,
@@ -196,7 +221,8 @@ async function findExistingAnswer(
 
     if (l3.rows.length > 0) {
       const row = l3.rows[0] as any;
-      if (row.distance < 0.15 && row.expert_answer) {
+      // Umbral relajado de 0.15 a 0.25 para permitir herencia semántica real en Paper Q1
+      if (row.distance < 0.25 && row.expert_answer) {
         return {
           id:                row.id,
           generatedQuestion: row.generated_question,
@@ -233,15 +259,19 @@ async function insertEnrichmentWithInheritance({
   existing:        ExistingAnswer | null;
 }): Promise<'pending' | 'inherited'> {
   if (existing) {
+    // Si es Nivel 0 (mismo documento):
+    // - Si ya tiene respuesta (is_verified=1), podríamos heredarla, pero el RAG ya la verá.
+    // - Si es pendiente, simplemente no insertamos nada más para no saturar al usuario.
+    if (existing.level === 0) {
+      return 'pending'; // Actuamos como si ya estuviera procesada
+    }
+
     // Vectorizar pregunta + respuesta heredada para futura recuperación RAG
     const textToEmbed = `Pregunta: ${result.question} | Respuesta: ${existing.expertAnswer}`;
     const { embedding } = await embed({
       model: openai.embedding('text-embedding-3-small'),
       value: textToEmbed,
     });
-    const embeddingBuffer = Buffer.from(
-      new Float32Array(embedding).buffer,
-    ) as unknown as number[];
 
     await db.insert(enrichments).values({
       id:                 createId(),
@@ -255,7 +285,8 @@ async function insertEnrichmentWithInheritance({
       answerSource:       'inherited',
       expertAnswer:       existing.expertAnswer,
       isVerified:         1,
-      embedding:          embeddingBuffer,
+      inheritanceLevel:   existing.level,
+      embedding:          embedding,
       answerLengthTokens: Math.round(existing.expertAnswer.length / 4),
       pageNumber,
       reviewedAt:         new Date().toISOString(),
@@ -388,7 +419,7 @@ export async function runCuriousAgent(documentId: string): Promise<void> {
             if      (existing!.level === 1) exactCount++;
             else if (existing!.level === 2) metaCount++;
             else                            semCount++;
-          } else {
+          } else if (!existing || existing.level !== 0) {
             newPending++;
           }
         }
@@ -435,7 +466,7 @@ export async function runCuriousAgent(documentId: string): Promise<void> {
             if      (existing!.level === 1) exactCount++;
             else if (existing!.level === 2) metaCount++;
             else                            semCount++;
-          } else {
+          } else if (!existing || existing.level !== 0) {
             newPending++;
           }
         }
@@ -456,8 +487,125 @@ export async function runCuriousAgent(documentId: string): Promise<void> {
       { input: totalInputTokens, output: totalOutputTokens },
       { gapsFound, totalReviewed, chunks: chunks.length, images: images.length, inherited, newPending },
     );
+
+    // ── Snapshot de Métricas Q1 ──
+    await updateIndexingMetricsSnapshot(documentId);
+
   } catch (err) {
     await logAgentError(logId, err as Error);
     throw err;
   }
 }
+
+export async function runCuriousForSpecificImages(documentId: string, imageIds: string[]): Promise<number> {
+  if (imageIds.length === 0) return 0;
+  
+  let newGaps = 0;
+  try {
+    const docResult = await client.execute({
+      sql: `SELECT equipment_model FROM documents WHERE id = ? LIMIT 1`,
+      args: [documentId],
+    });
+    const equipmentModel = (docResult.rows[0] as any)?.equipment_model ?? null;
+
+    const placeholders = imageIds.map(() => '?').join(',');
+    const imagesResult = await client.execute({
+      sql: `SELECT id, description, image_type, image_url, page_number
+            FROM extracted_images
+            WHERE id IN (${placeholders}) AND document_id = ?`,
+      args: [...imageIds, documentId],
+    });
+
+    const images = imagesResult.rows as unknown as Array<{
+      id:          string;
+      description: string | null;
+      image_type:  string | null;
+      image_url:   string | null;
+      page_number: number | null;
+    }>;
+
+    for (const image of images) {
+      if (!image.description) continue;
+      
+      const userMessage =
+        `DESCRIPCIÓN DE IMAGEN TÉCNICA (Tipo: ${image.image_type ?? 'desconocido'}):\n` +
+        image.description;
+
+      const { text } = await generateText({
+        model:     openai('gpt-4o-mini'),
+        maxTokens: 300,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user',   content: userMessage   },
+        ],
+      });
+
+      const result = parseGapResponse(text);
+      if (result.has_gap && result.confidence >= 0.65) {
+        const existing = await findExistingAnswer(result.question, equipmentModel, documentId);
+        const outcome = await insertEnrichmentWithInheritance({
+          documentId,
+          referenceId:     image.id,
+          referenceType:   'image',
+          originalExcerpt: image.description.slice(0, 200),
+          result,
+          pageNumber:      image.page_number ?? null,
+          existing,
+        });
+        if (outcome !== 'inherited' && (!existing || existing.level !== 0)) {
+          newGaps++;
+        }
+      }
+    }
+    
+    // Al añadir nuevas imágenes o lagunas, actualizamos el snapshot
+    await updateIndexingMetricsSnapshot(documentId);
+    
+  } catch (err) {
+    console.error('[curious] Error ejecutando para imágenes manuales:', (err as Error).message);
+  }
+  return newGaps;
+}
+
+/**
+ * Función centralizada para actualizar las métricas de un documento
+ * Re-elabora la snapshot (UPSERT) agregando toda la información actual.
+ */
+export async function updateIndexingMetricsSnapshot(documentId: string): Promise<void> {
+  try {
+    // 1. Borramos la snapshot anterior para este documento
+    await client.execute({
+      sql: `DELETE FROM indexing_metrics WHERE document_id = ?`,
+      args: [documentId],
+    });
+
+    // 2. Insertamos la snapshot fresca re-contando todo
+    await client.execute({
+      sql: `
+        INSERT INTO indexing_metrics (
+          id, document_id, total_chunks, hitl_images,
+          agent_mismatch_count, detected_gaps, inherited_l1, inherited_l2, inherited_l3,
+          total_input_tokens, total_output_tokens, processing_time_ms
+        )
+        SELECT 
+          ?, d.id,
+          (SELECT COUNT(*) FROM document_chunks WHERE document_id = d.id),
+          (SELECT COUNT(*) FROM extracted_images WHERE document_id = d.id AND is_useful = 1),
+          (SELECT COUNT(*) FROM extracted_images WHERE document_id = d.id AND description LIKE '%⚠ Nota del agente:%'),
+          (SELECT COUNT(*) FROM enrichments WHERE document_id = d.id),
+          (SELECT COUNT(*) FROM enrichments WHERE document_id = d.id AND inheritance_level = 1),
+          (SELECT COUNT(*) FROM enrichments WHERE document_id = d.id AND inheritance_level = 2),
+          (SELECT COUNT(*) FROM enrichments WHERE document_id = d.id AND inheritance_level = 3),
+          COALESCE((SELECT SUM(input_tokens) FROM agent_logs WHERE document_id = d.id), 0),
+          COALESCE((SELECT SUM(output_tokens) FROM agent_logs WHERE document_id = d.id), 0),
+          COALESCE(CAST((SELECT (julianday(MAX(ended_at)) - julianday(MIN(started_at))) * 86400000 FROM agent_logs WHERE document_id = d.id AND ended_at IS NOT NULL) AS INTEGER), 0)
+        FROM documents d WHERE d.id = ?
+      `,
+      args: [createId(), documentId]
+    });
+    console.log(`[metrics] Snapshot de indexación actualizada para doc ${documentId}`);
+  } catch (error) {
+    console.error(`[metrics] Error actualizando snapshot metricas:`, (error as Error).message);
+  }
+}
+

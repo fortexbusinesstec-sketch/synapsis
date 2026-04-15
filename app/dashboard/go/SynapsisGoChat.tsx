@@ -7,29 +7,14 @@ import { useChat } from "ai/react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
-  Send, Loader2, ChevronDown, AlertTriangle, Brain,
+  Send, Loader2, ChevronDown, AlertTriangle,
   Cpu, Trash2, ExternalLink, Zap, Activity, ShieldCheck,
   Layout, Sparkles, FlaskConical, BookMarked,
-  PanelRightOpen, PanelRightClose, X, Copy, Check, Plus
+  Copy, Check, Plus, SlidersHorizontal, X
 } from "lucide-react";
 import TextareaAutosize from 'react-textarea-autosize';
 import { cn } from "@/lib/utils";
 import type { EquipmentModel } from "./page";
-
-/* ── Types ───────────────────────────────────────────────────────────────── */
-
-interface RetrievedImageHeader {
-  url: string | null;
-  description: string | null;
-  image_type: string | null;
-  is_critical: boolean;
-}
-
-interface SideContext {
-  images: RetrievedImageHeader[];
-  urgency: string | null;
-  reasoning: string | null;
-}
 
 /* ── Urgency config ──────────────────────────────────────────────────────── */
 
@@ -39,14 +24,6 @@ const URGENCY = {
   alta: { label: "Alta", bg: "bg-orange-500/10", text: "text-orange-600", border: "border-orange-500/20", dot: "bg-orange-500", pulse: false },
   critica: { label: "Crítica", bg: "bg-red-500/10", text: "text-red-600", border: "border-red-500/20", dot: "bg-red-500", pulse: true },
 } as const;
-
-const IMAGE_TYPE_LABEL: Record<string, string> = {
-  diagram: "Diagrama Técnico",
-  schematic: "Esquema Eléctrico",
-  warning: "Advertencia Seguridad",
-  table: "Tabla Especificación",
-  photo: "Fotografía Campo",
-};
 
 /* ── Synthetic empty stream (when clarification is intercepted) ──────────── */
 
@@ -124,129 +101,6 @@ function RatingBar({
   );
 }
 
-/* ── ContextPanel ────────────────────────────────────────────────────────── */
-
-function ContextPanel({ context, isLoading }: { context: SideContext; isLoading: boolean }) {
-  const [analysisOpen, setAnalysisOpen] = useState(false);
-  const urgencyKey = (context.urgency ?? "media") as keyof typeof URGENCY;
-  const urgencyCfg = URGENCY[urgencyKey];
-  const hasData = context.urgency || context.images.length > 0 || context.reasoning;
-
-  if (!hasData && !isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-4 text-center p-8 opacity-40">
-        <div className="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center border border-slate-200">
-          <Brain className="h-8 w-8 text-slate-400" />
-        </div>
-        <div>
-          <p className="text-sm font-bold text-slate-500">Inteligencia en Reposo</p>
-          <p className="text-xs text-slate-400 mt-1 max-w-[200px]">
-            Inicia una consulta para activar el análisis multimodal.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-6 space-y-8 overflow-y-auto h-full scrollbar-hidden">
-      {(context.urgency || context.reasoning) && (
-        <div className="space-y-4">
-          {context.urgency && (
-            <div className={cn(
-              "p-4 rounded-2xl border flex flex-col gap-3 transition-all",
-              urgencyCfg.bg, urgencyCfg.border,
-            )}>
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                  Status de Falla
-                </span>
-                <div className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1.5", urgencyCfg.text)}>
-                  <div className={cn("w-1.5 h-1.5 rounded-full", urgencyCfg.dot, urgencyCfg.pulse && "animate-pulse")} />
-                  {urgencyCfg.label}
-                </div>
-              </div>
-              {context.reasoning && (
-                <div className="flex flex-col gap-2">
-                  <button
-                    onClick={() => setAnalysisOpen(!analysisOpen)}
-                    className="flex items-center gap-3 w-full text-left group"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-white/70 flex items-center justify-center flex-shrink-0 shadow-sm border border-white/50 group-hover:bg-white transition-colors">
-                      <Brain className="w-4 h-4 text-indigo-600" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-indigo-600 transition-colors">
-                        Ver Guía Estratégica
-                      </p>
-                    </div>
-                    <ChevronDown className={cn("w-3.5 h-3.5 text-slate-400 transition-transform", analysisOpen && "rotate-180")} />
-                  </button>
-                  
-                  {analysisOpen && (
-                    <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                      <p className="text-xs text-slate-700 leading-relaxed font-bold italic pl-11 pr-2 border-l-2 border-indigo-100/50 py-1">
-                        "{context.reasoning}"
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {context.images.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              Evidencia Multimodal
-            </h4>
-            <span className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-md text-[9px] font-bold">
-              {context.images.length} ARCHIVOS
-            </span>
-          </div>
-          <div className="grid grid-cols-1 gap-4">
-            {context.images.map((img, i) => (
-              <div key={i} className="group relative bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:border-blue-200 transition-all duration-300">
-                {img.url && (
-                  <div className="relative aspect-video bg-slate-100">
-                    <img src={img.url} alt="technical" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    <a href={img.url} target="_blank" className="absolute inset-0 bg-black/0 group-hover:bg-black/20 flex items-center justify-center transition-all">
-                      <ExternalLink className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
-                    </a>
-                    {img.is_critical && (
-                      <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center gap-1 shadow-lg">
-                        <AlertTriangle className="w-2.5 h-2.5" /> CRÍTICO
-                      </div>
-                    )}
-                  </div>
-                )}
-                <div className="p-3">
-                  <span className="text-[9px] font-black text-blue-500 uppercase tracking-tight bg-blue-50 px-1.5 py-0.5 rounded-md">
-                    {IMAGE_TYPE_LABEL[img.image_type ?? ""] ?? "Referencia"}
-                  </span>
-                  <p className="text-[11px] text-slate-500 mt-2 leading-relaxed line-clamp-2 italic">
-                    {img.description ?? "Sin descripción disponible."}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {isLoading && (
-        <div className="space-y-4 animate-pulse">
-          <div className="h-20 bg-slate-100 rounded-2xl" />
-          <div className="h-32 bg-slate-100 rounded-2xl" />
-        </div>
-      )}
-    </div>
-  );
-}
-
 /* ── UI Components ───────────────────────────────────────────────────────── */
 
 const UserMessageItem = memo(({ content }: { content: string }) => {
@@ -309,18 +163,18 @@ const AiMessageItem = memo(({ m, rated, onRate, sessionMode, servMsgId, sessionI
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="text-sm leading-relaxed text-zinc-800 w-full font-sans">
-            <div className="prose prose-neutral max-w-none text-gray-800 leading-snug prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-0 prose-li:marker:text-gray-500">
+            <div className="prose prose-neutral max-w-none text-gray-800 leading-snug prose-p:my-4 prose-ul:my-3 prose-ol:my-3 prose-li:my-0.5 prose-li:marker:text-gray-500">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
                   h2: ({ children }) => <h2 className="text-sm font-black text-zinc-900 mt-4 mb-2 uppercase tracking-wider">{children}</h2>,
                   h3: ({ children }) => <h3 className="text-xs font-black text-zinc-900 mt-3 mb-1 uppercase tracking-widest">{children}</h3>,
                   strong: ({ children }) => <strong className="font-bold text-zinc-900">{children}</strong>,
-                  ul: ({ children }) => <ul className="list-disc list-outside space-y-1 my-2 ml-4">{children}</ul>,
-                  ol: ({ children }) => <ol className="list-decimal list-outside space-y-1 my-2 ml-4">{children}</ol>,
-                  li: ({ children }) => <li className="pl-1">{children}</li>,
-                  p: ({ children }) => <p className="leading-snug text-zinc-800">{children}</p>,
-                  hr: () => <hr className="my-4 border-zinc-100" />
+                  ul: ({ children }) => <ul className="list-disc list-outside space-y-2 my-3 ml-4">{children}</ul>,
+                  ol: ({ children }) => <ol className="list-decimal list-outside space-y-2 my-3 ml-4">{children}</ol>,
+                  li: ({ children }) => <li className="pl-1 leading-relaxed">{children}</li>,
+                  p: ({ children }) => <p className="leading-relaxed text-zinc-800 mb-4 last:mb-0">{children}</p>,
+                  hr: () => <hr className="my-5 border-zinc-100" />
                 }}
               >
                 {m.content}
@@ -361,16 +215,47 @@ const AiMessageItem = memo(({ m, rated, onRate, sessionMode, servMsgId, sessionI
 });
 AiMessageItem.displayName = "AiMessageItem";
 
+/* ── AgentFlags ──────────────────────────────────────────────────────────── */
+
+interface AgentFlags {
+  clarifier:  boolean;
+  planner:    boolean;
+  textSearch: boolean;
+  imgSearch:  boolean;
+  analyst:    boolean;
+  metrifier:  boolean;
+}
+
+const DEFAULT_AGENT_FLAGS: AgentFlags = {
+  clarifier:  true,
+  planner:    true,
+  textSearch: true,
+  imgSearch:  true,
+  analyst:    true,
+  metrifier:  true,
+};
+
+const AGENT_LABELS: Record<keyof AgentFlags, { label: string; desc: string }> = {
+  clarifier:  { label: "Clarificador",       desc: "Expande y clasifica la query (N0)" },
+  planner:    { label: "Planificador",        desc: "Genera plan de búsqueda dual (N1)" },
+  textSearch: { label: "Búsqueda Texto",      desc: "Retrieval vectorial de chunks (N2A)" },
+  imgSearch:  { label: "Búsqueda Imágenes",   desc: "Retrieval vectorial de diagramas (N2B)" },
+  analyst:    { label: "Analista",            desc: "Evalúa suficiencia y controla loops (N3)" },
+  metrifier:  { label: "Metrificador",        desc: "Persiste métricas y mensajes (N5)" },
+};
+
 /* ── SynapsisGoChat ──────────────────────────────────────────────────────── */
 
 export function SynapsisGoChat({ models }: { models: EquipmentModel[] }) {
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [sessionMode, setSessionMode] = useState<"test" | "record">("test");
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [sideContext, setSideContext] = useState<SideContext>({ images: [], urgency: null, reasoning: null });
+  const [urgency, setUrgency] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [showIntelligence, setShowIntelligence] = useState(false);
   const [ratings, setRatings] = useState<Record<string, number>>({});
+  const [agentFlags, setAgentFlags] = useState<AgentFlags>(DEFAULT_AGENT_FLAGS);
+  const [agentPanelOpen, setAgentPanelOpen] = useState(false);
+  const agentFlagsRef = useRef<AgentFlags>(DEFAULT_AGENT_FLAGS);
   // messageServerIds[i] maps assistant message index → server messageId for rating
   const messageServerIdsRef = useRef<string[]>([]);
   const assistantMsgIndexRef = useRef(0);
@@ -387,6 +272,7 @@ export function SynapsisGoChat({ models }: { models: EquipmentModel[] }) {
   useEffect(() => { sessionIdRef.current = sessionId; }, [sessionId]);
   useEffect(() => { sessionModeRef.current = sessionMode; }, [sessionMode]);
   useEffect(() => { selectedModelRef.current = selectedModel; }, [selectedModel]);
+  useEffect(() => { agentFlagsRef.current = agentFlags; }, [agentFlags]);
 
   const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages, append, error } = useChat({
     api: "/api/chat",
@@ -397,27 +283,26 @@ export function SynapsisGoChat({ models }: { models: EquipmentModel[] }) {
     },
 
     fetch: useCallback(async (url: RequestInfo | URL, init?: RequestInit) => {
-      const res = await fetch(url, init);
+      // Inyectar agentFlags en el body de cada request
+      let modifiedInit = init;
+      if (init?.body) {
+        try {
+          const parsed = JSON.parse(init.body as string);
+          parsed.agentFlags = agentFlagsRef.current;
+          modifiedInit = { ...init, body: JSON.stringify(parsed) };
+        } catch { /* silencioso — usar init original */ }
+      }
+
+      const res = await fetch(url, modifiedInit);
 
       // Read metrics headers from streaming response
       try {
-        const rawImages = res.headers.get("x-retrieved-images");
-        const urgency = res.headers.get("x-urgency-level");
-        const reasoning = res.headers.get("x-analyst-reasoning");
-        const servMsgId = res.headers.get("x-message-id");
+        const urgencyLevel = res.headers.get("x-urgency-level");
+        const servMsgId    = res.headers.get("x-message-id");
 
-        if (rawImages) {
-          setSideContext({
-            images: JSON.parse(decodeURIComponent(rawImages)) as RetrievedImageHeader[],
-            urgency,
-            reasoning: reasoning ? decodeURIComponent(reasoning) : null,
-          });
-        }
-        if (servMsgId) {
-          messageServerIdsRef.current.push(servMsgId);
-        }
-        // Auto-show intelligence when reasoning comes in
-        if (reasoning) setShowIntelligence(true);
+        if (urgencyLevel) setUrgency(urgencyLevel);
+        if (servMsgId)    messageServerIdsRef.current.push(servMsgId);
+
       } catch { /* silencioso */ }
 
       return res;
@@ -466,6 +351,16 @@ export function SynapsisGoChat({ models }: { models: EquipmentModel[] }) {
     handleSubmit(e);
   }, [input, isLoading, ensureSession, handleSubmit]);
 
+  const toggleAgent = useCallback((key: keyof AgentFlags) => {
+    setAgentFlags(prev => {
+      const next = { ...prev, [key]: !prev[key] };
+      agentFlagsRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const activeCount = Object.values(agentFlags).filter(Boolean).length;
+
 
 
   // ── Clear / reset ────────────────────────────────────────────────────────
@@ -480,7 +375,7 @@ export function SynapsisGoChat({ models }: { models: EquipmentModel[] }) {
     setMessages([]);
     setSessionId(null);
     sessionIdRef.current = null;
-    setSideContext({ images: [], urgency: null, reasoning: null });
+    setUrgency(null);
     messageServerIdsRef.current = [];
     assistantMsgIndexRef.current = 0;
     setRatings({});
@@ -498,7 +393,7 @@ export function SynapsisGoChat({ models }: { models: EquipmentModel[] }) {
   }, [messages, isLoading]);
 
   return (
-    <div className="flex flex-col lg:flex-row h-full max-h-full overflow-hidden bg-white rounded-3xl border border-slate-200 shadow-2xl relative">
+    <div className="flex flex-col h-full max-h-full overflow-hidden bg-white rounded-3xl border border-slate-200 shadow-2xl relative">
 
       {/* ── CSS Reset for Spin Buttons and Scrollbars ── */}
       <style jsx global>{`
@@ -509,42 +404,130 @@ export function SynapsisGoChat({ models }: { models: EquipmentModel[] }) {
         }
       `}</style>
 
-      {/* ── LEFT: Chat Experience ── */}
-      <div className="flex flex-col flex-[1.5] min-w-0 border-r border-slate-100 relative">
+      {/* ── Chat Experience ── */}
+      <div className="flex flex-col flex-1 min-w-0 relative">
 
         {/* Header */}
         <div className="sticky top-0 z-20 flex-shrink-0 flex flex-col md:flex-row md:items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-md border-b border-slate-100 gap-4">
 
-          <div className="flex items-center justify-between w-full md:w-auto">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <Activity className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-sm font-black text-slate-900 tracking-tight">Comité de Diagnóstico</h1>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Multimodal Activo</span>
-                </div>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <Activity className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-sm font-black text-slate-900 tracking-tight">Comité de Diagnóstico</h1>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Multimodal Activo</span>
+                {urgency && (
+                  <div className={cn(
+                    "px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1",
+                    URGENCY[urgency as keyof typeof URGENCY]?.text,
+                  )}>
+                    <div className={cn(
+                      "w-1.5 h-1.5 rounded-full",
+                      URGENCY[urgency as keyof typeof URGENCY]?.dot,
+                      URGENCY[urgency as keyof typeof URGENCY]?.pulse && "animate-pulse",
+                    )} />
+                    {URGENCY[urgency as keyof typeof URGENCY]?.label}
+                  </div>
+                )}
               </div>
             </div>
-
-            {/* Toggle Intelligence (Mobile) */}
-            <button
-              onClick={() => setShowIntelligence(!showIntelligence)}
-              className={cn(
-                "lg:hidden w-10 h-10 flex items-center justify-center rounded-xl transition-all border",
-                showIntelligence 
-                  ? "bg-blue-50 border-blue-200 text-blue-600 shadow-sm" 
-                  : "bg-white border-slate-200 text-slate-500 hover:text-blue-500"
-              )}
-              title={showIntelligence ? "Ocultar Análisis" : "Mostrar Análisis"}
-            >
-              <Brain className="w-5 h-5" />
-            </button>
           </div>
 
           <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-hidden shrink-0">
+
+            {/* ── Agent Panel Toggle ── */}
+            <div className="relative">
+              <button
+                onClick={() => setAgentPanelOpen(v => !v)}
+                title="Configurar agentes"
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold transition-all border",
+                  agentPanelOpen
+                    ? "bg-slate-900 text-white border-slate-900"
+                    : activeCount < 6
+                      ? "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                      : "bg-slate-100 text-slate-500 border-transparent hover:bg-slate-200",
+                )}
+              >
+                <SlidersHorizontal className="w-3 h-3" />
+                <span>{activeCount}/6</span>
+              </button>
+
+              {agentPanelOpen && (
+                <div className="absolute right-0 top-full mt-2 z-50 w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl shadow-slate-200/60 p-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[11px] font-black text-slate-900 uppercase tracking-widest">
+                      Agentes del Comité
+                    </span>
+                    <button
+                      onClick={() => setAgentPanelOpen(false)}
+                      className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {(Object.keys(AGENT_LABELS) as Array<keyof AgentFlags>).map(key => {
+                      const { label, desc } = AGENT_LABELS[key];
+                      const enabled = agentFlags[key];
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => toggleAgent(key)}
+                          className={cn(
+                            "w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all text-left group",
+                            enabled
+                              ? "bg-slate-50 hover:bg-slate-100"
+                              : "bg-red-50/50 hover:bg-red-50 opacity-70",
+                          )}
+                        >
+                          <div>
+                            <p className={cn(
+                              "text-[12px] font-bold leading-none",
+                              enabled ? "text-slate-800" : "text-slate-400 line-through",
+                            )}>
+                              {label}
+                            </p>
+                            <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">{desc}</p>
+                          </div>
+                          <div className={cn(
+                            "w-8 h-4.5 rounded-full transition-all flex-shrink-0 relative",
+                            enabled ? "bg-blue-600" : "bg-slate-200",
+                          )} style={{ height: "18px", width: "32px" }}>
+                            <div className={cn(
+                              "absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-all",
+                              enabled ? "left-[14px]" : "left-0.5",
+                            )} />
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {activeCount < 6 && (
+                    <div className="mt-3 px-3 py-2 bg-amber-50 border border-amber-100 rounded-xl">
+                      <p className="text-[10px] font-bold text-amber-700 uppercase tracking-widest">
+                        Modo degradado activo
+                      </p>
+                      <p className="text-[10px] text-amber-600 mt-0.5 leading-tight">
+                        Los agentes deshabilitados usan fallbacks automáticos. El flujo no se rompe.
+                      </p>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => { setAgentFlags(DEFAULT_AGENT_FLAGS); agentFlagsRef.current = DEFAULT_AGENT_FLAGS; }}
+                    className="mt-2 w-full text-[10px] font-bold text-slate-400 hover:text-blue-600 uppercase tracking-widest py-1.5 transition-colors"
+                  >
+                    Restaurar todos
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* ── Mode Switcher ── */}
             <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1">
@@ -572,19 +555,6 @@ export function SynapsisGoChat({ models }: { models: EquipmentModel[] }) {
               </button>
             </div>
 
-            {/* Toggle Intelligence (Desktop) */}
-            <button
-              onClick={() => setShowIntelligence(!showIntelligence)}
-              title={showIntelligence ? "Ocultar Análisis" : "Mostrar Análisis"}
-              className={cn(
-                "hidden lg:flex w-10 h-10 items-center justify-center rounded-xl border transition-all ml-4",
-                showIntelligence
-                  ? "bg-blue-50 border-blue-200 text-blue-600 shadow-sm"
-                  : "bg-white border-slate-200 text-slate-400 hover:bg-slate-50 hover:text-blue-500"
-              )}
-            >
-              <Brain className="w-5 h-5" />
-            </button>
           </div>
         </div>
 
@@ -605,68 +575,43 @@ export function SynapsisGoChat({ models }: { models: EquipmentModel[] }) {
                     Selecciona el equipo para iniciar un diagnóstico experto con manuales en tiempo real.
                   </p>
                   
-                  {/* Selector de Modelos Estilo Cards */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-12 w-full">
-                    <button
-                      onClick={() => { setSelectedModel(""); ensureSession(); }}
-                      className={cn(
-                        "p-6 rounded-[2rem] border transition-all text-left flex items-center gap-5 group",
-                        selectedModel === "" 
-                          ? "bg-zinc-900 border-zinc-900 shadow-xl shadow-zinc-200" 
-                          : "bg-white border-zinc-100 hover:border-zinc-200 hover:bg-zinc-50"
-                      )}
-                    >
-                      <div className={cn(
-                        "w-12 h-12 rounded-2xl flex items-center justify-center transition-all",
-                        selectedModel === "" ? "bg-white/10 text-white" : "bg-zinc-100 text-zinc-400"
-                      )}>
-                        <Layout className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <p className={cn(
-                          "text-[13px] font-black uppercase tracking-tight",
-                          selectedModel === "" ? "text-white" : "text-zinc-900"
-                        )}>Todos los Equipos</p>
-                        <p className={cn(
-                          "text-[9px] font-bold uppercase tracking-widest mt-1",
-                          selectedModel === "" ? "text-zinc-400" : "text-zinc-400"
-                        )}>Búqueda Global</p>
-                      </div>
-                    </button>
-
-                    {models.map(m => {
-                      const active = selectedModel === m.equipmentModel;
-                      return (
-                        <button
-                          key={m.equipmentModel || "gen"}
-                          onClick={() => { setSelectedModel(m.equipmentModel || ""); ensureSession(); }}
-                          className={cn(
-                            "p-6 rounded-[2rem] border transition-all text-left flex items-center gap-5 group",
-                            active
-                              ? "bg-blue-600 border-blue-600 shadow-xl shadow-blue-100" 
-                              : "bg-white border-zinc-100 hover:border-zinc-200 hover:bg-zinc-50"
-                          )}
-                        >
-                          <div className={cn(
-                            "w-12 h-12 rounded-2xl flex items-center justify-center transition-all",
-                            active ? "bg-white/10 text-white shadow-lg" : "bg-zinc-100 text-zinc-400"
-                          )}>
-                            <Cpu className="w-6 h-6" />
-                          </div>
-                          <div>
-                            <p className={cn(
-                              "text-[13px] font-black uppercase tracking-tight",
-                              active ? "text-white" : "text-zinc-900"
-                            )}>Schindler {m.equipmentModel}</p>
-                            <p className={cn(
-                              "text-[9px] font-bold uppercase tracking-widest mt-1",
-                              active ? "text-blue-100" : "text-zinc-400"
-                            )}>Manuales Listos</p>
-                          </div>
-                        </button>
-                      )
-                    })}
-                  </div>
+                    {/* Selector de Modelos Estilo Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-12 w-full">
+                      {models
+                        .filter(m => m.equipmentModel === "3300" || m.equipmentModel === "5500")
+                        .map(m => {
+                          const active = selectedModel === m.equipmentModel;
+                          return (
+                            <button
+                              key={m.equipmentModel || "gen"}
+                              onClick={() => { setSelectedModel(m.equipmentModel || ""); ensureSession(); }}
+                              className={cn(
+                                "p-6 rounded-[2rem] border transition-all text-left flex items-center gap-5 group",
+                                active
+                                  ? "bg-blue-600 border-blue-600 shadow-xl shadow-blue-100" 
+                                  : "bg-white border-zinc-100 hover:border-zinc-200 hover:bg-zinc-50"
+                              )}
+                            >
+                              <div className={cn(
+                                "w-12 h-12 rounded-2xl flex items-center justify-center transition-all",
+                                active ? "bg-white/10 text-white shadow-lg" : "bg-zinc-100 text-zinc-400"
+                              )}>
+                                <Cpu className="w-6 h-6" />
+                              </div>
+                              <div>
+                                <p className={cn(
+                                  "text-[13px] font-black uppercase tracking-tight",
+                                  active ? "text-white" : "text-zinc-900"
+                                )}>Schindler {m.equipmentModel}</p>
+                                <p className={cn(
+                                  "text-[9px] font-bold uppercase tracking-widest mt-1",
+                                  active ? "text-blue-100" : "text-zinc-400"
+                                )}>Manuales Listos</p>
+                              </div>
+                            </button>
+                          )
+                        })}
+                    </div>
                   
                   {selectedModel !== "" && (
                     <div className="mt-10 animate-in fade-in slide-in-from-top-4 duration-700">
@@ -781,49 +726,6 @@ export function SynapsisGoChat({ models }: { models: EquipmentModel[] }) {
               </p>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* ── RIGHT/OVERLAY: Documentation Intelligence ── */}
-      <div className={cn(
-        "flex flex-col bg-white border-l border-slate-100 transition-all duration-500 ease-in-out overflow-hidden",
-        // Desktop
-        showIntelligence ? "lg:w-[400px]" : "lg:w-0 lg:border-none",
-        // Mobile (Overlay Drawer)
-        showIntelligence
-          ? "fixed inset-y-0 right-0 w-[90%] sm:w-[400px] shadow-2xl z-[100] translate-x-0"
-          : "fixed inset-y-0 right-0 w-[90%] sm:w-[400px] z-[100] translate-x-full lg:translate-x-0 lg:w-0"
-      )}>
-        {/* Mobile Backdrop */}
-        {showIntelligence && (
-          <div 
-            className="lg:hidden fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[-1]" 
-            onClick={() => setShowIntelligence(false)}
-          />
-        )}
-        {/* Botón de cierre explícito para todas las vistas */}
-        <button
-          onClick={() => setShowIntelligence(false)}
-          className="absolute top-4 right-4 w-10 h-10 bg-white rounded-full border border-slate-200 flex items-center justify-center shadow-lg z-[110] text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors"
-          title="Cerrar panel"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 blur-[120px] pointer-events-none rounded-full" />
-        <div className="flex-shrink-0 px-6 py-5 border-b border-slate-200/60 bg-white shadow-sm lg:shadow-none">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-50 rounded-lg border border-indigo-100 shadow-sm">
-              <Brain className="w-4 h-4 text-indigo-600" />
-            </div>
-            <div>
-              <h2 className="text-xs font-black text-slate-900 tracking-tight uppercase">Dashboard Intelligence</h2>
-              <p className="text-[9px] font-bold text-slate-500 tracking-widest mt-0.5">CONTEXTO EN TIEMPO REAL</p>
-            </div>
-          </div>
-        </div>
-        <div className="flex-1 overflow-y-auto scrollbar-hidden select-none bg-white lg:bg-transparent">
-          <ContextPanel context={sideContext} isLoading={isLoading} />
         </div>
       </div>
 

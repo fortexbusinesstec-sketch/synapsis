@@ -10,7 +10,9 @@ export const RATES = {
   ocr:          { perPage: 0.001 },
   vision:       { input: 0.15 / 1_000_000, output: 0.15 / 1_000_000 },
   // Agente Curioso — gpt-4o-mini (mismo modelo que orchestrator/chunker)
-  curious:      { input: 0.15 / 1_000_000, output: 0.60 / 1_000_000 },
+  curious:          { input: 0.15 / 1_000_000, output: 0.60 / 1_000_000 },
+  // Agente DiagramReasoner — gpt-4o-mini
+  diagram_reasoner: { input: 0.15 / 1_000_000, output: 0.60 / 1_000_000 },
 } as const;
 
 export type UsageData = {
@@ -36,6 +38,7 @@ export function calculateAgentCost(
 
     case 'vision':
     case 'curious':
+    case 'diagram_reasoner':
       return (
         (usage.prompt_tokens     ?? 0) * (rate as any).input +
         (usage.completion_tokens ?? 0) * (rate as any).output
