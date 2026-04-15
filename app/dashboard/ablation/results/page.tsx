@@ -29,183 +29,183 @@ interface Batch {
 }
 
 interface SummaryRow {
-  config_id:                string;
-  config_name:              string;
-  question_category:        string;
-  display_order:            number;
-  is_baseline:              number;
-  avg_score_total:          number | null;
-  avg_score_correctness:    number | null;
-  avg_score_completeness:   number | null;
-  avg_score_relevance:      number | null;
-  avg_score_clarity:        number | null;
+  config_id: string;
+  config_name: string;
+  question_category: string;
+  display_order: number;
+  is_baseline: number;
+  avg_score_total: number | null;
+  avg_score_correctness: number | null;
+  avg_score_completeness: number | null;
+  avg_score_relevance: number | null;
+  avg_score_clarity: number | null;
   avg_score_ablation_impact: number | null;
-  avg_phase1_ms:            number | null;
-  avg_total_ms:             number | null;
-  avg_cost_usd:             number | null;
-  n_runs:                   number;
-  clarifier_enabled:        number;
-  bibliotecario_enabled:    number;
-  analista_enabled:         number;
-  image_validator_enabled:  number;
-  rag_enabled:              number;
+  avg_phase1_ms: number | null;
+  avg_total_ms: number | null;
+  avg_cost_usd: number | null;
+  n_runs: number;
+  clarifier_enabled: number;
+  bibliotecario_enabled: number;
+  analista_enabled: number;
+  image_validator_enabled: number;
+  rag_enabled: number;
 }
 
 interface LoopHealthRow {
-  config_id:              string;
-  config_name:            string;
-  display_order:          number;
-  is_baseline:            number;
-  n_runs:                 number;
+  config_id: string;
+  config_name: string;
+  display_order: number;
+  is_baseline: number;
+  n_runs: number;
   // Loop metrics
-  avg_loops:              number | null;
-  avg_confidence:         number | null;
-  avg_chunks_final:       number | null;
-  avg_redundancy:         number | null;
-  max_loop_count:         number;
-  min_confidence:         number | null;
+  avg_loops: number | null;
+  avg_confidence: number | null;
+  avg_chunks_final: number | null;
+  avg_redundancy: number | null;
+  max_loop_count: number;
+  min_confidence: number | null;
   // Gap Engine metrics
-  pct_gap_resolved:       number | null;
-  loops_resolved:         number;
-  loops_stuck:            number;
-  loops_no_gain:          number;
-  loops_maxed:            number;
-  n_multi_loop:           number;
-  n_low_confidence:       number;
-  n_high_confidence:      number;
+  pct_gap_resolved: number | null;
+  loops_resolved: number;
+  loops_stuck: number;
+  loops_no_gain: number;
+  loops_maxed: number;
+  n_multi_loop: number;
+  n_low_confidence: number;
+  n_high_confidence: number;
 }
 
 interface RunRow {
-  id:                  string;
-  question_id:         string;
-  config_id:           string;
-  config_name:         string;
-  session_id:          string | null;
-  status:              string;
-  question_text:       string;
-  category:            string;
-  category_number:     number;
-  ground_truth:        string;
-  response_text:       string | null;
-  error_message:       string | null;
-  detected_urgency:    string | null;
-  response_mode:       string | null;
-  total_ms:            number | null;
-  cost_usd:            number | null;
-  chunks_retrieved:    number | null;
-  images_retrieved:    number | null;
-  enrichments_used:    number | null;
-  score_total:         number | null;
-  score_correctness:   number | null;
-  score_completeness:  number | null;
-  score_relevance:     number | null;
-  score_clarity:       number | null;
+  id: string;
+  question_id: string;
+  config_id: string;
+  config_name: string;
+  session_id: string | null;
+  status: string;
+  question_text: string;
+  category: string;
+  category_number: number;
+  ground_truth: string;
+  response_text: string | null;
+  error_message: string | null;
+  detected_urgency: string | null;
+  response_mode: string | null;
+  total_ms: number | null;
+  cost_usd: number | null;
+  chunks_retrieved: number | null;
+  images_retrieved: number | null;
+  enrichments_used: number | null;
+  score_total: number | null;
+  score_correctness: number | null;
+  score_completeness: number | null;
+  score_relevance: number | null;
+  score_clarity: number | null;
   score_ablation_impact: number | null;
   // Rúbrica Dual
-  score_factual:       number | null;
-  score_diagnostic:    number | null;
-  factual_errors:      string | null; // JSON
-  diagnostic_value:    string | null;
-  judge_reasoning:     string | null;
+  score_factual: number | null;
+  score_diagnostic: number | null;
+  factual_errors: string | null; // JSON
+  diagnostic_value: string | null;
+  judge_reasoning: string | null;
 }
 
 interface ScenRunRow {
   id: string;
-  scenario_id:         string;
-  config_id:           string;
-  session_id:          string | null;
-  run_batch:           string;
-  status:              string;
-  error_message:       string | null;
-  turns_completed:     number;
-  turns_planned:       number;
-  resolution_reached:  number;
+  scenario_id: string;
+  config_id: string;
+  session_id: string | null;
+  run_batch: string;
+  status: string;
+  error_message: string | null;
+  turns_completed: number;
+  turns_planned: number;
+  resolution_reached: number;
   turns_to_resolution: number | null;
-  total_loops_fired:   number;
+  total_loops_fired: number;
   avg_confidence_session: number | null;
-  total_latency_ms?:    number;
-  total_cost_usd?:      number | null;
-  scenario_title?:      string;
-  scenario_category?:   string;
-  difficulty?:          string;
-  equipment_model?:     string | null;
+  total_latency_ms?: number;
+  total_cost_usd?: number | null;
+  scenario_title?: string;
+  scenario_category?: string;
+  difficulty?: string;
+  equipment_model?: string | null;
   resolution_criteria?: string;
-  config_name:         string;
-  is_baseline?:         number;
-  display_order:       number;
-  score_id?:            string | null;
+  config_name: string;
+  is_baseline?: number;
+  display_order: number;
+  score_id?: string | null;
   score_diagnostic_progression: number | null;
-  score_factual_consistency:    number | null;
-  score_hypothesis_refinement:  number | null;
-  score_technician_effort:      number | null;
-  score_total:                  number | null;
-  judge_resolution_reached?:    number | null;
-  critical_error_made?:          number | null;
-  contradicted_itself?:          number | null;
-  repeated_question?:            number | null;
-  judge_narrative?:              string | null;
+  score_factual_consistency: number | null;
+  score_hypothesis_refinement: number | null;
+  score_technician_effort: number | null;
+  score_total: number | null;
+  judge_resolution_reached?: number | null;
+  critical_error_made?: number | null;
+  contradicted_itself?: number | null;
+  repeated_question?: number | null;
+  judge_narrative?: string | null;
 }
 
 interface IndexingDocRow {
-  doc_id:              string;
-  title:               string;
-  page_count:          number | null;
-  equipment_model:     string | null;
-  doc_type:            string | null;
-  total_cost:          number | null;
-  cost_orchestrator:   number | null;
-  cost_ocr:            number | null;
-  cost_vision:         number | null;
-  cost_chunker:        number | null;
-  cost_embedder:       number | null;
-  total_chunks:        number | null;
-  hitl_images:         number | null;
+  doc_id: string;
+  title: string;
+  page_count: number | null;
+  equipment_model: string | null;
+  doc_type: string | null;
+  total_cost: number | null;
+  cost_orchestrator: number | null;
+  cost_ocr: number | null;
+  cost_vision: number | null;
+  cost_chunker: number | null;
+  cost_embedder: number | null;
+  total_chunks: number | null;
+  hitl_images: number | null;
   agent_mismatch_count: number | null;
-  detected_gaps:       number | null;
-  inherited_l1:        number | null;
-  inherited_l2:        number | null;
-  inherited_l3:        number | null;
-  total_input_tokens:  number | null;
+  detected_gaps: number | null;
+  inherited_l1: number | null;
+  inherited_l2: number | null;
+  inherited_l3: number | null;
+  total_input_tokens: number | null;
   total_output_tokens: number | null;
-  processing_time_ms:  number | null;
+  processing_time_ms: number | null;
 }
 
 interface IndexingAgg {
-  n_docs:               number;
-  avg_chunks:           number | null;
-  avg_hitl_images:      number | null;
-  avg_mismatch:         number | null;
-  avg_detected_gaps:    number | null;
-  avg_l1:               number | null;
-  avg_l2:               number | null;
-  avg_l3:               number | null;
-  avg_input_tokens:     number | null;
-  avg_output_tokens:    number | null;
-  avg_processing_ms:    number | null;
-  max_processing_ms:    number | null;
-  min_processing_ms:    number | null;
-  avg_pages:            number | null;
-  avg_total_cost:       number | null;
+  n_docs: number;
+  avg_chunks: number | null;
+  avg_hitl_images: number | null;
+  avg_mismatch: number | null;
+  avg_detected_gaps: number | null;
+  avg_l1: number | null;
+  avg_l2: number | null;
+  avg_l3: number | null;
+  avg_input_tokens: number | null;
+  avg_output_tokens: number | null;
+  avg_processing_ms: number | null;
+  max_processing_ms: number | null;
+  min_processing_ms: number | null;
+  avg_pages: number | null;
+  avg_total_cost: number | null;
   avg_cost_orchestrator: number | null;
-  avg_cost_ocr:         number | null;
-  avg_cost_vision:      number | null;
-  avg_cost_chunker:     number | null;
-  avg_cost_embedder:    number | null;
-  total_cost_all:       number | null;
-  total_cost_ocr:       number | null;
-  total_cost_vision:    number | null;
-  total_cost_chunker:   number | null;
+  avg_cost_ocr: number | null;
+  avg_cost_vision: number | null;
+  avg_cost_chunker: number | null;
+  avg_cost_embedder: number | null;
+  total_cost_all: number | null;
+  total_cost_ocr: number | null;
+  total_cost_vision: number | null;
+  total_cost_chunker: number | null;
   total_cost_orchestrator: number | null;
-  total_cost_embedder:  number | null;
+  total_cost_embedder: number | null;
 }
 
 interface AgentLogRow {
-  agent_name:       string;
-  n_calls:          number;
-  avg_input:        number | null;
-  avg_output:       number | null;
-  avg_duration_ms:  number | null;
-  errors:           number;
+  agent_name: string;
+  n_calls: number;
+  avg_input: number | null;
+  avg_output: number | null;
+  avg_duration_ms: number | null;
+  errors: number;
 }
 
 /* ── Gráficos Reusable ────────────────────────────────────────────────────── */
@@ -225,11 +225,11 @@ function ChartCard({ title, description, children, height = 450, accent = 'blue'
   height?: number; accent?: 'blue' | 'violet' | 'emerald' | 'amber' | 'teal';
 }) {
   const accentMap: Record<string, string> = {
-    blue:    'bg-blue-50 border-blue-200 text-blue-700',
-    violet:  'bg-violet-50 border-violet-200 text-violet-700',
+    blue: 'bg-blue-50 border-blue-200 text-blue-700',
+    violet: 'bg-violet-50 border-violet-200 text-violet-700',
     emerald: 'bg-emerald-50 border-emerald-200 text-emerald-700',
-    amber:   'bg-amber-50 border-amber-200 text-amber-700',
-    teal:    'bg-teal-50 border-teal-200 text-teal-700',
+    amber: 'bg-amber-50 border-amber-200 text-amber-700',
+    teal: 'bg-teal-50 border-teal-200 text-teal-700',
   };
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col" style={{ height }}>
@@ -252,9 +252,9 @@ function RadarChartAcademic({ scenarios }: { scenarios: ScenRunRow[] }) {
   const configs = ['A', 'B', 'C', 'D'];
   const dimensions = [
     { key: 'score_diagnostic_progression', label: 'Diag' },
-    { key: 'score_factual_consistency',     label: 'Factual' },
-    { key: 'score_hypothesis_refinement',   label: 'Hypo' },
-    { key: 'score_technician_effort',        label: 'Tech' },
+    { key: 'score_factual_consistency', label: 'Factual' },
+    { key: 'score_hypothesis_refinement', label: 'Hypo' },
+    { key: 'score_technician_effort', label: 'Tech' },
   ];
 
   const data = dimensions.map(d => {
@@ -299,14 +299,14 @@ function ComposedChartDual({ scenarios, summaryAll }: { scenarios: ScenRunRow[],
     const scenRuns = scenarios.filter(s => s.config_id === cid);
     const resolvedPct = scenRuns.length ? (scenRuns.filter(r => (r.judge_resolution_reached ?? r.resolution_reached) === 1).length / scenRuns.length) * 100 : 0;
     const summary = summaryAll.find(s => s.config_id === cid);
-    
+
     // Si hay datos de escenarios, calculamos el promedio directamente
-    const avgScoreScen = scenRuns.length 
-      ? scenRuns.reduce((sum, r) => sum + (r.score_total ?? 0), 0) / scenRuns.length 
+    const avgScoreScen = scenRuns.length
+      ? scenRuns.reduce((sum, r) => sum + (r.score_total ?? 0), 0) / scenRuns.length
       : 0;
 
     const scoreTotal = avgScoreScen > 0 ? avgScoreScen : (summary?.avg_score_total ?? 0);
-    
+
     return { name: cid, resolved: Number(resolvedPct.toFixed(1)), score: Number(scoreTotal.toFixed(2)) };
   });
 
@@ -315,24 +315,24 @@ function ComposedChartDual({ scenarios, summaryAll }: { scenarios: ScenRunRow[],
       <ComposedChart data={data} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
         <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: 900, fill: '#475569' }} axisLine={false} tickLine={false} />
-        <YAxis 
-          yAxisId="left" 
-          domain={[0, 100]} 
-          tick={{ fontSize: 10, fill: '#94a3b8' }} 
-          axisLine={false} 
+        <YAxis
+          yAxisId="left"
+          domain={[0, 100]}
+          tick={{ fontSize: 10, fill: '#94a3b8' }}
+          axisLine={false}
           tickLine={false}
           label={{ value: '% Resuelto', angle: -90, position: 'insideLeft', style: { fontSize: 10, fontWeight: 700, fill: '#94a3b8' } }}
         />
-        <YAxis 
-          yAxisId="right" 
-          orientation="right" 
-          domain={[0, 2]} 
-          tick={{ fontSize: 10, fill: '#3b82f6' }} 
-          axisLine={false} 
+        <YAxis
+          yAxisId="right"
+          orientation="right"
+          domain={[0, 2]}
+          tick={{ fontSize: 10, fill: '#3b82f6' }}
+          axisLine={false}
           tickLine={false}
           label={{ value: 'Score Total', angle: 90, position: 'insideRight', style: { fontSize: 10, fontWeight: 700, fill: '#3b82f6' } }}
         />
-        <Tooltip 
+        <Tooltip
           cursor={{ fill: '#f8fafc' }}
           contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px' }}
         />
@@ -356,7 +356,7 @@ function BarChartLoops({ scenarios }: { scenarios: ScenRunRow[] }) {
       <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
         <XAxis type="number" domain={[4.8, 5.4]} hide />
         <YAxis dataKey="name" type="category" tick={{ fontSize: 12, fontWeight: 900 }} axisLine={false} tickLine={false} />
-        <Tooltip 
+        <Tooltip
           cursor={{ fill: 'transparent' }}
           contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px' }}
         />
@@ -373,13 +373,13 @@ function BarChartLoops({ scenarios }: { scenarios: ScenRunRow[] }) {
 // 4. Heatmap (CSS Grid)
 function HeatmapAcademic({ data }: { data: any[] }) {
   const configs = ['A', 'B', 'C', 'D'];
-  
+
   // Extraer categorías únicas presentes en la data
   const rawCats = [...new Set(data.map(d => d.question_category || d.category))];
   const cats = CAT_ORDER.filter(c => rawCats.includes(c));
   // Añadir cualquier categoría extra que no esté en CAT_ORDER
   rawCats.forEach(c => { if (!cats.includes(c)) cats.push(c); });
-  
+
   const getScore = (cat: string, cid: string) => {
     const row = data.find(d => (d.question_category === cat || d.category === cat) && d.config_id === cid);
     return row?.avg_score_total ?? row?.avg_score ?? 0;
@@ -429,7 +429,7 @@ function HeatmapAcademic({ data }: { data: any[] }) {
 function ConfidenceTrendChart({ turnStats }: { turnStats: Record<string, any[]> }) {
   const configs = ['B', 'D']; // Comparativa clave
   const turns = [1, 2, 3, 4, 5];
-  
+
   const data = turns.map(t => {
     const obj: any = { turn: `Turno ${t}` };
     configs.forEach(cid => {
@@ -457,41 +457,41 @@ function ConfidenceTrendChart({ turnStats }: { turnStats: Record<string, any[]> 
       <LineChart data={data} margin={{ top: 30, right: 40, left: 10, bottom: 20 }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
         <XAxis dataKey="turn" tick={{ fontSize: 10, fontWeight: 800, fill: '#475569' }} axisLine={false} tickLine={false} />
-        <YAxis 
-          domain={[0.4, 1]} 
+        <YAxis
+          domain={[0.4, 1]}
           tickCount={7}
-          tick={{ fontSize: 10, fill: '#94a3b8' }} 
-          axisLine={false} 
-          tickLine={false} 
+          tick={{ fontSize: 10, fill: '#94a3b8' }}
+          axisLine={false}
+          tickLine={false}
         />
-        <Tooltip 
+        <Tooltip
           contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontSize: '11px' }}
         />
-        <Legend 
-          verticalAlign="top" 
+        <Legend
+          verticalAlign="top"
           align="right"
-          height={40} 
-          iconType="circle" 
-          wrapperStyle={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }} 
+          height={40}
+          iconType="circle"
+          wrapperStyle={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}
         />
-        <Line 
-          type="monotone" 
-          dataKey="B" 
-          name="Config B (MAS)" 
-          stroke="#2563eb" 
-          strokeWidth={5} 
-          dot={{ r: 6, fill: '#2563eb', strokeWidth: 2, stroke: '#fff' }} 
+        <Line
+          type="monotone"
+          dataKey="B"
+          name="Config B (MAS)"
+          stroke="#2563eb"
+          strokeWidth={5}
+          dot={{ r: 6, fill: '#2563eb', strokeWidth: 2, stroke: '#fff' }}
           activeDot={{ r: 8, strokeWidth: 0 }}
           animationDuration={2000}
         >
           <LabelList dataKey="B" content={(props: any) => <CustomLabel {...props} color="#2563eb" />} />
         </Line>
-        <Line 
-          type="monotone" 
-          dataKey="D" 
-          name="Config D (RAG Base)" 
-          stroke="#64748b" 
-          strokeWidth={3} 
+        <Line
+          type="monotone"
+          dataKey="D"
+          name="Config D (RAG Base)"
+          stroke="#64748b"
+          strokeWidth={3}
           strokeDasharray="8 4"
           dot={{ r: 5, fill: '#f1f5f9', strokeWidth: 2, stroke: '#64748b' }}
           activeDot={{ r: 7 }}
@@ -513,10 +513,10 @@ function ScoreBreakdownChart({ scenarios, summaryAll }: { scenarios: ScenRunRow[
     return {
       name: `Config ${cid}`,
       cid,
-      diag:    Number(avg('score_diagnostic_progression').toFixed(2)),
+      diag: Number(avg('score_diagnostic_progression').toFixed(2)),
       factual: Number(avg('score_factual_consistency').toFixed(2)),
-      hypo:    Number(avg('score_hypothesis_refinement').toFixed(2)),
-      tech:    Number(avg('score_technician_effort').toFixed(2)),
+      hypo: Number(avg('score_hypothesis_refinement').toFixed(2)),
+      tech: Number(avg('score_technician_effort').toFixed(2)),
     };
   });
   return (
@@ -525,20 +525,20 @@ function ScoreBreakdownChart({ scenarios, summaryAll }: { scenarios: ScenRunRow[
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
         <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 900, fill: '#475569' }} axisLine={false} tickLine={false} />
         <YAxis domain={[0, 2]} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-        <Tooltip 
+        <Tooltip
           cursor={{ fill: '#f8fafc' }}
-          contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontSize: '11px', padding: '12px' }} 
+          contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontSize: '11px', padding: '12px' }}
         />
-        <Legend 
-          iconType="circle" 
+        <Legend
+          iconType="circle"
           verticalAlign="top"
           align="right"
-          wrapperStyle={{ fontSize: 10, fontWeight: 800, paddingBottom: 20, textTransform: 'uppercase', letterSpacing: '0.05em' }} 
+          wrapperStyle={{ fontSize: 10, fontWeight: 800, paddingBottom: 20, textTransform: 'uppercase', letterSpacing: '0.05em' }}
         />
-        <Bar dataKey="diag"    name="Diagnóstico" stackId="a" fill="#4f46e5" stroke="#fff" strokeWidth={2} radius={[0,0,0,0]} />
-        <Bar dataKey="factual" name="Factual"     stackId="a" fill="#f59e0b" stroke="#fff" strokeWidth={2} />
-        <Bar dataKey="hypo"    name="Hipótesis"   stackId="a" fill="#ec4899" stroke="#fff" strokeWidth={2} />
-        <Bar dataKey="tech"    name="Técnico"     stackId="a" fill="#10b981" stroke="#fff" strokeWidth={2} radius={[8,8,0,0]} />
+        <Bar dataKey="diag" name="Diagnóstico" stackId="a" fill="#4f46e5" stroke="#fff" strokeWidth={2} radius={[0, 0, 0, 0]} />
+        <Bar dataKey="factual" name="Factual" stackId="a" fill="#f59e0b" stroke="#fff" strokeWidth={2} />
+        <Bar dataKey="hypo" name="Hipótesis" stackId="a" fill="#ec4899" stroke="#fff" strokeWidth={2} />
+        <Bar dataKey="tech" name="Técnico" stackId="a" fill="#10b981" stroke="#fff" strokeWidth={2} radius={[8, 8, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -559,41 +559,41 @@ function LatencyEfficiencyChart({ data }: { data: any[] }) {
       <ComposedChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
         <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 900, fill: '#475569' }} axisLine={false} tickLine={false} />
-        
-        <YAxis 
+
+        <YAxis
           yAxisId="left"
-          tickFormatter={v => `${(v/1000).toFixed(0)}s`} 
-          tick={{ fontSize: 10, fill: '#6366f1' }} 
-          axisLine={false} 
+          tickFormatter={v => `${(v / 1000).toFixed(0)}s`}
+          tick={{ fontSize: 10, fill: '#6366f1' }}
+          axisLine={false}
           tickLine={false}
           label={{ value: 'Latencia (s)', angle: -90, position: 'insideLeft', style: { fontSize: 9, fontWeight: 700, fill: '#6366f1' } }}
         />
-        
-        <YAxis 
-          yAxisId="right" 
-          orientation="right" 
-          tick={{ fontSize: 10, fill: '#ec4899' }} 
-          axisLine={false} 
+
+        <YAxis
+          yAxisId="right"
+          orientation="right"
+          tick={{ fontSize: 10, fill: '#ec4899' }}
+          axisLine={false}
           tickLine={false}
           label={{ value: 'Loops avg', angle: 90, position: 'insideRight', style: { fontSize: 9, fontWeight: 700, fill: '#ec4899' } }}
         />
 
-        <Tooltip 
+        <Tooltip
           contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontSize: '11px' }}
           formatter={(value: any, name: any) => {
-            if (name === 'Latencia') return [`${(value/1000).toFixed(2)}s`, 'Tiempo Total'];
+            if (name === 'Latencia') return [`${(value / 1000).toFixed(2)}s`, 'Tiempo Total'];
             return [value, 'Ciclos de Razonamiento'];
           }}
         />
-        
-        <Legend 
+
+        <Legend
           iconType="circle"
           verticalAlign="top"
           align="right"
-          wrapperStyle={{ fontSize: 10, fontWeight: 800, paddingBottom: 20 }} 
+          wrapperStyle={{ fontSize: 10, fontWeight: 800, paddingBottom: 20 }}
         />
 
-        <Bar yAxisId="left" dataKey="latency" name="Latencia" fill="#6366f1" radius={[8,8,0,0]} barSize={40} />
+        <Bar yAxisId="left" dataKey="latency" name="Latencia" fill="#6366f1" radius={[8, 8, 0, 0]} barSize={40} />
         <Line yAxisId="right" type="monotone" dataKey="loops" name="Loops (avg)" stroke="#ec4899" strokeWidth={3} dot={{ r: 6, fill: '#ec4899', strokeWidth: 2, stroke: '#fff' }} />
       </ComposedChart>
     </ResponsiveContainer>
@@ -616,7 +616,7 @@ function CostEffectivenessChart({ scenarios }: { scenarios: ScenRunRow[] }) {
       name: `Cfg ${cid}`,
       cid,
       'Costo (¢ USD)': Number(avgCostMilliUsd.toFixed(2)),
-      'Turnos avg':    Number(avgTurns.toFixed(2)),
+      'Turnos avg': Number(avgTurns.toFixed(2)),
     };
   });
 
@@ -632,10 +632,10 @@ function CostEffectivenessChart({ scenarios }: { scenarios: ScenRunRow[] }) {
         <Tooltip
           cursor={{ fill: '#f8fafc' }}
           contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontSize: '11px' }}
-          formatter={((v: number, name: string) => name === 'Costo (¢ USD)' ? [`$${(v/1000).toFixed(4)}`, 'Costo estimado'] : [v.toFixed(2), name]) as any}
+          formatter={((v: number, name: string) => name === 'Costo (¢ USD)' ? [`$${(v / 1000).toFixed(4)}`, 'Costo estimado'] : [v.toFixed(2), name]) as any}
         />
         <Legend iconType="circle" wrapperStyle={{ fontSize: 11, fontWeight: 700, paddingTop: 8 }} />
-        <Bar yAxisId="cost" dataKey="Costo (¢ USD)" fill="#7c3aed" radius={[8,8,0,0]} barSize={40} fillOpacity={0.85} />
+        <Bar yAxisId="cost" dataKey="Costo (¢ USD)" fill="#7c3aed" radius={[8, 8, 0, 0]} barSize={40} fillOpacity={0.85} />
         <Line yAxisId="turns" type="monotone" dataKey="Turnos avg" stroke="#ec4899" strokeWidth={3} dot={{ r: 6, fill: '#ec4899', strokeWidth: 2, stroke: '#fff' }} />
       </ComposedChart>
     </ResponsiveContainer>
@@ -662,7 +662,7 @@ function TurnsToResolutionChart({ scenarios }: { scenarios: ScenRunRow[] }) {
         <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px' }} />
         <Legend iconType="circle" wrapperStyle={{ fontSize: 11, fontWeight: 700, paddingTop: 8 }} />
         {cfgIds.map(cid => (
-          <Bar key={cid} dataKey={cid} name={`Config ${cid}`} fill={CONFIG_COLORS[cid] ?? '#94a3b8'} radius={[4,4,0,0]} barSize={22} />
+          <Bar key={cid} dataKey={cid} name={`Config ${cid}`} fill={CONFIG_COLORS[cid] ?? '#94a3b8'} radius={[4, 4, 0, 0]} barSize={22} />
         ))}
       </BarChart>
     </ResponsiveContainer>
@@ -676,43 +676,43 @@ function ConsistencyChart({ scenarios }: { scenarios: ScenRunRow[] }) {
     .filter(r => r.score_total !== null)
     .map(r => ({
       config: r.config_id,
-      score:  r.score_total,
+      score: r.score_total,
       // Añadimos un pequeño jitter horizontal para mejorar la visualización de la densidad
-      jitter: (Math.random() - 0.5) * 0.15 
+      jitter: (Math.random() - 0.5) * 0.15
     }));
 
   return (
     <ResponsiveContainer width="100%" height="100%">
       <ScatterChart margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-        <XAxis 
-          dataKey="config" 
-          type="category" 
+        <XAxis
+          dataKey="config"
+          type="category"
           allowDuplicatedCategory={false}
-          tick={{ fontSize: 11, fontWeight: 900, fill: '#475569' }} 
-          axisLine={false} 
-          tickLine={false} 
+          tick={{ fontSize: 11, fontWeight: 900, fill: '#475569' }}
+          axisLine={false}
+          tickLine={false}
         />
-        <YAxis 
-          type="number" 
-          dataKey="score" 
-          domain={[0, 2]} 
-          tick={{ fontSize: 10, fill: '#94a3b8' }} 
-          axisLine={false} 
+        <YAxis
+          type="number"
+          dataKey="score"
+          domain={[0, 2]}
+          tick={{ fontSize: 10, fill: '#94a3b8' }}
+          axisLine={false}
           tickLine={false}
           label={{ value: 'Score Total', angle: -90, position: 'insideLeft', style: { fontSize: 9, fontWeight: 700, fill: '#94a3b8' } }}
         />
         <ZAxis type="number" range={[100, 100]} />
-        <Tooltip 
+        <Tooltip
           cursor={{ strokeDasharray: '3 3' }}
           contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px' }}
         />
         {configs.map(cid => (
-          <Scatter 
+          <Scatter
             key={cid}
-            name={`Config ${cid}`} 
-            data={data.filter(d => d.config === cid)} 
-            fill={CONFIG_COLORS[cid]} 
+            name={`Config ${cid}`}
+            data={data.filter(d => d.config === cid)}
+            fill={CONFIG_COLORS[cid]}
             fillOpacity={0.6}
             shape="circle"
           />
@@ -736,11 +736,11 @@ function ContextReuseChart({ scenarios }: { scenarios: ScenRunRow[] }) {
       <ComposedChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
         <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 800, fill: '#475569' }} axisLine={false} tickLine={false} />
-        <YAxis yAxisId="left"  domain={[0, 100]} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} label={{ value: '% Reuso', angle: -90, position: 'insideLeft', style: { fontSize: 9, fill: '#94a3b8' } }} />
+        <YAxis yAxisId="left" domain={[0, 100]} tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} label={{ value: '% Reuso', angle: -90, position: 'insideLeft', style: { fontSize: 9, fill: '#94a3b8' } }} />
         <YAxis yAxisId="right" orientation="right" domain={[0, 5]} tick={{ fontSize: 10, fill: '#f59e0b' }} axisLine={false} tickLine={false} />
         <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px' }} />
         <Legend iconType="circle" wrapperStyle={{ fontSize: 11, fontWeight: 700, paddingTop: 8 }} />
-        <Bar yAxisId="left"  dataKey="Reuso de Contexto %" fill="#06b6d4" radius={[6,6,0,0]} barSize={40} />
+        <Bar yAxisId="left" dataKey="Reuso de Contexto %" fill="#06b6d4" radius={[6, 6, 0, 0]} barSize={40} />
         <Line yAxisId="right" type="monotone" dataKey="Clarif. Innecesarias avg" stroke="#f59e0b" strokeWidth={3} dot={{ r: 5, fill: '#f59e0b' }} />
       </ComposedChart>
     </ResponsiveContainer>
@@ -778,11 +778,11 @@ function IndexingCostPie({ agg }: { agg: IndexingAgg | null }) {
   const total = (agg.total_cost_ocr ?? 0) + (agg.total_cost_vision ?? 0) + (agg.total_cost_orchestrator ?? 0) + (agg.total_cost_chunker ?? 0) + (agg.total_cost_embedder ?? 0);
   if (total === 0) return <div className="flex items-center justify-center h-full text-slate-300 text-sm">Sin costos registrados</div>;
   const data = [
-    { name: 'OCR',           value: agg.total_cost_ocr          ?? 0, color: '#9d174d' },
-    { name: 'Vision',        value: agg.total_cost_vision        ?? 0, color: '#7c3aed' },
-    { name: 'Orchestrator',  value: agg.total_cost_orchestrator  ?? 0, color: '#1d4ed8' },
-    { name: 'Chunker',       value: agg.total_cost_chunker       ?? 0, color: '#0369a1' },
-    { name: 'Embedder',      value: agg.total_cost_embedder      ?? 0, color: '#0f766e' },
+    { name: 'OCR', value: agg.total_cost_ocr ?? 0, color: '#9d174d' },
+    { name: 'Vision', value: agg.total_cost_vision ?? 0, color: '#7c3aed' },
+    { name: 'Orchestrator', value: agg.total_cost_orchestrator ?? 0, color: '#1d4ed8' },
+    { name: 'Chunker', value: agg.total_cost_chunker ?? 0, color: '#0369a1' },
+    { name: 'Embedder', value: agg.total_cost_embedder ?? 0, color: '#0f766e' },
   ].filter(d => d.value > 0);
   const RADIAN = Math.PI / 180;
   const renderLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }: any) => {
@@ -820,9 +820,9 @@ function AgentTokensChart({ agentLogs }: { agentLogs: AgentLogRow[] }) {
   const data = agentLogs
     .filter(a => INDEXING_AGENTS.includes(a.agent_name))
     .map(a => ({
-      name:    a.agent_name.replace('diagram-reasoner', 'diag-reason').replace('vector-scanner', 'vec-scanner'),
-      input:   a.avg_input  ?? 0,
-      output:  a.avg_output ?? 0,
+      name: a.agent_name.replace('diagram-reasoner', 'diag-reason').replace('vector-scanner', 'vec-scanner'),
+      input: a.avg_input ?? 0,
+      output: a.avg_output ?? 0,
       duration: Math.round((a.avg_duration_ms ?? 0) / 1000 * 10) / 10,
     }))
     .sort((a, b) => (b.input + b.output) - (a.input + a.output));
@@ -836,8 +836,8 @@ function AgentTokensChart({ agentLogs }: { agentLogs: AgentLogRow[] }) {
         <YAxis dataKey="name" type="category" width={90} tick={{ fontSize: 10, fontWeight: 700, fill: '#374151' }} axisLine={false} tickLine={false} />
         <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px' }} />
         <Legend iconType="square" wrapperStyle={{ fontSize: 11, fontWeight: 700, paddingTop: 8 }} />
-        <Bar dataKey="input"  name="Input tokens"  stackId="a" fill="#bfdbfe" barSize={20} />
-        <Bar dataKey="output" name="Output tokens" stackId="a" fill="#3b82f6" radius={[0,8,8,0]} barSize={20}
+        <Bar dataKey="input" name="Input tokens" stackId="a" fill="#bfdbfe" barSize={20} />
+        <Bar dataKey="output" name="Output tokens" stackId="a" fill="#3b82f6" radius={[0, 8, 8, 0]} barSize={20}
           label={{ position: 'right', style: { fontSize: 9, fontWeight: 700, fill: '#475569' }, formatter: ((v: number, entry: any) => `${(entry?.input ?? 0) + v}tk`) as any }} />
       </BarChart>
     </ResponsiveContainer>
@@ -864,7 +864,7 @@ function GapInheritanceChart({ agg }: { agg: IndexingAgg | null }) {
             <XAxis dataKey="name" tick={{ fontSize: 9, fontWeight: 700, fill: '#374151', textAnchor: 'middle' }} axisLine={false} tickLine={false} interval={0} />
             <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
             <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px' }} />
-            <Bar dataKey="value" name="Avg por documento" radius={[8,8,0,0]} barSize={50}
+            <Bar dataKey="value" name="Avg por documento" radius={[8, 8, 0, 0]} barSize={50}
               label={{ position: 'top', style: { fontSize: 11, fontWeight: 900, fill: '#374151' } }}>
               {data.map((d, i) => <Cell key={i} fill={d.fill} />)}
             </Bar>
@@ -924,10 +924,10 @@ function ProcessingTimeChart({ docs }: { docs: IndexingDocRow[] }) {
   const validDocs = docs.filter(d => d.processing_time_ms && d.page_count).sort((a, b) => (a.page_count ?? 0) - (b.page_count ?? 0));
   if (!validDocs.length) return <div className="flex items-center justify-center h-full text-slate-300 text-sm">Sin datos</div>;
   const data = validDocs.slice(0, 20).map(d => ({
-    name:  d.title.slice(0, 18).replace(/\s+/g, ' '),
+    name: d.title.slice(0, 18).replace(/\s+/g, ' '),
     pages: d.page_count ?? 0,
-    ms:    Math.round((d.processing_time_ms ?? 0) / 1000),
-    cost:  Number(((d.total_cost ?? 0) * 1000).toFixed(2)),
+    ms: Math.round((d.processing_time_ms ?? 0) / 1000),
+    cost: Number(((d.total_cost ?? 0) * 1000).toFixed(2)),
   }));
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -940,7 +940,7 @@ function ProcessingTimeChart({ docs }: { docs: IndexingDocRow[] }) {
           label={{ value: 'páginas', angle: 90, position: 'insideRight', style: { fontSize: 9, fill: '#3b82f6' } }} />
         <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px' }}
           formatter={((v: number, name: string) => name === 'ms' ? [`${v}s`, 'Tiempo'] : [`${v} págs`, 'Páginas']) as any} />
-        <Bar yAxisId="time" dataKey="ms" name="Tiempo (s)" fill="#dbeafe" radius={[4,4,0,0]} />
+        <Bar yAxisId="time" dataKey="ms" name="Tiempo (s)" fill="#dbeafe" radius={[4, 4, 0, 0]} />
         <Line yAxisId="pages" type="monotone" dataKey="pages" name="Páginas" stroke="#2563eb" strokeWidth={2} dot={{ r: 3 }} />
       </ComposedChart>
     </ResponsiveContainer>
@@ -950,17 +950,17 @@ function ProcessingTimeChart({ docs }: { docs: IndexingDocRow[] }) {
 // ── A7. KPIs de Indexing (tarjetas) ───────────────────────────────────────────
 function IndexingKPIRow({ agg, agentLogs }: { agg: IndexingAgg | null; agentLogs: AgentLogRow[] }) {
   if (!agg) return null;
-  const errorCount  = agentLogs.reduce((s, a) => s + (a.errors ?? 0), 0);
-  const totalCalls  = agentLogs.reduce((s, a) => s + (a.n_calls ?? 0), 0);
+  const errorCount = agentLogs.reduce((s, a) => s + (a.errors ?? 0), 0);
+  const totalCalls = agentLogs.reduce((s, a) => s + (a.n_calls ?? 0), 0);
   const kpis = [
     { label: 'Documentos indexados', value: agg.n_docs, unit: '', icon: <FileText className="w-4 h-4" />, color: 'bg-blue-50 text-blue-700 border-blue-100' },
-    { label: 'Avg chunks / doc',     value: agg.avg_chunks?.toFixed(1) ?? '—', unit: '', icon: <Database className="w-4 h-4" />, color: 'bg-violet-50 text-violet-700 border-violet-100' },
-    { label: 'Gaps detectados avg',  value: agg.avg_detected_gaps?.toFixed(1) ?? '—', unit: '/doc', icon: <GitBranch className="w-4 h-4" />, color: 'bg-amber-50 text-amber-700 border-amber-100' },
-    { label: 'Tiempo pipeline avg',  value: agg.avg_processing_ms ? `${(agg.avg_processing_ms / 1000).toFixed(0)}s` : '—', unit: '', icon: <Clock className="w-4 h-4" />, color: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+    { label: 'Avg chunks / doc', value: agg.avg_chunks?.toFixed(1) ?? '—', unit: '', icon: <Database className="w-4 h-4" />, color: 'bg-violet-50 text-violet-700 border-violet-100' },
+    { label: 'Gaps detectados avg', value: agg.avg_detected_gaps?.toFixed(1) ?? '—', unit: '/doc', icon: <GitBranch className="w-4 h-4" />, color: 'bg-amber-50 text-amber-700 border-amber-100' },
+    { label: 'Tiempo pipeline avg', value: agg.avg_processing_ms ? `${(agg.avg_processing_ms / 1000).toFixed(0)}s` : '—', unit: '', icon: <Clock className="w-4 h-4" />, color: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
     { label: 'Costo total avg / doc', value: agg.avg_total_cost ? `$${agg.avg_total_cost.toFixed(4)}` : '—', unit: '', icon: <DollarSign className="w-4 h-4" />, color: 'bg-rose-50 text-rose-700 border-rose-100' },
-    { label: 'Llamadas API (logs)',   value: totalCalls, unit: '', icon: <Zap className="w-4 h-4" />, color: 'bg-slate-50 text-slate-700 border-slate-100' },
-    { label: 'Errores de agentes',   value: errorCount, unit: '', icon: <AlertCircle className="w-4 h-4" />, color: errorCount > 0 ? 'bg-red-50 text-red-700 border-red-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100' },
-    { label: 'Chunks / Página avg',  value: agg.avg_chunks && agg.avg_pages ? (agg.avg_chunks / agg.avg_pages).toFixed(1) : '—', unit: 'ck/pág', icon: <Cpu className="w-4 h-4" />, color: 'bg-teal-50 text-teal-700 border-teal-100' },
+    { label: 'Llamadas API (logs)', value: totalCalls, unit: '', icon: <Zap className="w-4 h-4" />, color: 'bg-slate-50 text-slate-700 border-slate-100' },
+    { label: 'Errores de agentes', value: errorCount, unit: '', icon: <AlertCircle className="w-4 h-4" />, color: errorCount > 0 ? 'bg-red-50 text-red-700 border-red-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+    { label: 'Chunks / Página avg', value: agg.avg_chunks && agg.avg_pages ? (agg.avg_chunks / agg.avg_pages).toFixed(1) : '—', unit: 'ck/pág', icon: <Cpu className="w-4 h-4" />, color: 'bg-teal-50 text-teal-700 border-teal-100' },
   ];
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -980,11 +980,11 @@ function ChatAgentTokensChart({ agentLogs }: { agentLogs: AgentLogRow[] }) {
   const data = agentLogs
     .filter(a => CHAT_AGENTS.includes(a.agent_name))
     .map(a => ({
-      name:     a.agent_name,
-      input:    a.avg_input  ?? 0,
-      output:   a.avg_output ?? 0,
-      latency:  Math.round((a.avg_duration_ms ?? 0)),
-      calls:    a.n_calls,
+      name: a.agent_name,
+      input: a.avg_input ?? 0,
+      output: a.avg_output ?? 0,
+      latency: Math.round((a.avg_duration_ms ?? 0)),
+      calls: a.n_calls,
     }))
     .sort((a, b) => (b.input + b.output) - (a.input + a.output));
   if (!data.length) return <div className="flex items-center justify-center h-full text-slate-300 text-sm">Sin datos de chat agents</div>;
@@ -997,8 +997,8 @@ function ChatAgentTokensChart({ agentLogs }: { agentLogs: AgentLogRow[] }) {
         <YAxis yAxisId="lat" orientation="right" tick={{ fontSize: 10, fill: '#f59e0b' }} axisLine={false} tickLine={false} label={{ value: 'ms', angle: 90, position: 'insideRight', style: { fontSize: 9, fill: '#f59e0b' } }} />
         <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px' }} />
         <Legend iconType="square" wrapperStyle={{ fontSize: 11, fontWeight: 700, paddingTop: 8 }} />
-        <Bar yAxisId="tok" dataKey="input"  name="Input tokens"  stackId="t" fill="#bfdbfe" barSize={35} />
-        <Bar yAxisId="tok" dataKey="output" name="Output tokens" stackId="t" fill="#3b82f6" radius={[6,6,0,0]} barSize={35} />
+        <Bar yAxisId="tok" dataKey="input" name="Input tokens" stackId="t" fill="#bfdbfe" barSize={35} />
+        <Bar yAxisId="tok" dataKey="output" name="Output tokens" stackId="t" fill="#3b82f6" radius={[6, 6, 0, 0]} barSize={35} />
         <Line yAxisId="lat" type="monotone" dataKey="latency" name="Latencia avg (ms)" stroke="#f59e0b" strokeWidth={3} dot={{ r: 5, fill: '#f59e0b' }} />
       </ComposedChart>
     </ResponsiveContainer>
@@ -1008,10 +1008,10 @@ function ChatAgentTokensChart({ agentLogs }: { agentLogs: AgentLogRow[] }) {
 /* ── Paleta ───────────────────────────────────────────────────────────────── */
 const CAT_LABELS: Record<string, string> = {
   diagnostico_tecnico: 'Cat I — Diagnóstico',
-  ambigua:             'Cat II — Ambigua',
-  secuencial:          'Cat III — Secuencial',
-  enriquecimiento:     'Cat IV — Enriquecimiento',
-  visual:              'Cat V — Visual',
+  ambigua: 'Cat II — Ambigua',
+  secuencial: 'Cat III — Secuencial',
+  enriquecimiento: 'Cat IV — Enriquecimiento',
+  visual: 'Cat V — Visual',
 };
 
 const CAT_ORDER = ['diagnostico_tecnico', 'ambigua', 'secuencial', 'enriquecimiento', 'visual'];
@@ -1019,14 +1019,14 @@ const CAT_ORDER = ['diagnostico_tecnico', 'ambigua', 'secuencial', 'enriquecimie
 /* ── Helpers visuales ─────────────────────────────────────────────────────── */
 function ScoreCell({ value }: { value: number | null }) {
   if (value === null) return <span className="text-slate-300">—</span>;
-  const pct  = (value / 2) * 100;
+  const pct = (value / 2) * 100;
   const color = pct >= 75 ? 'text-emerald-700' : pct >= 50 ? 'text-blue-700' : pct >= 30 ? 'text-amber-700' : 'text-red-700';
   return <span className={cn('font-bold tabular-nums', color)}>{value.toFixed(2)}</span>;
 }
 
 function ScoreBar({ value, max = 2 }: { value: number | null; max?: number }) {
   if (value === null) return <div className="h-2 bg-slate-100 rounded-full" />;
-  const pct   = Math.min(100, (value / max) * 100);
+  const pct = Math.min(100, (value / max) * 100);
   const color = pct >= 75 ? 'bg-emerald-500' : pct >= 50 ? 'bg-blue-500' : pct >= 30 ? 'bg-amber-500' : 'bg-red-500';
   return (
     <div className="flex items-center gap-2">
@@ -1058,7 +1058,7 @@ function BatchSelector({
   selected,
   onChange,
 }: {
-  batches:  Batch[];
+  batches: Batch[];
   selected: string;
   onChange: (b: string) => void;
 }) {
@@ -1122,9 +1122,9 @@ function SummaryTable({
 }) {
   if (!summaryAll.length) return null;
 
-  const sorted  = [...summaryAll].sort((a, b) => (b.avg_score_total ?? 0) - (a.avg_score_total ?? 0));
-  const maxRow  = sorted[0];
-  const minRow  = sorted[sorted.length - 1];
+  const sorted = [...summaryAll].sort((a, b) => (b.avg_score_total ?? 0) - (a.avg_score_total ?? 0));
+  const maxRow = sorted[0];
+  const minRow = sorted[sorted.length - 1];
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
@@ -1146,7 +1146,7 @@ function SummaryTable({
           </thead>
           <tbody className="divide-y divide-slate-50">
             {sorted.map((row) => {
-              const isBest  = row.config_id === maxRow.config_id;
+              const isBest = row.config_id === maxRow.config_id;
               const isWorst = row.config_id === minRow.config_id && sorted.length > 1;
               return (
                 <tr
@@ -1154,8 +1154,8 @@ function SummaryTable({
                   onClick={() => onSelectRun?.(row.config_id)}
                   className={cn(
                     'transition-colors cursor-pointer',
-                    isBest  ? 'bg-emerald-50/60 hover:bg-emerald-50' :
-                    isWorst ? 'bg-red-50/40 hover:bg-red-50/60'      : 'hover:bg-slate-50/60',
+                    isBest ? 'bg-emerald-50/60 hover:bg-emerald-50' :
+                      isWorst ? 'bg-red-50/40 hover:bg-red-50/60' : 'hover:bg-slate-50/60',
                   )}
                 >
                   <td className="px-4 py-3">
@@ -1165,7 +1165,7 @@ function SummaryTable({
                       {row.is_baseline === 1 && (
                         <span className="text-[10px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded-full font-black">BASE</span>
                       )}
-                      {isBest  && <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />}
+                      {isBest && <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />}
                     </div>
                   </td>
                   <td className="px-4 py-3"><ScoreCell value={row.avg_score_total} /></td>
@@ -1203,8 +1203,8 @@ function Heatmap({
   configs,
   onCellClick,
 }: {
-  summary:     SummaryRow[];
-  configs:     string[];
+  summary: SummaryRow[];
+  configs: string[];
   onCellClick: (category: string, configId: string) => void;
 }) {
   if (!summary.length) return null;
@@ -1280,7 +1280,7 @@ function Heatmap({
             { label: '≥1.1', cls: 'bg-blue-100 text-blue-800' },
             { label: '≥0.8', cls: 'bg-amber-100 text-amber-800' },
             { label: '≥0.5', cls: 'bg-orange-100 text-orange-800' },
-            { label: '<0.5',  cls: 'bg-red-100 text-red-800' },
+            { label: '<0.5', cls: 'bg-red-100 text-red-800' },
           ].map(({ label, cls }) => (
             <span key={label} className={cn('px-2 py-0.5 rounded-lg text-[10px] font-bold', cls)}>
               {label}
@@ -1297,8 +1297,8 @@ function RunsExpanded({
   runs,
   onSelectRun,
 }: {
-  runs:          RunRow[];
-  onSelectRun:   (run: RunRow) => void;
+  runs: RunRow[];
+  onSelectRun: (run: RunRow) => void;
 }) {
   if (!runs.length) return null;
   return (
@@ -1339,8 +1339,8 @@ function RunsExpanded({
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
-    done:    'bg-emerald-100 text-emerald-700',
-    error:   'bg-red-100 text-red-700',
+    done: 'bg-emerald-100 text-emerald-700',
+    error: 'bg-red-100 text-red-700',
     running: 'bg-blue-100 text-blue-700',
     pending: 'bg-slate-100 text-slate-500',
   };
@@ -1354,8 +1354,8 @@ function StatusBadge({ status }: { status: string }) {
 /* ── Panel 4b — Detalle de un run ─────────────────────────────────────────── */
 function RunDetail({ run, onClose }: { run: RunRow; onClose: () => void }) {
   const DUAL_SCORES = [
-    { key: 'score_factual',    label: 'Integridad Factual', weight: '50%' },
-    { key: 'score_diagnostic', label: 'Valor Diagnóstico',  weight: '50%' },
+    { key: 'score_factual', label: 'Integridad Factual', weight: '50%' },
+    { key: 'score_diagnostic', label: 'Valor Diagnóstico', weight: '50%' },
   ] as const;
 
   return (
@@ -1447,10 +1447,10 @@ function RunDetail({ run, onClose }: { run: RunRow; onClose: () => void }) {
                     </div>
                     <div className="flex items-end gap-3">
                       <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
-                        <div 
-                          className={cn('h-full rounded-full transition-all duration-1000', 
+                        <div
+                          className={cn('h-full rounded-full transition-all duration-1000',
                             ((run as any)[key] ?? 0) >= 1.5 ? 'bg-emerald-500' :
-                            ((run as any)[key] ?? 0) >= 1.0 ? 'bg-amber-400' : 'bg-red-500'
+                              ((run as any)[key] ?? 0) >= 1.0 ? 'bg-amber-400' : 'bg-red-500'
                           )}
                           style={{ width: `${(((run as any)[key] ?? 0) / 2) * 100}%` }}
                         />
@@ -1484,7 +1484,7 @@ function RunDetail({ run, onClose }: { run: RunRow; onClose: () => void }) {
                       </div>
                     );
                   }
-                } catch (e) {}
+                } catch (e) { }
                 return <p className="text-xs text-slate-400 italic">No se detectaron errores factuales.</p>;
               })()}
             </div>
@@ -1547,15 +1547,15 @@ function ClipboardExportPanel({
   runs,
   configIds,
 }: {
-  batch:      string;
+  batch: string;
   summaryAll: SummaryRow[];
-  summary:    SummaryRow[];
-  runs:       RunRow[];
-  configIds:  string[];
+  summary: SummaryRow[];
+  runs: RunRow[];
+  configIds: string[];
 }) {
-  const [copied,    setCopied]    = useState(false);
-  const [loopRows,  setLoopRows]  = useState<LoopHealthRow[]>([]);
-  const [scenRows,  setScenRows]  = useState<ScenRunRow[]>([]);
+  const [copied, setCopied] = useState(false);
+  const [loopRows, setLoopRows] = useState<LoopHealthRow[]>([]);
+  const [scenRows, setScenRows] = useState<ScenRunRow[]>([]);
 
   useEffect(() => {
     if (!batch) return;
@@ -1563,13 +1563,13 @@ function ClipboardExportPanel({
     fetch(`/api/ablation/loop-health?batch=${encodeURIComponent(batch)}`)
       .then((r) => r.json())
       .then((d) => setLoopRows(Array.isArray(d) ? d : []))
-      .catch(() => {});
-    
+      .catch(() => { });
+
     // Cargar Escenarios Multi-turno
     fetch(`/api/ablation/scenarios/runs?batch=${encodeURIComponent(batch)}`)
       .then((r) => r.json())
       .then((d) => setScenRows(Array.isArray(d) ? d : []))
-      .catch(() => {});
+      .catch(() => { });
   }, [batch]);
 
   const buildText = useCallback((): string => {
@@ -1595,16 +1595,16 @@ function ClipboardExportPanel({
       lines.push(H.map(h => '-'.repeat(h.length)).join(' | '));
       for (const r of loopRows) {
         lines.push([
-          pad(r.config_id,     6),
-          pad(r.config_name,   22),
-          pad(r.n_runs,        3),
-          pad(fmt(r.avg_loops, 2),         8),
-          pad(fmt(r.avg_confidence, 2),    7),
+          pad(r.config_id, 6),
+          pad(r.config_name, 22),
+          pad(r.n_runs, 3),
+          pad(fmt(r.avg_loops, 2), 8),
+          pad(fmt(r.avg_confidence, 2), 7),
           pad(r.pct_gap_resolved != null ? `${r.pct_gap_resolved.toFixed(0)}%` : 'N/A', 7),
-          pad(r.loops_stuck,    5),
+          pad(r.loops_stuck, 5),
           pad(r.max_loop_count, 8),
-          pad(r.n_multi_loop,   9),
-          pad(r.n_low_confidence,  7),
+          pad(r.n_multi_loop, 9),
+          pad(r.n_low_confidence, 7),
           pad(r.n_high_confidence, 8),
         ].join(' | '));
       }
@@ -1615,27 +1615,27 @@ function ClipboardExportPanel({
       lines.push('### 1b. Loop Health — Escenarios Multi-turno');
       const scenCfgIds = [...new Set(scenRows.map(r => r.config_id))].sort((a, b) => {
         return (scenRows.find(r => r.config_id === a)?.display_order ?? 99) -
-               (scenRows.find(r => r.config_id === b)?.display_order ?? 99);
+          (scenRows.find(r => r.config_id === b)?.display_order ?? 99);
       });
       const SH = ['Config', 'Nombre', 'N', 'AvgLoopsTot', 'AvgConf', 'PctResuelto', 'AvgTurnos'];
       lines.push(SH.join(' | '));
       lines.push(SH.map(h => '-'.repeat(h.length)).join(' | '));
       for (const cid of scenCfgIds) {
-        const cfgRuns  = scenRows.filter(r => r.config_id === cid);
-        const cfgName  = cfgRuns[0]?.config_name ?? cid;
-        const n        = cfgRuns.length;
+        const cfgRuns = scenRows.filter(r => r.config_id === cid);
+        const cfgName = cfgRuns[0]?.config_name ?? cid;
+        const n = cfgRuns.length;
         const avgLoops = cfgRuns.reduce((s, r) => s + (r.total_loops_fired ?? 0), 0) / n;
         const confVals = cfgRuns.filter(r => r.avg_confidence_session != null).map(r => r.avg_confidence_session as number);
-        const avgConf  = confVals.length ? confVals.reduce((a, b) => a + b, 0) / confVals.length : null;
-        const pctRes   = (cfgRuns.filter(r => (r.judge_resolution_reached ?? r.resolution_reached) === 1).length / n * 100);
+        const avgConf = confVals.length ? confVals.reduce((a, b) => a + b, 0) / confVals.length : null;
+        const pctRes = (cfgRuns.filter(r => (r.judge_resolution_reached ?? r.resolution_reached) === 1).length / n * 100);
         const turnVals = cfgRuns.filter(r => r.turns_to_resolution != null).map(r => r.turns_to_resolution as number);
         const avgTurns = turnVals.length ? turnVals.reduce((a, b) => a + b, 0) / turnVals.length : null;
         lines.push([
-          pad(cid,              6),
+          pad(cid, 6),
           pad(cfgName.slice(0, 22), 22),
-          pad(n,                3),
+          pad(n, 3),
           pad(fmt(avgLoops, 2), 11),
-          pad(fmt(avgConf, 2),  7),
+          pad(fmt(avgConf, 2), 7),
           pad(`${pctRes.toFixed(0)}%`, 11),
           pad(fmt(avgTurns, 1), 9),
         ].join(' | '));
@@ -1660,11 +1660,11 @@ function ClipboardExportPanel({
 
       for (const s of summaryAll.sort((a, b) => a.display_order - b.display_order)) {
         lines.push([
-          pad(s.config_id,             3),
-          pad(s.config_name.slice(0,22), 22),
-          pad(s.n_runs,                3),
-          pad(fmt(s.avg_score_total),  10),
-          pad(fmt(avgByConfig(s.config_id, 'score_factual')),    7),
+          pad(s.config_id, 3),
+          pad(s.config_name.slice(0, 22), 22),
+          pad(s.n_runs, 3),
+          pad(fmt(s.avg_score_total), 10),
+          pad(fmt(avgByConfig(s.config_id, 'score_factual')), 7),
           pad(fmt(avgByConfig(s.config_id, 'score_diagnostic')), 4),
           pad(s.avg_total_ms != null ? Math.round(s.avg_total_ms).toString() : 'N/A', 5),
           pad(s.avg_cost_usd != null ? s.avg_cost_usd.toFixed(4) : 'N/A', 8),
@@ -1678,7 +1678,7 @@ function ClipboardExportPanel({
       lines.push('## 2b. RESUMEN POR CONFIGURACIÓN (Escenarios Multi-turno)');
       const scenCfgIds2 = [...new Set(scenRows.map(r => r.config_id))].sort((a, b) => {
         return (scenRows.find(r => r.config_id === a)?.display_order ?? 99) -
-               (scenRows.find(r => r.config_id === b)?.display_order ?? 99);
+          (scenRows.find(r => r.config_id === b)?.display_order ?? 99);
       });
       const Hs = ['Cfg', 'Nombre', 'N', 'ScoreTotal', 'Diag', 'Factual', 'Hypo', 'Tech', 'Resuelto%'];
       lines.push(Hs.join(' | '));
@@ -1692,15 +1692,15 @@ function ClipboardExportPanel({
         };
         const pctRes = (cfgRuns.filter(r => (r.judge_resolution_reached ?? r.resolution_reached) === 1).length / cfgRuns.length * 100);
         lines.push([
-          pad(cid,                   3),
-          pad(cfgRuns[0]?.config_name?.slice(0,22) ?? '', 22),
-          pad(cfgRuns.length,        3),
-          pad(fmt(avg('score_total')),                         10),
-          pad(fmt(avg('score_diagnostic_progression')),        4),
-          pad(fmt(avg('score_factual_consistency')),           7),
-          pad(fmt(avg('score_hypothesis_refinement')),         4),
-          pad(fmt(avg('score_technician_effort')),             4),
-          pad(`${pctRes.toFixed(0)}%`,                        9),
+          pad(cid, 3),
+          pad(cfgRuns[0]?.config_name?.slice(0, 22) ?? '', 22),
+          pad(cfgRuns.length, 3),
+          pad(fmt(avg('score_total')), 10),
+          pad(fmt(avg('score_diagnostic_progression')), 4),
+          pad(fmt(avg('score_factual_consistency')), 7),
+          pad(fmt(avg('score_hypothesis_refinement')), 4),
+          pad(fmt(avg('score_technician_effort')), 4),
+          pad(`${pctRes.toFixed(0)}%`, 9),
         ].join(' | '));
       }
       lines.push('');
@@ -1770,7 +1770,7 @@ function ClipboardExportPanel({
             try {
               const errs = JSON.parse(r.factual_errors);
               if (errs.length) lines.push(`**ERRORES FACTUALES:** ${errs.join('; ')}`);
-            } catch {}
+            } catch { }
           }
         }
         lines.push('');
@@ -1819,13 +1819,13 @@ function ClipboardExportPanel({
         } catch { /* */ }
 
         lines.push([
-          pad(r.config_id,   3),
+          pad(r.config_id, 3),
           pad(r.config_name.slice(0, 18), 18),
-          pad(fmt(r.score_total),   10),
-          pad(fmt(r.score_factual),  7),
+          pad(fmt(r.score_total), 10),
+          pad(fmt(r.score_factual), 7),
           pad(fmt(r.score_diagnostic), 4),
-          pad((factErrors).slice(0, 60),            18),
-          pad((r.diagnostic_value  ?? '—').slice(0, 60), 18),
+          pad((factErrors).slice(0, 60), 18),
+          pad((r.diagnostic_value ?? '—').slice(0, 60), 18),
           (r.judge_reasoning ?? '—').replace(/\n/g, ' '),
         ].join(' | '));
       }
@@ -1894,27 +1894,27 @@ function ClipboardExportPanel({
 
 /* ── Panel 6 — Resultados de Escenarios Multi-turno ──────────────────────── */
 interface ScenTurnResult {
-  id:              string;
-  turn_number:     number;
+  id: string;
+  turn_number: number;
   system_response: string | null;
-  response_mode:   string | null;
-  chunks_used:     number;
-  loops_fired:     number;
-  confidence:      number | null;
-  gap_type:        string | null;
-  latency_ms:      number | null;
+  response_mode: string | null;
+  chunks_used: number;
+  loops_fired: number;
+  confidence: number | null;
+  gap_type: string | null;
+  latency_ms: number | null;
 }
 
 interface ScenTurn {
-  turn_number:        number;
+  turn_number: number;
   technician_message: string;
-  turn_intent:        string | null;
-  expected_behavior:  string | null;
+  turn_intent: string | null;
+  expected_behavior: string | null;
 }
 
 function ScenScoreCell({ v }: { v: number | null }) {
   if (v === null) return <span className="text-slate-300">—</span>;
-  const pct   = (v / 2) * 100;
+  const pct = (v / 2) * 100;
   const color = pct >= 75 ? 'text-emerald-700' : pct >= 50 ? 'text-blue-700' : pct >= 30 ? 'text-amber-700' : 'text-red-700';
   return <span className={cn('font-bold tabular-nums', color)}>{v.toFixed(2)}</span>;
 }
@@ -1929,7 +1929,7 @@ function ScenTranscriptModal({
     fetch(`/api/ablation/scenarios/runs/${runId}`)
       .then((r) => r.json())
       .then((d) => setData({ turns: d.turns ?? [], results: d.results ?? [] }))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, [runId]);
 
@@ -2007,7 +2007,7 @@ function ScenarioResultsPanel({ rows, loading }: { rows: ScenRunRow[]; loading: 
 
   // Agrupar por scenario_id
   const scenarioIds = [...new Set(rows.map((r) => r.scenario_id))];
-  const configIds   = [...new Set(rows.map((r) => r.config_id))].sort((a, b) => {
+  const configIds = [...new Set(rows.map((r) => r.config_id))].sort((a, b) => {
     const ra = rows.find((r) => r.config_id === a);
     const rb = rows.find((r) => r.config_id === b);
     return (ra?.display_order ?? 99) - (rb?.display_order ?? 99);
@@ -2080,9 +2080,9 @@ function ScenarioResultsPanel({ rows, loading }: { rows: ScenRunRow[]; loading: 
                               </div>
                               <div className="flex items-center justify-center gap-1 flex-wrap">
                                 {r.judge_resolution_reached === 1 && <span title="Resolución alcanzada" className="text-emerald-500 text-[10px]">✓</span>}
-                                {r.critical_error_made      === 1 && <span title="Error crítico"        className="text-red-500    text-[10px]">⚠</span>}
-                                {r.contradicted_itself      === 1 && <span title="Se contradijo"        className="text-amber-500  text-[10px]">↯</span>}
-                                {r.repeated_question        === 1 && <span title="Pregunta repetida"    className="text-slate-400  text-[10px]">↺</span>}
+                                {r.critical_error_made === 1 && <span title="Error crítico" className="text-red-500    text-[10px]">⚠</span>}
+                                {r.contradicted_itself === 1 && <span title="Se contradijo" className="text-amber-500  text-[10px]">↯</span>}
+                                {r.repeated_question === 1 && <span title="Pregunta repetida" className="text-slate-400  text-[10px]">↺</span>}
                               </div>
                               <div className="text-[9px] text-slate-300 group-hover:text-slate-400 transition-colors">
                                 {r.turns_completed}/{r.turns_planned} turnos
@@ -2123,7 +2123,7 @@ function ScenarioResultsPanel({ rows, loading }: { rows: ScenRunRow[]; loading: 
 
 /* ── Panel 0 — Loop Health + Gap Engine ───────────────────────────────────── */
 function LoopHealthPanel({ batch }: { batch: string }) {
-  const [rows,    setRows]    = useState<LoopHealthRow[]>([]);
+  const [rows, setRows] = useState<LoopHealthRow[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -2145,10 +2145,10 @@ function LoopHealthPanel({ batch }: { batch: string }) {
   if (rows.length === 0) return null;
 
   /* Badges globales de alerta */
-  const stuckConfigs     = rows.filter(r => (r.loops_stuck      ?? 0) > 2);
-  const lowGapResolve    = rows.filter(r => (r.pct_gap_resolved  ?? 100) < 30 && r.n_multi_loop > 0);
-  const highGapResolve   = rows.filter(r => (r.pct_gap_resolved  ?? 0)  > 70 && r.n_multi_loop > 0);
-  const efficientLoops   = rows.filter(r => { const a = r.avg_loops ?? 0; return a >= 1.2 && a <= 1.6; });
+  const stuckConfigs = rows.filter(r => (r.loops_stuck ?? 0) > 2);
+  const lowGapResolve = rows.filter(r => (r.pct_gap_resolved ?? 100) < 30 && r.n_multi_loop > 0);
+  const highGapResolve = rows.filter(r => (r.pct_gap_resolved ?? 0) > 70 && r.n_multi_loop > 0);
+  const efficientLoops = rows.filter(r => { const a = r.avg_loops ?? 0; return a >= 1.2 && a <= 1.6; });
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
@@ -2194,27 +2194,27 @@ function LoopHealthPanel({ batch }: { batch: string }) {
           </thead>
           <tbody className="divide-y divide-slate-50">
             {rows.map(row => {
-              const avgLoops  = row.avg_loops    ?? 0;
-              const avgConf   = row.avg_confidence ?? null;
-              const pctRes    = row.pct_gap_resolved ?? null;
-              const isStuck   = (row.loops_stuck ?? 0) > 2;
-              const isNoGap   = pctRes !== null && pctRes < 30 && row.n_multi_loop > 0;
-              const isAlert   = isStuck || isNoGap || (row.n_low_confidence ?? 0) > 0;
+              const avgLoops = row.avg_loops ?? 0;
+              const avgConf = row.avg_confidence ?? null;
+              const pctRes = row.pct_gap_resolved ?? null;
+              const isStuck = (row.loops_stuck ?? 0) > 2;
+              const isNoGap = pctRes !== null && pctRes < 30 && row.n_multi_loop > 0;
+              const isAlert = isStuck || isNoGap || (row.n_low_confidence ?? 0) > 0;
 
               const confColor = avgConf === null ? 'text-slate-300'
-                              : avgConf >= 0.7   ? 'text-emerald-700'
-                              : avgConf >= 0.5   ? 'text-amber-700'
-                              : 'text-red-700';
-              const loopColor = avgLoops <= 1    ? 'text-emerald-700'
-                              : avgLoops <= 1.6  ? 'text-amber-700'
-                              : 'text-red-700';
+                : avgConf >= 0.7 ? 'text-emerald-700'
+                  : avgConf >= 0.5 ? 'text-amber-700'
+                    : 'text-red-700';
+              const loopColor = avgLoops <= 1 ? 'text-emerald-700'
+                : avgLoops <= 1.6 ? 'text-amber-700'
+                  : 'text-red-700';
 
               // Razón de stop dominante
               const stopCounts = [
-                { label: 'resolved',   n: row.loops_resolved ?? 0, color: 'text-emerald-600' },
-                { label: 'no_gain',    n: row.loops_no_gain  ?? 0, color: 'text-amber-600'   },
-                { label: 'stuck',      n: row.loops_stuck    ?? 0, color: 'text-red-600'     },
-                { label: 'max_loops',  n: row.loops_maxed    ?? 0, color: 'text-red-700'     },
+                { label: 'resolved', n: row.loops_resolved ?? 0, color: 'text-emerald-600' },
+                { label: 'no_gain', n: row.loops_no_gain ?? 0, color: 'text-amber-600' },
+                { label: 'stuck', n: row.loops_stuck ?? 0, color: 'text-red-600' },
+                { label: 'max_loops', n: row.loops_maxed ?? 0, color: 'text-red-700' },
               ].sort((a, b) => b.n - a.n);
               const topStop = stopCounts[0];
 
@@ -2275,14 +2275,14 @@ function LoopHealthPanel({ batch }: { batch: string }) {
                           <div
                             className={cn('h-full rounded-full',
                               (pctRes ?? 0) >= 70 ? 'bg-emerald-500'
-                              : (pctRes ?? 0) >= 30 ? 'bg-amber-400' : 'bg-red-400'
+                                : (pctRes ?? 0) >= 30 ? 'bg-amber-400' : 'bg-red-400'
                             )}
                             style={{ width: `${pctRes ?? 0}%` }}
                           />
                         </div>
                         <span className={cn('text-[11px] font-bold',
                           (pctRes ?? 0) >= 70 ? 'text-emerald-700'
-                          : (pctRes ?? 0) >= 30 ? 'text-amber-700' : 'text-red-700'
+                            : (pctRes ?? 0) >= 30 ? 'text-amber-700' : 'text-red-700'
                         )}>
                           {pctRes !== null ? `${pctRes.toFixed(0)}%` : '—'}
                         </span>
@@ -2328,8 +2328,8 @@ function LoopHealthPanel({ batch }: { batch: string }) {
                     <span className={cn(
                       'font-mono font-black text-[11px] px-1.5 py-0.5 rounded',
                       row.max_loop_count >= 3 ? 'bg-red-100 text-red-700'
-                      : row.max_loop_count >= 2 ? 'bg-amber-100 text-amber-700'
-                      : 'bg-slate-100 text-slate-600',
+                        : row.max_loop_count >= 2 ? 'bg-amber-100 text-amber-700'
+                          : 'bg-slate-100 text-slate-600',
                     )}>
                       {row.max_loop_count}
                     </span>
@@ -2352,23 +2352,25 @@ function LoopHealthPanel({ batch }: { batch: string }) {
   );
 }
 
+import { Suspense } from 'react';
+
 /* ── PAGE ─────────────────────────────────────────────────────────────────── */
-export default function ResultsPage() {
+function ResultsContent() {
   const searchParams = useSearchParams();
   const initialBatch = searchParams.get('batch') ?? '';
 
-  const [batches,     setBatches]     = useState<Batch[]>([]);
-  const [selBatch,    setSelBatch]    = useState(initialBatch);
-  const [summary,     setSummary]     = useState<SummaryRow[]>([]);
-  const [runs,        setRuns]        = useState<RunRow[]>([]);
-  const [scenarios,   setScenarios]   = useState<ScenRunRow[]>([]);
-  const [turnStats,   setTurnStats]   = useState<Record<string, any[]>>({});
-  const [loopRows,    setLoopRows]    = useState<LoopHealthRow[]>([]);
+  const [batches, setBatches] = useState<Batch[]>([]);
+  const [selBatch, setSelBatch] = useState(initialBatch);
+  const [summary, setSummary] = useState<SummaryRow[]>([]);
+  const [runs, setRuns] = useState<RunRow[]>([]);
+  const [scenarios, setScenarios] = useState<ScenRunRow[]>([]);
+  const [turnStats, setTurnStats] = useState<Record<string, any[]>>({});
+  const [loopRows, setLoopRows] = useState<LoopHealthRow[]>([]);
   const [loadingData, setLoadingData] = useState(false);
   const [selectedRun, setSelectedRun] = useState<RunRow | null>(null);
   const [expandedCell, setExpandedCell] = useState<{ cat: string; cfgId: string } | null>(null);
-  const [activeTab,    setActiveTab]    = useState<'resultados' | 'graficos' | 'indexing'>('resultados');
-  const [scenHeatmap,  setScenHeatmap] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'resultados' | 'graficos' | 'indexing'>('resultados');
+  const [scenHeatmap, setScenHeatmap] = useState<any[]>([]);
   const [scenEfficiency, setScenEfficiency] = useState<any[]>([]);
   const [indexingData, setIndexingData] = useState<{ agg: IndexingAgg | null; docs: IndexingDocRow[]; agentLogs: AgentLogRow[] }>({ agg: null, docs: [], agentLogs: [] });
   const [indexingLoading, setIndexingLoading] = useState(false);
@@ -2387,8 +2389,8 @@ export default function ResultsPage() {
     fetch('/api/ablation/indexing-metrics')
       .then((r) => r.json())
       .then((d) => setIndexingData({
-        agg:       d.agg       ?? null,
-        docs:      Array.isArray(d.docs)      ? d.docs      : [],
+        agg: d.agg ?? null,
+        docs: Array.isArray(d.docs) ? d.docs : [],
         agentLogs: Array.isArray(d.agentLogs) ? d.agentLogs : [],
       }))
       .catch(console.error)
@@ -2421,8 +2423,8 @@ export default function ResultsPage() {
       .finally(() => setLoadingData(false));
   }, [selBatch]);
 
-  const summaryAll    = summary.filter((s) => s.question_category === 'all');
-  
+  const summaryAll = summary.filter((s) => s.question_category === 'all');
+
   // Consolidar configIds de ambas fuentes (Ablatión normal y Escenarios)
   const configIds = [...new Set([
     ...summaryAll.map((s) => s.config_id),
@@ -2755,3 +2757,12 @@ export default function ResultsPage() {
     </div>
   );
 }
+
+export default function ResultsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-[400px]"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>}>
+      <ResultsContent />
+    </Suspense>
+  );
+}
+
