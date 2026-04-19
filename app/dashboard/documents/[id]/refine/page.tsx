@@ -1,6 +1,6 @@
-import { notFound }      from 'next/navigation';
-import Link              from 'next/link';
-import { eq, desc }      from 'drizzle-orm';
+import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import { eq, desc } from 'drizzle-orm';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -9,10 +9,11 @@ import {
   HelpCircle,
 } from 'lucide-react';
 
-import { db }            from '@/lib/db';
+import { db } from '@/lib/db';
 import { documents, enrichments, agentLogs } from '@/lib/db/schema';
+import { getCurrentUser } from '@/lib/db/auth';
 import { EnrichmentReviewer } from './EnrichmentReviewer';
-import { RerunButton }        from './RerunButton';
+import { RerunButton } from './RerunButton';
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -25,9 +26,9 @@ function AgentStatusBanner({
   documentId,
 }: {
   agentStatus: 'never' | 'running' | 'done' | 'error';
-  summary:     string | null;
-  total:       number;
-  documentId:  string;
+  summary: string | null;
+  total: number;
+  documentId: string;
 }) {
   // Nunca ha corrido (documento anterior al feature)
   if (agentStatus === 'never') {
@@ -128,6 +129,31 @@ function AgentStatusBanner({
 
 export default async function RefinePage({ params }: PageProps) {
   const { id } = await params;
+  const user = await getCurrentUser();
+
+  if (user?.role === "Técnico") {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 text-center space-y-6 animate-in fade-in zoom-in-95 duration-500">
+        <div className="w-20 h-20 bg-red-50 rounded-[2.5rem] flex items-center justify-center border-2 border-red-100 shadow-xl shadow-red-500/10">
+          <AlertCircle className="w-10 h-10 text-red-500" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Acceso Privado</h1>
+          <p className="text-slate-500 max-w-sm mx-auto leading-relaxed font-medium">
+            El Módulo de Refinamiento es exclusivo para el equipo de <span className="text-slate-900 font-bold">Administración</span> y <span className="text-blue-600 font-bold">Auditoría</span>.
+          </p>
+        </div>
+        <div className="pt-4">
+          <Link
+            href="/dashboard/home"
+            className="px-8 py-3 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-black transition-all active:scale-95 shadow-2xl inline-block"
+          >
+            Volver al Panel Técnico
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const [doc] = await db
     .select({ id: documents.id, title: documents.title, status: documents.status })
@@ -141,21 +167,21 @@ export default async function RefinePage({ params }: PageProps) {
   const [rows, allLogs] = await Promise.all([
     db
       .select({
-        id:                  enrichments.id,
-        referenceId:         enrichments.referenceId,
-        referenceType:       enrichments.referenceType,
-        originalExcerpt:     enrichments.originalExcerpt,
-        generatedQuestion:   enrichments.generatedQuestion,
-        questionContext:     enrichments.questionContext,
-        expertAnswer:        enrichments.expertAnswer,
-        answerSource:        enrichments.answerSource,
-        confidence:          enrichments.confidence,
-        isVerified:          enrichments.isVerified,
-        pageNumber:          enrichments.pageNumber,
-        timesRetrieved:      enrichments.timesRetrieved,
-        answerLengthTokens:  enrichments.answerLengthTokens,
-        createdAt:           enrichments.createdAt,
-        reviewedAt:          enrichments.reviewedAt,
+        id: enrichments.id,
+        referenceId: enrichments.referenceId,
+        referenceType: enrichments.referenceType,
+        originalExcerpt: enrichments.originalExcerpt,
+        generatedQuestion: enrichments.generatedQuestion,
+        questionContext: enrichments.questionContext,
+        expertAnswer: enrichments.expertAnswer,
+        answerSource: enrichments.answerSource,
+        confidence: enrichments.confidence,
+        isVerified: enrichments.isVerified,
+        pageNumber: enrichments.pageNumber,
+        timesRetrieved: enrichments.timesRetrieved,
+        answerLengthTokens: enrichments.answerLengthTokens,
+        createdAt: enrichments.createdAt,
+        reviewedAt: enrichments.reviewedAt,
       })
       .from(enrichments)
       .where(eq(enrichments.documentId, id)),
@@ -163,10 +189,10 @@ export default async function RefinePage({ params }: PageProps) {
     // Último log del agente 'curious' para este documento
     db
       .select({
-        agentName:     agentLogs.agentName,
-        status:        agentLogs.status,
+        agentName: agentLogs.agentName,
+        status: agentLogs.status,
         outputSummary: agentLogs.outputSummary,
-        errorMessage:  agentLogs.errorMessage,
+        errorMessage: agentLogs.errorMessage,
       })
       .from(agentLogs)
       .where(eq(agentLogs.documentId, id))
@@ -177,20 +203,20 @@ export default async function RefinePage({ params }: PageProps) {
   const curiousLog = allLogs.find(l => l.agentName === 'curious');
 
   const agentStatus: 'never' | 'running' | 'done' | 'error' =
-    !curiousLog                        ? 'never'   :
-    curiousLog.status === 'running'    ? 'running' :
-    curiousLog.status === 'error'      ? 'error'   :
-    'done';
+    !curiousLog ? 'never' :
+      curiousLog.status === 'running' ? 'running' :
+        curiousLog.status === 'error' ? 'error' :
+          'done';
 
   const agentSummary =
-    agentStatus === 'error'   ? curiousLog?.errorMessage ?? null :
-    agentStatus === 'done'    ? curiousLog?.outputSummary ?? null :
-    null;
+    agentStatus === 'error' ? curiousLog?.errorMessage ?? null :
+      agentStatus === 'done' ? curiousLog?.outputSummary ?? null :
+        null;
 
-  const pending   = rows.filter(r => r.answerSource === 'pending');
+  const pending = rows.filter(r => r.answerSource === 'pending');
   const inherited = rows.filter(r => r.answerSource === 'inherited');
-  const answered  = rows.filter(r => r.isVerified === 1 && r.answerSource !== 'inherited');
-  const total     = rows.length;
+  const answered = rows.filter(r => r.isVerified === 1 && r.answerSource !== 'inherited');
+  const total = rows.length;
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
@@ -206,6 +232,42 @@ export default async function RefinePage({ params }: PageProps) {
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
         <h1 className="text-xl font-bold text-slate-900">Refinamiento de Conocimiento</h1>
         <p className="mt-1 text-sm text-slate-500">{doc.title}</p>
+      </div>
+
+      {/* ── Explicación del Proceso de Refinamiento ────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-blue-600 rounded-2xl p-6 text-white shadow-xl shadow-blue-600/20 relative overflow-hidden">
+          <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 blur-3xl pointer-events-none" />
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-10 w-10 bg-white/20 rounded-xl flex items-center justify-center">
+              <HelpCircle className="w-5 h-5" />
+            </div>
+            <h3 className="text-sm font-black uppercase tracking-widest">Modelo de Aprendizaje</h3>
+          </div>
+          <p className="text-sm leading-relaxed font-bold opacity-90">
+            El motor de IA Synapsis puede presentar dudas sobre diagramas específicos o terminología del manual. Su función aquí es responder estas consultas para "entrenar" al sistema y garantizar respuestas infalibles para los técnicos en campo.
+          </p>
+        </div>
+
+        <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
+          <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-blue-500/10 blur-3xl pointer-events-none" />
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-10 w-10 bg-white/10 rounded-xl flex items-center justify-center">
+              <Loader2 className="w-5 h-5 text-blue-400" />
+            </div>
+            <h3 className="text-sm font-black uppercase tracking-widest text-blue-400">Tiempos de Procesamiento</h3>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+              <p className="text-[13px] font-bold">Información Manual: Preguntas y respuestas al instante.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+              <p className="text-[13px] font-bold">Análisis de Imágenes: Demora de unos minutos según la complejidad.</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Banner con el estado real del agente */}

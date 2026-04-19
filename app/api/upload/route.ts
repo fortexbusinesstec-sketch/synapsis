@@ -10,25 +10,26 @@
  * Pipeline (processDocumentPipeline):
  *   Orchestrator → OCR → Promise.all([chunks, images]) → Embedder → ready
  */
-import { waitUntil }          from '@vercel/functions';
-import { NextResponse }        from 'next/server';
-import { eq, sql }             from 'drizzle-orm';
-import { createId }            from '@paralleldrive/cuid2';
+import { waitUntil } from '@vercel/functions';
+import { NextResponse } from 'next/server';
+import { eq, sql } from 'drizzle-orm';
+import { createId } from '@paralleldrive/cuid2';
 
-import { db }                  from '@/lib/db';
+import { db } from '@/lib/db';
 import { documents, documentChunks, extractedImages } from '@/lib/db/schema';
+import { getCurrentUser } from '@/lib/db/auth';
 import { updateDocumentStatus } from '@/lib/db/turso';
 import { uploadPdf, uploadImage } from '@/lib/storage/blob';
-import { calculateAgentCost, RATES }  from '@/lib/utils/costs';
+import { calculateAgentCost, RATES } from '@/lib/utils/costs';
 
-import { runOrchestrator }     from '@/lib/agents/orchestrator';
-import { runOcr }              from '@/lib/agents/ocr';
-import type { OcrPage }        from '@/lib/agents/ocr';
+import { runOrchestrator } from '@/lib/agents/orchestrator';
+import { runOcr } from '@/lib/agents/ocr';
+import type { OcrPage } from '@/lib/agents/ocr';
 import { processImage as visionRoute, type ImageInput, type ImageResult } from '@/lib/agents/vision';
-import { runVectorScanner }    from '@/lib/agents/vector-scanner';
+import { runVectorScanner } from '@/lib/agents/vector-scanner';
 import { runDiagramReasoner, isDiagramEligible, serializeDiagramKnowledge } from '@/lib/agents/diagram-reasoner';
-import { chunkAllPages }       from '@/lib/agents/chunker';
-import { embedAll }            from '@/lib/agents/embedder';
+import { chunkAllPages } from '@/lib/agents/chunker';
+import { embedAll } from '@/lib/agents/embedder';
 import { logAgentStart, logAgentEnd, logAgentError } from '@/lib/agents/logger';
 import { runCuriousAgent, updateIndexingMetricsSnapshot } from '@/lib/agents/curious';
 
@@ -40,18 +41,18 @@ export const maxDuration = 300;
 ═══════════════════════════════════════════════════════════════════════ */
 
 interface PreparedChunk {
-  content:       string;
-  pageNumber:    number;
-  chunkIndex:    number;
-  sectionTitle:  string | null;
-  chunkType:     string;
-  hasWarning:    boolean;
+  content: string;
+  pageNumber: number;
+  chunkIndex: number;
+  sectionTitle: string | null;
+  chunkType: string;
+  hasWarning: boolean;
   tokenEstimate: number;
 }
 
 async function prepareTextChunks(
   documentId: string,
-  pages:      OcrPage[],
+  pages: OcrPage[],
 ): Promise<{ data: PreparedChunk[]; usage: { prompt_tokens: number; completion_tokens: number } }> {
   const logId = await logAgentStart(
     documentId,
@@ -62,12 +63,12 @@ async function prepareTextChunks(
   try {
     const { data: chunks, usage } = await chunkAllPages(pages);
     const result: PreparedChunk[] = chunks.map((c) => ({
-      content:       c.content,
-      pageNumber:    c.page_number,
-      chunkIndex:    c.chunk_index,
-      sectionTitle:  c.section_title,
-      chunkType:     c.chunk_type,
-      hasWarning:    c.has_warning,
+      content: c.content,
+      pageNumber: c.page_number,
+      chunkIndex: c.chunk_index,
+      sectionTitle: c.section_title,
+      chunkType: c.chunk_type,
+      hasWarning: c.has_warning,
       tokenEstimate: c.token_estimate,
     }));
 
@@ -91,13 +92,13 @@ async function prepareTextChunks(
 ═══════════════════════════════════════════════════════════════════════ */
 
 interface PreparedImage {
-  imageUrl:    string;
-  pageNumber:  number;
-  imageType:   string;
-  confidence:  number;
+  imageUrl: string;
+  pageNumber: number;
+  imageType: string;
+  confidence: number;
   description: string;
-  isCritical:  boolean;
-  metadata?:   string;    // JSON — presente solo en imágenes del VectorScanner
+  isCritical: boolean;
+  metadata?: string;    // JSON — presente solo en imágenes del VectorScanner
 }
 
 /* 
@@ -108,7 +109,7 @@ interface PreparedImage {
 /* ── Inyección de conocimiento de diagramas en el markdown de las páginas ── */
 
 function enrichPagesWithDiagramKnowledge(
-  pages:            OcrPage[],
+  pages: OcrPage[],
   diagramKnowledge: Map<number, string[]>,
 ): OcrPage[] {
   if (diagramKnowledge.size === 0) return pages;
@@ -129,16 +130,16 @@ function enrichPagesWithDiagramKnowledge(
 
 async function processDocumentPipeline(
   documentId: string,
-  pdfUrl:     string,
-  title:      string,
-  docType:    string,
+  pdfUrl: string,
+  title: string,
+  docType: string,
 ): Promise<void> {
 
   try {
     /* ── 1. OCR (para Preview y Orchestrator) ── */
     await updateDocumentStatus(documentId, 'ocr', 'Extrayendo texto con OCR…');
     const ocrLogId = await logAgentStart(documentId, 'ocr', `Procesando ${pdfUrl}`);
-    
+
     const { data: ocr, usage: ocrUsage } = await runOcr(pdfUrl);
     const costOcr = calculateAgentCost('ocr', ocrUsage);
 
@@ -151,7 +152,7 @@ async function processDocumentPipeline(
       .where(eq(documents.id, documentId));
 
     // Estadísticas del OCR para el log (antes del VectorScanner)
-    const rasterImagesFound  = ocr.pages.reduce((s, p) => s + p.images.length, 0);
+    const rasterImagesFound = ocr.pages.reduce((s, p) => s + p.images.length, 0);
     const pagesWithoutImages = ocr.pages.filter(p => p.images.length === 0).length;
 
     await logAgentEnd(
@@ -164,7 +165,7 @@ async function processDocumentPipeline(
     /* ── 2. Orchestrator ── */
     await updateDocumentStatus(documentId, 'analyzing', 'Analizando estructura…');
     const orchLogId = await logAgentStart(documentId, 'orchestrator', `Análisis de ${title}`);
-    
+
     const previewPages = ocr.pages.slice(0, 2).map((p) => p.markdown);
     const { data: orch, usage: orchUsage } = await runOrchestrator(title, docType, previewPages);
     const costOrch = calculateAgentCost('orchestrator', orchUsage);
@@ -225,7 +226,7 @@ async function processDocumentPipeline(
     );
 
     await updateDocumentStatus(documentId, 'ready', `Listo: ${chunkResult.data.length} chunks de texto vectorizados.`);
-    
+
     // Inicializar snapshot de métricas (chunks registrados)
     await updateIndexingMetricsSnapshot(documentId);
 
@@ -248,6 +249,7 @@ async function processDocumentPipeline(
 
 export async function POST(request: Request) {
   try {
+    const user = await getCurrentUser();
     const form = await request.formData();
     console.log('[API/upload] Form data keys:', Array.from(form.keys()));
     const file = form.get('file') as File | null;
@@ -265,6 +267,8 @@ export async function POST(request: Request) {
       pdfUrl,
       status: 'pending',
       fileSizeKb: Math.round(file.size / 1024),
+      auditorRecommendation: (form.get('auditorRecommendation') as string) || null,
+      createdBy: user?.id || null,
     });
 
     waitUntil(processDocumentPipeline(documentId, pdfUrl, form.get('title') as string || file.name, form.get('docType') as string || 'manual'));

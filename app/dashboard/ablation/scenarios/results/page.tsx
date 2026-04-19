@@ -2759,6 +2759,51 @@ function ScenariosResultsContent() {
 }
 
 export default function ResultsPage() {
+  const [user, setUser] = useState<{ role: string; isDevMode: boolean } | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((u) => setUser(u))
+      .finally(() => setAuthLoading(false));
+  }, []);
+
+  if (authLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 space-y-4">
+        <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
+        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Validando Seguridad...</p>
+      </div>
+    );
+  }
+
+  const isAuditorDev = user?.role === "Auditor" && user?.isDevMode;
+
+  if (!isAuditorDev) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 text-center space-y-6 animate-in fade-in zoom-in-95 duration-500">
+        <div className="w-20 h-20 bg-red-50 rounded-[2rem] flex items-center justify-center border-2 border-red-100 shadow-xl shadow-red-500/10">
+          <AlertCircle className="w-10 h-10 text-red-500" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Acceso Restringido</h1>
+          <p className="text-slate-500 max-w-sm mx-auto leading-relaxed font-medium">
+            Este módulo de visualización científico es exclusivo para el <span className="text-slate-900 font-bold">Rol Auditor</span> en <span className="text-violet-600 font-bold">Modo Desarrollador</span>.
+          </p>
+        </div>
+        <div className="pt-4">
+          <button
+            onClick={() => window.location.href = '/dashboard/home'}
+            className="px-8 py-3 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-black transition-all active:scale-95 shadow-2xl"
+          >
+            Volver al Inicio
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Suspense fallback={<div className="flex items-center justify-center min-h-[400px]"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>}>
       <ScenariosResultsContent />

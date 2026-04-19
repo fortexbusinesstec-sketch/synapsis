@@ -1,9 +1,11 @@
-import { count, eq }      from 'drizzle-orm';
-import { Cpu, Zap }     from 'lucide-react';
+import { count, eq } from 'drizzle-orm';
+import { Cpu, Zap } from 'lucide-react';
 
-import { db }           from '@/lib/db';
-import { documents }    from '@/lib/db/schema';
+import { db } from '@/lib/db';
+import { documents } from '@/lib/db/schema';
 import { SynapsisGoChat } from './SynapsisGoChat';
+
+import { cookies } from 'next/headers';
 
 /* ── Tipos ──────────────────────────────────────────────────────────────── */
 
@@ -19,17 +21,32 @@ export default async function SynapsisGoPage() {
     db.selectDistinct({
       equipmentModel: documents.equipmentModel,
     })
-    .from(documents)
-    .where(eq(documents.status, 'ready'))
-    .orderBy(documents.equipmentModel),
+      .from(documents)
+      .where(eq(documents.status, 'ready'))
+      .orderBy(documents.equipmentModel),
 
     db.select({ count: count() })
-    .from(documents)
-    .where(eq(documents.status, 'ready'))
+      .from(documents)
+      .where(eq(documents.status, 'ready'))
   ]);
 
   const filteredModels = models.length > 0 ? models : [];
   const readyDocsCount = totalDocs[0]?.count ?? 0;
+
+  const cookieStore = await cookies();
+  const token = cookieStore.get('schindler_token')?.value;
+  const isDevMode = cookieStore.get('schindler_dev_mode')?.value === 'true';
+
+  let role = null;
+  if (token) {
+    try {
+      const parts = token.split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(atob(parts[1]));
+        role = payload.role_id === 1 ? 'Admin' : payload.role_id === 2 ? 'Auditor' : 'Tecnico';
+      }
+    } catch { }
+  }
 
   return (
     <div className="flex flex-col h-full min-h-0 space-y-0 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6">
@@ -58,7 +75,7 @@ export default async function SynapsisGoPage() {
       </div>
 
       {/* ── Chat ─────────────────────────────────────────────────────── */}
-      <SynapsisGoChat models={filteredModels} />
+      <SynapsisGoChat models={filteredModels} userRole={role} isDevMode={isDevMode} />
     </div>
   );
 }

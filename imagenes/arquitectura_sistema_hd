@@ -1,0 +1,102 @@
+// Synapse MAS ArchiMate Architecture
+digraph Synapse_MAS_Architecture {
+	fontname=Arial fontsize=12 rankdir=TB ratio=fill size="15,20!" splines=ortho
+	node [fontname=Arial fontsize=10 shape=box style="filled,rounded"]
+	edge [color="#666666" fontname=Arial fontsize=8]
+	subgraph cluster_0 {
+		color="#F9F9F9" fillcolor="#FFFFFF" fontname="Arial Bold" fontsize=14 label="① BUSINESS LAYER — Capa de Presentación" style=filled
+		subgraph cluster_b_row1 {
+			label="" style=invis
+			ACTOR [label="👤 Técnico / Ingeniero
+(Business Actor)" fillcolor="#FFF9C4"]
+			ROLE_ADMIN [label="👔 Administrador
+(Business Role)" fillcolor="#FFF9C4"]
+		}
+		subgraph cluster_b_row2 {
+			label="" style=invis
+			SERV_AUTH [label="🔐 Autenticación
+(Business Service)" fillcolor="#FFF9C4"]
+			INT_DASH [label="📊 Dashboard Web
+(Business Interface)" fillcolor="#FFF9C4"]
+		}
+		subgraph cluster_b_row3 {
+			label="" style=invis
+			PROC_DL [label="📋 Consulta de Diagnóstico
+(Business Process)" fillcolor="#FFF9C4"]
+			PROC_IDX [label="📤 Indexación de Documentos
+(Business Process)" fillcolor="#FFF9C4"]
+		}
+	}
+	subgraph cluster_1 {
+		color="#F9F9F9" fillcolor="#F0FBFF" fontname="Arial Bold" fontsize=14 label="② APPLICATION LAYER — Capa de Aplicación" style=filled
+		CORE [label="⚙️ Synapse MAS Core
+(Application Component)" fillcolor="#B2EBF2"]
+		subgraph cluster_staged {
+			color="#999999" label="Componentes Staged" style=dashed
+			FIDELITY [label="🛡️ Verificador de Fidelidad" fillcolor="#B2EBF2"]
+			SELECTOR [label="🗺️ Selector de Contexto" fillcolor="#B2EBF2"]
+			ROUTER [label="⚡ Enrutador Semántico" fillcolor="#B2EBF2"]
+		}
+		subgraph cluster_rag {
+			color="#E0F7FA" label="Pipeline RAG / Indexing" style=filled
+			ORCH [label="🎯 Orchestrator" fillcolor="#B2EBF2"]
+			OCR [label="📖 OCR" fillcolor="#B2EBF2"]
+			VIS [label="👁️ Vision" fillcolor="#B2EBF2"]
+		}
+		subgraph cluster_chat {
+			color="#E0F7FA" label="Pipeline Chat — Agentic Loop" style=filled
+			CLAR [label="🔤 Clarificador" fillcolor="#B2EBF2"]
+			PLAN [label="📋 Planificador" fillcolor="#B2EBF2"]
+			ANAL [label="🔬 Analista" fillcolor="#B2EBF2"]
+		}
+		SERV_CHAT [label="💬 Servicio de Chat RAG" fillcolor="#B2EBF2"]
+		SERV_IDX [label="🔂 Servicio de Indexación" fillcolor="#B2EBF2"]
+		CURIOUS [label="🤔 Agente Curious — HITL" fillcolor="#B2EBF2"]
+		LOGGER [label="📈 Logger + FinOps" fillcolor="#B2EBF2"]
+	}
+	subgraph cluster_2 {
+		color="#F9F9F9" fillcolor="#F0F7FF" fontname="Arial Bold" fontsize=14 label="③ DATA LAYER — Capa de Datos" style=filled
+		ART_PDF [label="📄 PDFs + Imágenes Procesadas
+(Artifact)" fillcolor="#BBDEFB"]
+		DO_CHUNKS [label="📦 Chunks + Embeddings
+(Data Object)" fillcolor="#BBDEFB"]
+		DO_IMGS [label="🖼️ Imágenes + Embeddings
+(Data Object)" fillcolor="#BBDEFB"]
+		DO_SESS [label="💬 Chat Sessions + Messages
+(Data Object)" fillcolor="#BBDEFB"]
+		DO_ENR [label="💡 Enrichments — HITL
+(Data Object)" fillcolor="#BBDEFB"]
+		DO_METRICS [label="📊 Agent Logs + Métricas
+(Data Object)" fillcolor="#BBDEFB"]
+	}
+	subgraph cluster_3 {
+		color="#F9F9F9" fillcolor="#F1F8F1" fontname="Arial Bold" fontsize=14 label="④ TECHNOLOGY LAYER — Capa de Tecnología" style=filled
+		MISTRAL [label="☁️ Mistral AI API" fillcolor="#C8E6C9"]
+		OPENAI [label="☁️ OpenAI API" fillcolor="#C8E6C9"]
+		R2 [label="🪣 Cloudflare R2" fillcolor="#C8E6C9"]
+		NEXT [label="⚛️ Next.js 16.2.1 + Vercel AI SDK" fillcolor="#C8E6C9"]
+		VERCEL [label="⚡ Vercel Serverless" fillcolor="#C8E6C9"]
+		TURSO [label="🗄️ Turso Cloud — LibSQL" fillcolor="#C8E6C9"]
+	}
+	ACTOR -> PROC_DL [label=triggering]
+	ROLE_ADMIN -> PROC_IDX [label=triggering]
+	INT_DASH -> ROLE_ADMIN [label=serving]
+	PROC_DL -> SERV_CHAT [label=uses]
+	PROC_IDX -> SERV_IDX [label=uses]
+	SERV_CHAT -> CLAR [label=realization]
+	SERV_IDX -> ORCH [label=realization]
+	ANAL -> DO_SESS [label=reads]
+	ANAL -> DO_CHUNKS [label=reads]
+	ANAL -> DO_ENR [label=reads]
+	OCR -> DO_CHUNKS [label=writes]
+	VIS -> DO_IMGS [label=writes]
+	ORCH -> ART_PDF [label=writes]
+	CURIOUS -> DO_ENR [label=writes]
+	LOGGER -> DO_METRICS [label=writes]
+	NEXT -> CORE [label=realizes]
+	VERCEL -> NEXT [label=hosts]
+	TURSO -> DO_CHUNKS [label=hosts]
+	R2 -> ART_PDF [label=hosts]
+	OPENAI -> CORE [label=serving]
+	MISTRAL -> CORE [label=serving]
+}

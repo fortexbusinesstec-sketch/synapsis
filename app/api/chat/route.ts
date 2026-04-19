@@ -25,12 +25,12 @@
  */
 
 import { embed, generateText, streamText } from 'ai';
-import { openai }  from '@ai-sdk/openai';
+import { openai } from '@ai-sdk/openai';
 import { createId } from '@paralleldrive/cuid2';
 import type { Message } from 'ai';
-import { client }  from '@/lib/db';
+import { client } from '@/lib/db';
 
-import { runClarifier }    from '@/lib/agents/clarifier';
+import { runClarifier } from '@/lib/agents/clarifier';
 import { saveChatMessage } from '@/lib/agents/metrifier';
 
 export const maxDuration = 60;
@@ -38,56 +38,56 @@ export const maxDuration = 60;
 /* ── Tipos ──────────────────────────────────────────────────────────────── */
 
 interface ChunkWithEnrichmentRow {
-  chunk_id:           string;
-  content:            string;
-  section_title:      string | null;
-  chunk_type:         string | null;
-  has_warning:        number | null;
-  page_number:        number | null;
-  doc_title:          string | null;
-  equipment_model:    string | null;
-  distance:           number;
-  enrichment_id:      string | null;
+  chunk_id: string;
+  content: string;
+  section_title: string | null;
+  chunk_type: string | null;
+  has_warning: number | null;
+  page_number: number | null;
+  doc_title: string | null;
+  equipment_model: string | null;
+  distance: number;
+  enrichment_id: string | null;
   generated_question: string | null;
-  expert_answer:      string | null;
+  expert_answer: string | null;
 }
 
 interface EnrichmentWithChunkRow {
-  enrichment_id:      string;
+  enrichment_id: string;
   generated_question: string | null;
-  expert_answer:      string | null;
-  distance:           number;
-  chunk_id:           string;
-  chunk_content:      string | null;
-  section_title:      string | null;
-  chunk_type:         string | null;
-  has_warning:        number | null;
-  page_number:        number | null;
-  doc_title:          string | null;
-  equipment_model:    string | null;
+  expert_answer: string | null;
+  distance: number;
+  chunk_id: string;
+  chunk_content: string | null;
+  section_title: string | null;
+  chunk_type: string | null;
+  has_warning: number | null;
+  page_number: number | null;
+  doc_title: string | null;
+  equipment_model: string | null;
 }
 
 interface ConsolidatedEntry {
-  content:            string;
-  section_title:      string | null;
-  chunk_type:         string | null;
-  has_warning:        number | null;
-  page_number:        number | null;
-  doc_title:          string | null;
-  equipment_model:    string | null;
-  enrichment_id:      string | null;
+  content: string;
+  section_title: string | null;
+  chunk_type: string | null;
+  has_warning: number | null;
+  page_number: number | null;
+  doc_title: string | null;
+  equipment_model: string | null;
+  enrichment_id: string | null;
   generated_question: string | null;
-  expert_answer:      string | null;
-  distance:           number;
+  expert_answer: string | null;
+  distance: number;
 }
 
 interface RetrievedImage {
-  description:  string | null;
-  image_url:    string | null;
-  image_type:   string | null;
-  is_critical:  number | null;
-  doc_title:    string | null;
-  distance:     number;
+  description: string | null;
+  image_url: string | null;
+  image_type: string | null;
+  is_critical: number | null;
+  doc_title: string | null;
+  distance: number;
 }
 
 interface AnalystOutput {
@@ -99,16 +99,16 @@ interface AnalystOutput {
 }
 
 interface AnalystResult {
-  output:      AnalystOutput;
+  output: AnalystOutput;
   totalTokens: number;
 }
 
 interface BibliotecarioResult {
-  groundTruth:      string;
-  retrievedImages:  RetrievedImage[];
-  chunksRetrieved:  number;
-  hasEnrichments:   boolean;
-  bestDistance:     number;
+  groundTruth: string;
+  retrievedImages: RetrievedImage[];
+  chunksRetrieved: number;
+  hasEnrichments: boolean;
+  bestDistance: number;
 }
 
 /* ── Fallback del Analista ──────────────────────────────────────────────── */
@@ -124,13 +124,13 @@ const ANALYST_FALLBACK: AnalystOutput = {
 /* ── FASE 1: Retrieval vectorial ─────────────────────────────────────────── */
 
 async function runBibliotecario(
-  queryVector:    number[],
+  queryVector: number[],
   equipmentModel: string | null,
-  intent:         string = 'troubleshooting'
+  intent: string = 'troubleshooting'
 ): Promise<BibliotecarioResult> {
   const embeddingVec = new Uint8Array(new Float32Array(queryVector).buffer);
-  const modelFilter  = equipmentModel ? 'AND d.equipment_model = ?' : '';
-  const orderClause  = intent === 'education_info'
+  const modelFilter = equipmentModel ? 'AND d.equipment_model = ?' : '';
+  const orderClause = intent === 'education_info'
     ? "ORDER BY CASE WHEN dc.chunk_type IN ('theory', 'description', 'overview') THEN 0 ELSE 1 END, distance ASC"
     : "ORDER BY distance ASC";
 
@@ -212,28 +212,28 @@ async function runBibliotecario(
     client.execute({ sql: queryA, args: baseArgs(embeddingVec) }),
     client.execute({ sql: queryB, args: baseArgs(embeddingVec) }),
     client.execute({ sql: queryC, args: baseArgs(embeddingVec) })
-          .catch(() => ({ rows: [] })),
+      .catch(() => ({ rows: [] })),
   ]);
 
   const rowsA = resultA.rows as unknown as ChunkWithEnrichmentRow[];
   const images = resultB.rows as unknown as RetrievedImage[];
-  const rowsC  = resultC.rows as unknown as EnrichmentWithChunkRow[];
+  const rowsC = resultC.rows as unknown as EnrichmentWithChunkRow[];
 
   const consolidatedMap = new Map<string, ConsolidatedEntry>();
 
   for (const row of rowsA) {
     consolidatedMap.set(row.chunk_id, {
-      content:            row.content,
-      section_title:      row.section_title,
-      chunk_type:         row.chunk_type,
-      has_warning:        row.has_warning,
-      page_number:        row.page_number,
-      doc_title:          row.doc_title,
-      equipment_model:    row.equipment_model,
-      enrichment_id:      row.enrichment_id   ?? null,
+      content: row.content,
+      section_title: row.section_title,
+      chunk_type: row.chunk_type,
+      has_warning: row.has_warning,
+      page_number: row.page_number,
+      doc_title: row.doc_title,
+      equipment_model: row.equipment_model,
+      enrichment_id: row.enrichment_id ?? null,
       generated_question: row.generated_question ?? null,
-      expert_answer:      row.expert_answer   ?? null,
-      distance:           row.distance,
+      expert_answer: row.expert_answer ?? null,
+      distance: row.distance,
     });
   }
 
@@ -241,24 +241,24 @@ async function runBibliotecario(
     const existing = consolidatedMap.get(row.chunk_id);
     if (existing) {
       if (!existing.enrichment_id && row.enrichment_id) {
-        existing.enrichment_id      = row.enrichment_id;
+        existing.enrichment_id = row.enrichment_id;
         existing.generated_question = row.generated_question;
-        existing.expert_answer      = row.expert_answer;
+        existing.expert_answer = row.expert_answer;
       }
       existing.distance = Math.min(existing.distance, row.distance);
     } else {
       consolidatedMap.set(row.chunk_id, {
-        content:            row.chunk_content ?? '',
-        section_title:      row.section_title,
-        chunk_type:         row.chunk_type,
-        has_warning:        row.has_warning,
-        page_number:        row.page_number,
-        doc_title:          row.doc_title,
-        equipment_model:    row.equipment_model,
-        enrichment_id:      row.enrichment_id,
+        content: row.chunk_content ?? '',
+        section_title: row.section_title,
+        chunk_type: row.chunk_type,
+        has_warning: row.has_warning,
+        page_number: row.page_number,
+        doc_title: row.doc_title,
+        equipment_model: row.equipment_model,
+        enrichment_id: row.enrichment_id,
         generated_question: row.generated_question,
-        expert_answer:      row.expert_answer,
-        distance:           row.distance,
+        expert_answer: row.expert_answer,
+        distance: row.distance,
       });
     }
   }
@@ -267,10 +267,10 @@ async function runBibliotecario(
 
   const chunkBlocks = consolidated.map(entry => {
     const source = [
-      entry.doc_title      ? `[${entry.doc_title}]`             : '',
+      entry.doc_title ? `[${entry.doc_title}]` : '',
       entry.equipment_model ? `Modelo: ${entry.equipment_model}` : '',
-      entry.page_number    ? `Pág. ${entry.page_number}`        : '',
-      entry.section_title  ? `§ ${entry.section_title}`         : '',
+      entry.page_number ? `Pág. ${entry.page_number}` : '',
+      entry.section_title ? `§ ${entry.section_title}` : '',
     ].filter(Boolean).join(' · ');
 
     const warningPrefix = entry.has_warning ? '⚠️ ADVERTENCIA: ' : '';
@@ -283,10 +283,10 @@ async function runBibliotecario(
 
   const imageBlock = images.length > 0
     ? '\n--- IMÁGENES TÉCNICAS RELACIONADAS ---\n' +
-      images
-        .filter(i => i.description)
-        .map(i => `• [${i.image_type ?? 'imagen'}] ${i.doc_title ?? ''}: ${i.description}`)
-        .join('\n')
+    images
+      .filter(i => i.description)
+      .map(i => `• [${i.image_type ?? 'imagen'}] ${i.doc_title ?? ''}: ${i.description}`)
+      .join('\n')
     : '';
 
   const groundTruth = [...chunkBlocks, imageBlock]
@@ -301,7 +301,7 @@ async function runBibliotecario(
   if (usedEnrichmentIds.length > 0) {
     const placeholders = usedEnrichmentIds.map(() => '?').join(', ');
     client.execute({
-      sql:  `UPDATE enrichments SET times_retrieved = times_retrieved + 1 WHERE id IN (${placeholders})`,
+      sql: `UPDATE enrichments SET times_retrieved = times_retrieved + 1 WHERE id IN (${placeholders})`,
       args: usedEnrichmentIds,
     }).catch(err => console.error('[chat] Error incrementando times_retrieved:', err.message));
   }
@@ -310,9 +310,9 @@ async function runBibliotecario(
 
   return {
     groundTruth,
-    retrievedImages:  images,
-    chunksRetrieved:  consolidated.length,
-    hasEnrichments:   usedEnrichmentIds.length > 0,
+    retrievedImages: images,
+    chunksRetrieved: consolidated.length,
+    hasEnrichments: usedEnrichmentIds.length > 0,
     bestDistance,
   };
 }
@@ -320,12 +320,12 @@ async function runBibliotecario(
 /* ── FASE 2: Internal Monologue (Analista) ──────────────────────────────── */
 
 async function runAnalista(
-  userQuery:   string,
+  userQuery: string,
   groundTruth: string,
-  intent:      string,
+  intent: string,
 ): Promise<AnalystResult> {
   const { text, usage } = await generateText({
-    model:     openai('gpt-4o-mini'),
+    model: openai('gpt-4o-mini'),
     maxTokens: 400,
     messages: [
       {
@@ -352,7 +352,7 @@ async function runAnalista(
   const totalTokens = usage.totalTokens ?? (usage.promptTokens + usage.completionTokens);
 
   try {
-    const stripped  = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+    const stripped = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
     const jsonMatch = stripped.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('No JSON found');
 
@@ -377,20 +377,26 @@ async function runAnalista(
 export async function POST(req: Request) {
   const timestamp = new Date().toISOString();
 
-  let messages:              Message[];
-  let equipmentModel:        string | null;
-  let sessionId:             string | null;
-  let sessionMode:           'test' | 'record';
-  let clarificationAnswers:  Record<string, string> | null;
+  let messages: Message[];
+  let equipmentModel: string | null;
+  let sessionId: string | null;
+  let sessionMode: 'test' | 'record';
+  let clarificationAnswers: Record<string, string> | null;
+
+  let agentFlags = { planner: false, clarifier: true, analyst: true };
 
   try {
-    const body       = await req.json();
-    messages             = body.messages ?? [];
-    equipmentModel       = body.equipmentModel || null;
-    sessionId            = body.sessionId || null;
-    sessionMode          = body.sessionMode === 'record' ? 'record' : 'test';
+    const body = await req.json();
+    messages = body.messages ?? [];
+    equipmentModel = body.equipmentModel || null;
+    sessionId = body.sessionId || null;
+    sessionMode = body.sessionMode === 'record' ? 'record' : 'test';
     clarificationAnswers = body.clarificationAnswers ?? null;
-  } catch {
+    if (body.agentFlags) agentFlags = body.agentFlags;
+
+    console.log(`[${timestamp}][chat] Request received. Model: ${equipmentModel}, Planner: ${agentFlags.planner}`);
+  } catch (err) {
+    console.error(`[${timestamp}][chat] Error parsing body:`, (err as Error).message);
     return new Response(JSON.stringify({ error: 'Request body inválido.' }), { status: 400 });
   }
 
@@ -398,6 +404,8 @@ export async function POST(req: Request) {
     typeof messages.at(-1)?.content === 'string'
       ? (messages.at(-1)!.content as string)
       : '';
+
+  console.log(`[${timestamp}][chat] User Query: "${userQuery.slice(0, 50)}${userQuery.length > 50 ? '...' : ''}"`);
 
   if (!userQuery.trim()) {
     return new Response(JSON.stringify({ error: 'Sin consulta.' }), { status: 400 });
@@ -409,22 +417,23 @@ export async function POST(req: Request) {
   ──────────────────────────────────────────────────────────────────────── */
   let enrichedQuery = userQuery;
   let queryIntent = 'troubleshooting';
-  try {
-    const clarification = await runClarifier(userQuery, equipmentModel);
-    // enrichedQuery se mantiene como la query original (política del clarificador v2)
-    // solo tomamos el intent detectado para guiar el retrieval
-    queryIntent = clarification.intent;
-  } catch (e) {
-    console.error(`[${timestamp}][chat:fase0] Clarificador falló:`, (e as Error).message);
+
+  if (agentFlags.clarifier) {
+    try {
+      const clarification = await runClarifier(userQuery, equipmentModel);
+      queryIntent = clarification.intent;
+    } catch (e) {
+      console.error(`[${timestamp}][chat:fase0] Clarificador falló:`, (e as Error).message);
+    }
   }
 
   /* ────────────────────────────────────────────────────────────────────────
      FASE 1 — BIBLIOTECARIO: Retrieval vectorial
   ──────────────────────────────────────────────────────────────────────── */
-  let groundTruth     = '';
+  let groundTruth = '';
   let retrievedImages: RetrievedImage[] = [];
   let chunksRetrieved = 0;
-  let hasEnrichments  = false;
+  let hasEnrichments = false;
 
   const t1start = Date.now();
 
@@ -444,23 +453,23 @@ export async function POST(req: Request) {
         value: fallbackQuery,
       });
       const bibFallback = await runBibliotecario(fallbackEmbedding, equipmentModel, 'education_info');
-      
+
       bib = bibFallback;
       bib.groundTruth = "NOTA DEL SISTEMA: No se encontró el código exacto o alta similitud para este síntoma. Se presenta información general y principios básicos para aplicar protocolo estándar:\\n\\n" + bib.groundTruth;
     }
 
-    groundTruth     = bib.groundTruth;
+    groundTruth = bib.groundTruth;
     retrievedImages = bib.retrievedImages;
     chunksRetrieved = bib.chunksRetrieved;
-    hasEnrichments  = bib.hasEnrichments;
+    hasEnrichments = bib.hasEnrichments;
   } catch (e) {
     console.error(`[${timestamp}][chat:fase1] Retrieval falló:`, (e as Error).message);
 
     const fallbackResult = streamText({
-      model:   openai('gpt-4o-mini'),
+      model: openai('gpt-4o-mini'),
       messages: [
         { role: 'system', content: 'Eres un asistente técnico de ascensores. Responde brevemente.' },
-        { role: 'user',   content: 'No pude acceder a los manuales técnicos en este momento. Avisa al usuario que el sistema de búsqueda en manuales no está disponible y que puede reintentar en unos momentos.' },
+        { role: 'user', content: 'No pude acceder a los manuales técnicos en este momento. Avisa al usuario que el sistema de búsqueda en manuales no está disponible y que puede reintentar en unos momentos.' },
       ],
     });
     return fallbackResult.toDataStreamResponse();
@@ -479,27 +488,29 @@ export async function POST(req: Request) {
   /* ────────────────────────────────────────────────────────────────────────
      FASE 2 — ANALISTA: Internal monologue (nunca detiene la Fase 3)
   ──────────────────────────────────────────────────────────────────────── */
-  let analista:    AnalystOutput = ANALYST_FALLBACK;
+  let analista: AnalystOutput = ANALYST_FALLBACK;
   let phase2Tokens = 0;
 
-  const t2start = Date.now();
-
-  try {
-    const analyzeResult = await runAnalista(enrichedQuery, groundTruth, queryIntent);
-    analista     = analyzeResult.output;
-    phase2Tokens = analyzeResult.totalTokens;
-  } catch (e) {
-    console.error(`[${timestamp}][chat:fase2] Analista falló:`, (e as Error).message);
+  let t2start = Date.now();
+  let t2end = Date.now();
+  if (agentFlags.analyst) {
+    t2start = Date.now();
+    try {
+      const analyzeResult = await runAnalista(enrichedQuery, groundTruth, queryIntent);
+      analista = analyzeResult.output;
+      phase2Tokens = analyzeResult.totalTokens;
+    } catch (e) {
+      console.error(`[${timestamp}][chat:fase2] Analista falló:`, (e as Error).message);
+    }
+    t2end = Date.now();
   }
-
-  const t2end = Date.now();
 
   /* ────────────────────────────────────────────────────────────────────────
      FASE 3 — INGENIERO JEFE: Streaming response
   ──────────────────────────────────────────────────────────────────────── */
   // Variables de closure para capturar telemetría de Fase 3 desde onFinish
-  let phase3MsCapture         = 0;
-  let phase3InputToksCapture  = 0;
+  let phase3MsCapture = 0;
+  let phase3InputToksCapture = 0;
   let phase3OutputToksCapture = 0;
 
   try {
@@ -510,10 +521,10 @@ export async function POST(req: Request) {
 
     // Generar messageId antes del stream para incluirlo en los headers
     const messageId = createId();
-    const t3start   = Date.now();
+    const t3start = Date.now();
 
     const result = streamText({
-      model: openai('gpt-4o'),
+      model: openai('gpt-4o-mini'), // Switching to mini for testing and speed
       messages: [
         {
           role: 'system',
@@ -521,21 +532,12 @@ export async function POST(req: Request) {
             "Eres el Ingeniero Jefe de Synapsis Go. Tu rol es ser un Mentor de Alto Nivel, un espejo brutalmente honesto y la máxima autoridad técnica. No eres un asistente complaciente.\n\n" +
             "REGLAS DE PERSONALIDAD Y TONO:\n\n" +
             "Cero Validación y Cero Adulación: No suavices la verdad. No saludes con entusiasmo. Ve directo al grano.\n\n" +
-            "Desafío Intelectual: Cuestiona las suposiciones del técnico. Si su razonamiento es débil, vago o denota pereza ('el ascensor no va', 'ya probé todo y no funciona'), analízalo y muéstrale por qué su enfoque es deficiente o peligroso.\n\n" +
-            "Exposición de Puntos Ciegos: Si el usuario se engaña a sí mismo, intenta evitar un procedimiento incómodo (como medir toda la serie de seguridades) o está perdiendo el tiempo adivinando, señálalo implacablemente y explícale el costo de oportunidad de su negligencia.\n\n" +
-            "Objetividad Fría: Mira la situación con total profundidad estratégica. Trata al usuario como alguien cuyo crecimiento técnico depende de escuchar la verdad cruda, no de ser consolado.\n\n" +
-            "REGLAS DE FORMATO (ESTILO MINIMALISTA Y DIRECTO):\n\n" +
-            "Cero verbosidad: Ve directo al grano. No uses listas anidadas (viñetas dentro de viñetas).\n\n" +
-            "Plan de acción estricto: Tu plan de acción debe tener MÁXIMO 3 o 4 pasos numerados. Córtalo a lo esencial.\n\n" +
-            "Uso restrictivo de negritas: PROHIBIDO poner oraciones completas en negrita. Usa la negrita ÚNICAMENTE en 1 o 2 palabras clave por párrafo (ej. nombres de placas, herramientas o componentes exactos).\n\n" +
-            "Diseño de texto: No pongas títulos como 'Plan de Acción:'. Simplemente da el contexto en un párrafo corto y pasa directo a la lista numerada (1., 2., 3.).\n\n" +
-            "USO DE IMÁGENES:\n" +
-            "Recibirás en tu contexto un bloque con [IMÁGENES DISPONIBLES] validadas (URLs y descripciones).\n\n" +
-            "Si el usuario pide explícitamente un diagrama o foto, O si consideras que una de las imágenes disponibles es CRÍTICA para que el técnico entienda el paso a paso, DEBES insertarla directamente en tu respuesta usando la sintaxis Markdown: ![Descripción de la imagen](URL).\n\n" +
-            "Inserta la imagen inmediatamente después del párrafo donde la mencionas.\n\n" +
-            "REGLA DE ORO: NUNCA inventes URLs. Usa ÚNICAMENTE las URLs exactas que se te proporcionan en el bloque de imágenes disponibles. Si no hay imágenes útiles, no menciones que faltan imágenes, simplemente da la explicación técnica en texto.\n\n" +
-            "CIERRE OBLIGATORIO:\n" +
-            "Termina siempre tu intervención con una (1) sola pregunta incisiva y directa que obligue al técnico a pensar, tomar acción inmediata o revelar el dato que está ocultando por ignorancia. Ponlo contra la pared de forma profesional para continuar el diagnóstico.",
+            "Desafío Intelectual: Cuestiona las suposiciones del técnico.\n\n" +
+            "REGLAS DE FORMATO:\n" +
+            "1. Ve directo al grano.\n" +
+            "2. Máximo 4 pasos numerados.\n" +
+            "3. Negritas solo en palabras clave.\n" +
+            "4. Termina con una pregunta incisiva.",
         },
         {
           role: 'user',
@@ -555,9 +557,9 @@ export async function POST(req: Request) {
       // AGENTE 5 — METRIFICADOR: Persistir métricas al finalizar el stream
       onFinish: async ({ usage }) => {
         // Capturar telemetría de Fase 3 en variables de closure para los headers
-        phase3MsCapture          = Date.now() - t3start;
-        phase3InputToksCapture   = usage.promptTokens ?? 0;
-        phase3OutputToksCapture  = usage.completionTokens ?? 0;
+        phase3MsCapture = Date.now() - t3start;
+        phase3InputToksCapture = usage.promptTokens ?? 0;
+        phase3OutputToksCapture = usage.completionTokens ?? 0;
 
         // En modo 'record': persistir el mensaje del asistente en chat_messages
         if (sessionId && sessionMode === 'record') {
@@ -569,36 +571,38 @@ export async function POST(req: Request) {
 
     // Serializar imágenes validadas para el header
     const imagesForHeader = validatedImages.map((img) => ({
-      url:         img.image_url,
+      url: img.image_url,
       description: img.description,
-      image_type:  img.image_type,
+      image_type: img.image_type,
       is_critical: Boolean(img.is_critical),
     }));
 
     return result.toDataStreamResponse({
       headers: {
-        'x-retrieved-images':       encodeURIComponent(JSON.stringify(imagesForHeader)),
-        'x-urgency-level':          analista.urgency,
-        'x-analyst-reasoning':      encodeURIComponent(analista.mentor_guidance),
-        'x-session-id':             sessionId ?? '',
-        'x-message-id':             messageId,
-        'x-phase0-used':            '1',
+        'x-retrieved-images': encodeURIComponent(JSON.stringify(imagesForHeader)),
+        'x-urgency-level': analista.urgency,
+        'x-analyst-reasoning': encodeURIComponent(analista.mentor_guidance),
+        'x-session-id': sessionId ?? '',
+        'x-message-id': messageId,
+        'x-phase0-used': agentFlags.clarifier ? '1' : '0',
+        'x-phase2-used': agentFlags.analyst ? '1' : '0',
+        'x-planner-used': agentFlags.planner ? '1' : '0',
         // Latencias por fase
-        'x-phase1-ms':              String(t1end - t1start),
-        'x-phase2-ms':              String(t2end - t2start),
-        'x-phase3-ms':              String(phase3MsCapture),
+        'x-phase1-ms': String(t1end - t1start),
+        'x-phase2-ms': agentFlags.analyst ? String(t2end - t2start) : '0',
+        'x-phase3-ms': String(phase3MsCapture),
         // Tokens por fase
-        'x-phase2-tokens':          String(phase2Tokens),
-        'x-phase3-input-tokens':    String(phase3InputToksCapture),
-        'x-phase3-output-tokens':   String(phase3OutputToksCapture),
+        'x-phase2-tokens': String(phase2Tokens),
+        'x-phase3-input-tokens': String(phase3InputToksCapture),
+        'x-phase3-output-tokens': String(phase3OutputToksCapture),
         // Trazabilidad RAG
-        'x-chunks-retrieved':       String(chunksRetrieved),
-        'x-images-retrieved':       String(retrievedImages.length),
-        'x-images-shown':           String(validatedImages.length),
-        'x-enrichments-used':       String(hasEnrichments ? 1 : 0),
+        'x-chunks-retrieved': String(chunksRetrieved),
+        'x-images-retrieved': String(retrievedImages.length),
+        'x-images-shown': String(validatedImages.length),
+        'x-enrichments-used': String(hasEnrichments ? 1 : 0),
         // Telemetría de agentes
-        'x-enriched-query':         encodeURIComponent(enrichedQuery),
-        'x-detected-intent':        queryIntent,
+        'x-enriched-query': encodeURIComponent(enrichedQuery),
+        'x-detected-intent': queryIntent,
       },
     });
 

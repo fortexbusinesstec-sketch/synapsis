@@ -720,17 +720,17 @@ function SectionQuestions({
   return (
     <div className="space-y-4">
       {/* Toolbar */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <p className="text-sm text-slate-500">
             <span className="font-bold text-slate-800">{questions.length}</span> preguntas
           </p>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 sm:pb-0">
             {ALL_CATEGORIES.map((cat) => {
               const s = CAT_STYLE[cat];
               const n = questions.filter((q) => q.category === cat).length;
               return (
-                <span key={cat} className={cn('px-2 py-0.5 rounded-full text-[11px] font-bold', s.bg, s.text)}>
+                <span key={cat} className={cn('px-2 py-0.5 rounded-full text-[10px] md:text-[11px] font-bold whitespace-nowrap', s.bg, s.text)}>
                   {n}
                 </span>
               );
@@ -739,14 +739,14 @@ function SectionQuestions({
         </div>
         <button
           onClick={() => setShowNewForm(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all shadow-blue-200"
         >
           <Plus className="w-4 h-4" />
           Nueva pregunta
         </button>
       </div>
 
-      {/* Tabla */}
+      {/* Content */}
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
         {questions.length === 0 ? (
           <div className="text-center py-16 text-slate-400">
@@ -758,47 +758,81 @@ function SectionQuestions({
           </div>
         ) : (
           <>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/80">
-                  {['ID', 'Categoría', 'Pregunta', 'Modelo', 'Dificultad', 'Agente crítico', ''].map((h) => (
-                    <th key={h} className="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {visible.map((q) => (
-                  <tr key={q.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="px-4 py-3">
-                      <span className="font-mono text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg">{q.id}</span>
-                    </td>
-                    <td className="px-4 py-3"><CatBadge category={q.category} /></td>
-                    <td className="px-4 py-3 max-w-xs">
-                      <p className="truncate text-slate-700">{q.question_text.slice(0, 80)}{q.question_text.length > 80 ? '…' : ''}</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-xs font-bold text-slate-500">{q.equipment_model ?? '—'}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={cn('px-2 py-0.5 rounded-full text-[11px] font-bold', DIFF_STYLE[q.difficulty] ?? DIFF_STYLE.medium)}>
-                        {q.difficulty}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {q.expected_agent_critical
-                        ? <span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">{AGENT_LABELS[q.expected_agent_critical] ?? q.expected_agent_critical}</span>
-                        : <span className="text-slate-300 text-xs">—</span>
-                      }
-                    </td>
-                    <td className="px-4 py-3">
-                      <button onClick={() => setSelected(q)} className="text-[11px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-0.5">
-                        Ver <ChevronRight className="w-3 h-3" />
-                      </button>
-                    </td>
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50/80">
+                    {['ID', 'Categoría', 'Pregunta', 'Modelo', 'Dificultad', 'Agente crítico', ''].map((h) => (
+                      <th key={h} className="text-left px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {visible.map((q) => (
+                    <tr key={q.id} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="px-4 py-3">
+                        <span className="font-mono text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg">{q.id}</span>
+                      </td>
+                      <td className="px-4 py-3"><CatBadge category={q.category} /></td>
+                      <td className="px-4 py-3 max-w-xs">
+                        <p className="truncate text-slate-700">{q.question_text.slice(0, 80)}{q.question_text.length > 80 ? '…' : ''}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-xs font-bold text-slate-500">{q.equipment_model ?? '—'}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={cn('px-2 py-0.5 rounded-full text-[11px] font-bold', DIFF_STYLE[q.difficulty] ?? DIFF_STYLE.medium)}>
+                          {q.difficulty}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {q.expected_agent_critical
+                          ? <span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">{AGENT_LABELS[q.expected_agent_critical] ?? q.expected_agent_critical}</span>
+                          : <span className="text-slate-300 text-xs">—</span>
+                        }
+                      </td>
+                      <td className="px-4 py-3">
+                        <button onClick={() => setSelected(q)} className="text-[11px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-0.5">
+                          Ver <ChevronRight className="w-3 h-3" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards */}
+            <div className="md:hidden divide-y divide-slate-100">
+              {visible.map((q) => (
+                <div key={q.id} className="p-4 space-y-3 active:bg-slate-50" onClick={() => setSelected(q)}>
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-lg">{q.id}</span>
+                    <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold', DIFF_STYLE[q.difficulty] ?? DIFF_STYLE.medium)}>
+                      {q.difficulty}
+                    </span>
+                  </div>
+                  <p className="text-sm font-medium text-slate-800 leading-snug line-clamp-3">
+                    {q.question_text}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <CatBadge category={q.category} />
+                    {q.equipment_model && (
+                      <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                        {q.equipment_model}
+                      </span>
+                    )}
+                    {q.expected_agent_critical && (
+                      <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+                        {AGENT_LABELS[q.expected_agent_critical] ?? q.expected_agent_critical}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
             {pages > 1 && (
               <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-slate-50/50">
                 <button disabled={page === 0} onClick={() => setPage((p) => p - 1)} className="text-xs font-bold text-slate-500 disabled:opacity-30">← Anterior</button>
@@ -842,14 +876,15 @@ function ConfigCard({ config }: { config: AblationConfig }) {
       {config.description && (
         <p className="text-xs text-slate-500 leading-relaxed">{config.description}</p>
       )}
-      <div className="grid grid-cols-2 gap-2">
-        {AGENT_TOGGLES.map(({ key, label, icon: Icon }) => {
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {AGENT_TOGGLES.map(({ key, label }) => {
+          const Icon = AGENT_TOGGLES.find(t => t.key === key)?.icon ?? Sliders;
           const on = (config as any)[key] !== 0;
           return (
-            <div key={key} className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-100">
-              <div className="flex items-center gap-1.5">
-                <Icon className={cn('w-3.5 h-3.5', on ? 'text-emerald-500' : 'text-slate-300')} />
-                <span className={cn('text-[11px] font-bold', on ? 'text-slate-700' : 'text-slate-400')}>{label}</span>
+            <div key={key} className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-slate-50 border border-slate-100 min-w-0">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Icon className={cn('w-3.5 h-3.5 flex-shrink-0', on ? 'text-blue-500' : 'text-slate-300')} />
+                <span className={cn('text-[10px] md:text-xs font-bold truncate', on ? 'text-slate-700' : 'text-slate-400')}>{label}</span>
               </div>
               <Toggle on={on} />
             </div>
@@ -1023,7 +1058,7 @@ function SectionRunner({ configs, questions }: { configs: AblationConfig[]; ques
           onChange={(e) => setBatch(e.target.value)}
           placeholder="pilot_2025_04_09"
           disabled={runStatus === 'running' || runStatus === 'creating'}
-          className="max-w-sm font-mono"
+          className="w-full sm:max-w-sm font-mono"
         />
       </div>
 
@@ -1111,11 +1146,11 @@ function SectionRunner({ configs, questions }: { configs: AblationConfig[]; ques
 
       {/* Estimación */}
       {estimatedRuns > 0 && runStatus === 'idle' && (
-        <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm">
-          <FlaskConical className="w-4 h-4 text-violet-500" />
-          <span className="text-slate-600">
+        <div className="flex items-start sm:items-center gap-3 px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm">
+          <FlaskConical className="w-4 h-4 text-violet-500 mt-1 sm:mt-0 flex-shrink-0" />
+          <span className="text-slate-600 leading-tight">
             <span className="font-bold text-slate-800">{estimatedRuns}</span> ejecuciones estimadas
-            <span className="text-slate-400 ml-2">({filteredCount}p × {selConfigs.size} configs)</span>
+            <span className="text-slate-400 block sm:inline sm:ml-2">({filteredCount}p × {selConfigs.size} configs)</span>
           </span>
         </div>
       )}
@@ -1258,31 +1293,31 @@ function CleanupZone({ type = 'individual' }: { type?: 'individual' | 'scenario'
         ) : (
           <div className="divide-y divide-slate-100">
             {batches.map((b) => (
-              <div key={b.run_batch} className="p-5 flex items-center justify-between hover:bg-slate-50/50 transition-all group">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-white group-hover:shadow-sm transition-all">
+              <div key={b.run_batch} className="p-4 md:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-slate-50/50 transition-all group">
+                <div className="flex items-center gap-3 md:gap-4 min-w-0 w-full">
+                  <div className="w-10 h-10 rounded-2xl bg-slate-100 flex-shrink-0 items-center justify-center text-slate-400 group-hover:bg-white group-hover:shadow-sm transition-all hidden sm:flex">
                     <FlaskConical className="w-4 h-4" />
                   </div>
-                  <div>
-                    <h4 className="text-sm font-black text-slate-800 font-mono">{b.run_batch}</h4>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
-                        {b.done_runs} / {b.total_runs} COMPLETADOS
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-sm font-black text-slate-800 font-mono truncate">{b.run_batch}</h4>
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1">
+                      <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-tight whitespace-nowrap">
+                        {b.done_runs} / {b.total_runs} completados
                       </span>
-                      <span className="w-1 h-1 rounded-full bg-slate-300" />
-                      <span className="text-[10px] font-bold text-slate-400">
+                      <span className="hidden md:block w-1 h-1 rounded-full bg-slate-300" />
+                      <span className="text-[9px] md:text-[10px] font-bold text-slate-400 whitespace-nowrap">
                         {new Date(b.started_at || '').toLocaleDateString()}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                   <a
                     href={`/dashboard/ablation/${type === 'scenario' ? 'scenarios' : 'individual'}/results?batch=${encodeURIComponent(b.run_batch)}`}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[11px] font-black bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 md:px-4 py-2 rounded-xl text-[10px] md:text-[11px] font-black bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all whitespace-nowrap"
                   >
-                    ANALIZAR <ChevronRight className="w-3 h-3" />
+                    ANALIZAR <ChevronRight className="w-3 h-3 hidden md:block" />
                   </a>
                   <button
                     onClick={() => {
@@ -1506,19 +1541,19 @@ function SectionScenarios({ configs, mode = 'bank' }: { configs: AblationConfig[
 
           {/* Resumen de Porcentajes por Categoría */}
           {!loadingScen && scenarios.length > 0 && (
-            <div className="bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm">
-              <div className="flex flex-wrap gap-x-8 gap-y-4">
+            <div className="bg-white border border-slate-200 rounded-3xl md:rounded-[2rem] p-5 md:p-6 shadow-sm overflow-hidden">
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-x-8 gap-y-6">
                 {categoryStats.map(({ cat, count, percentage }) => {
                   const s = CAT_STYLE[cat] || { bg: 'bg-slate-100', text: 'text-slate-600', dot: 'bg-slate-400', label: cat };
                   return (
-                    <div key={cat} className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <span className={cn('w-2 h-2 rounded-full', s.dot)} />
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{s.label}</span>
+                    <div key={cat} className="flex flex-col gap-1 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={cn('w-2 h-2 rounded-full flex-shrink-0', s.dot)} />
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest truncate">{s.label}</span>
                       </div>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-black text-slate-800">{percentage}%</span>
-                        <span className="text-[11px] font-bold text-slate-400 font-mono">({count} scen)</span>
+                        <span className="text-xl md:text-2xl font-black text-slate-800">{percentage}%</span>
+                        <span className="text-[9px] md:text-[11px] font-bold text-slate-400 font-mono whitespace-nowrap">({count} scen)</span>
                       </div>
                     </div>
                   );
@@ -1634,11 +1669,11 @@ function SectionScenarios({ configs, mode = 'bank' }: { configs: AblationConfig[
 
           {/* Configuración del Run */}
           <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-5 shadow-sm">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
               <div className="space-y-4">
                 <FieldLabel>Batch & Configuración</FieldLabel>
                 <div>
-                  <label className="text-[10px] text-slate-400 font-black uppercase mb-1.5 block">Nombre del Batch</label>
+                  <label className="text-[10px] text-slate-400 font-black uppercase mb-1.5 block tracking-wider">Nombre del Batch</label>
                   <Input
                     value={batch}
                     onChange={(e) => setBatch(e.target.value)}
@@ -1647,18 +1682,18 @@ function SectionScenarios({ configs, mode = 'bank' }: { configs: AblationConfig[
                   />
                 </div>
                 <div className="flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-2xl border border-slate-200">
-                  <Zap className="w-4 h-4 text-amber-500" />
+                  <Zap className="w-4 h-4 text-amber-500 flex-shrink-0" />
                   <div>
                     <p className="text-xs font-bold text-slate-800">{estimatedRuns} Ejecuciones Estimadas</p>
-                    <p className="text-[10px] text-slate-400">Total acumulado para este run de ablación técnico.</p>
+                    <p className="text-[9px] md:text-[10px] text-slate-400 leading-tight">Total acumulado para este experimento.</p>
                   </div>
                 </div>
               </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-3">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
                   <FieldLabel>Ablación: Configs ({selConfigs.size})</FieldLabel>
-                  <button className="text-[10px] text-blue-600 font-black hover:underline uppercase"
+                  <button className="text-[10px] text-blue-600 font-black hover:underline uppercase tracking-wider"
                     onClick={() => setSelConfigs(selConfigs.size === configs.length ? new Set() : new Set(configs.map(c => c.id)))}>
                     {selConfigs.size === configs.length ? 'Ninguna' : 'Todas'}
                   </button>
@@ -1666,10 +1701,10 @@ function SectionScenarios({ configs, mode = 'bank' }: { configs: AblationConfig[
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                   {configs.map((c) => (
                     <button key={c.id} onClick={() => toggleConfig(c.id)} disabled={runStatus === 'running'}
-                      className={cn('flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[11px] font-bold text-left transition-all',
-                        selConfigs.has(c.id) ? 'bg-blue-50 border-blue-200 text-blue-800' : 'bg-white border-slate-200 text-slate-500')}>
-                      {selConfigs.has(c.id) ? <CheckSquare className="w-3.5 h-3.5 text-blue-500" /> : <Square className="w-3.5 h-3.5 text-slate-300" />}
-                      <span className="font-mono text-[10px]">{c.id}</span>
+                      className={cn('flex items-center gap-2 px-3 py-2 rounded-xl border text-[10px] md:text-[11px] font-bold text-left transition-all min-w-0',
+                        selConfigs.has(c.id) ? 'bg-blue-50 border-blue-200 text-blue-800' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300')}>
+                      {selConfigs.has(c.id) ? <CheckSquare className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" /> : <Square className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />}
+                      <span className="font-mono text-[9px] bg-slate-100 px-1 rounded flex-shrink-0">{c.id}</span>
                       <span className="truncate">{c.name}</span>
                     </button>
                   ))}
@@ -1774,6 +1809,15 @@ export default function AblationPage() {
   const [questions, setQuestions] = useState<AblationQuestion[]>([]);
   const [configs, setConfigs] = useState<AblationConfig[]>([]);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<{ role: string; isDevMode: boolean } | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((u) => setUser(u))
+      .finally(() => setAuthLoading(false));
+  }, []);
 
   const reload = useCallback(() => {
     Promise.all([
@@ -1791,32 +1835,67 @@ export default function AblationPage() {
   const indConfigs = configs.filter(c => INDIVIDUAL_CONFIG_IDS.includes(c.id));
   const scenConfigs = configs.filter(c => SCENARIO_CONFIG_IDS.includes(c.id));
 
+  if (authLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 space-y-4">
+        <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
+        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Validando Seguridad...</p>
+      </div>
+    );
+  }
+
+  const isAuditorDev = user?.role === "Auditor" && user?.isDevMode;
+
+  if (!isAuditorDev) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 text-center space-y-6 animate-in fade-in zoom-in-95 duration-500">
+        <div className="w-20 h-20 bg-red-50 rounded-[2rem] flex items-center justify-center border-2 border-red-100 shadow-xl shadow-red-500/10">
+          <AlertCircle className="w-10 h-10 text-red-500" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Acceso Restringido</h1>
+          <p className="text-slate-500 max-w-sm mx-auto leading-relaxed font-medium">
+            Este entorno de experimentación avanzado es exclusivo para el <span className="text-slate-900 font-bold">Rol Auditor</span> en <span className="text-violet-600 font-bold">Modo Desarrollador</span>.
+          </p>
+        </div>
+        <div className="pt-4">
+          <button
+            onClick={() => window.location.href = '/dashboard/home'}
+            className="px-8 py-3 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-black transition-all active:scale-95 shadow-2xl"
+          >
+            Volver al Inicio
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
 
       {/* Header */}
-      <div className="relative overflow-hidden rounded-3xl p-7 shadow-sm border border-violet-100"
+      <div className="relative overflow-hidden rounded-2xl md:rounded-3xl p-5 md:p-7 shadow-sm border border-violet-100"
         style={{ background: 'linear-gradient(135deg, #ffffff 0%, #f3e8ff 50%, #ede9fe 100%)' }}>
         <div className="absolute -right-10 -top-10 w-64 h-64 rounded-full bg-violet-200/30 blur-3xl pointer-events-none" />
-        <div className="relative flex items-start justify-between gap-4">
+        <div className="relative flex flex-col md:flex-row items-start justify-between gap-6">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-100 border border-violet-200 text-violet-700 text-[10px] font-black tracking-widest uppercase">
               <FlaskConical className="w-3.5 h-3.5" />
               ABLATION STUDY
             </div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-800">Entorno de Experimentos</h1>
-            <p className="text-slate-500 text-sm max-w-xl leading-relaxed">
-              Define preguntas de evaluación, crea configuraciones deshabilitando agentes del pipeline, y lanza el runner para medir el impacto de cada uno.
+            <h1 className="text-xl md:text-2xl font-black tracking-tight text-slate-800">Entorno de Experimentos</h1>
+            <p className="text-slate-500 text-xs md:text-sm max-w-xl leading-relaxed">
+              Define preguntas de evaluación, crea configuraciones deshabilitando agentes del pipeline y lanza el runner para medir el impacto de cada uno.
             </p>
           </div>
-          <div className="hidden md:flex gap-4">
+          <div className="flex gap-6 md:gap-4 w-full md:w-auto justify-between md:justify-normal border-t md:border-t-0 border-violet-200/50 pt-4 md:pt-0">
             <div className="text-center">
-              <p className="text-2xl font-black text-slate-800">{questions.length}</p>
+              <p className="text-xl md:text-2xl font-black text-slate-800">{questions.length}</p>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Preguntas</p>
             </div>
-            <div className="w-px bg-slate-200/60 self-stretch" />
+            <div className="w-px bg-slate-200/60 self-stretch hidden md:block" />
             <div className="text-center">
-              <p className="text-2xl font-black text-slate-800">{configs.length}</p>
+              <p className="text-xl md:text-2xl font-black text-slate-800">{configs.length}</p>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Configs</p>
             </div>
           </div>
@@ -1826,19 +1905,19 @@ export default function AblationPage() {
       {/* Main Layout Tabs */}
       <div className="flex flex-col gap-6">
         {/* Parent Tabs */}
-        <div className="flex items-center gap-1.5 bg-white border border-slate-200 p-1.5 rounded-3xl w-fit shadow-sm">
+        <div className="flex items-center gap-1.5 bg-white border border-slate-200 p-1.5 rounded-2xl md:rounded-3xl w-full md:w-fit shadow-sm overflow-x-auto scrollbar-hide no-scrollbar">
           {PARENT_TABS.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => setParentTab(id)}
               className={cn(
-                'flex items-center gap-2.5 px-6 py-2.5 text-sm font-black rounded-2xl transition-all',
+                'flex items-center gap-2.5 px-4 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-black rounded-xl md:rounded-2xl transition-all whitespace-nowrap',
                 parentTab === id
                   ? 'bg-slate-900 text-white shadow-lg'
                   : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
               )}
             >
-              <Icon className={cn('w-4 h-4', parentTab === id ? 'text-violet-400' : 'text-slate-300')} />
+              <Icon className={cn('w-3.5 md:w-4 h-3.5 md:h-4', parentTab === id ? 'text-violet-400' : 'text-slate-300')} />
               {label}
             </button>
           ))}
@@ -1854,10 +1933,10 @@ export default function AblationPage() {
             {/* INDIVIDUAL TAB */}
             {parentTab === 'individual' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="flex items-center gap-1 bg-violet-50/50 p-1 rounded-2xl border border-violet-100/50 w-fit">
+                <div className="flex items-center gap-1 bg-violet-50/50 p-1 rounded-2xl border border-violet-100/50 w-full md:w-fit overflow-x-auto no-scrollbar scrollbar-hide">
                   {INDIVIDUAL_TABS.map(({ id, label, icon: Icon }) => (
                     <button key={id} onClick={() => setIndTab(id)}
-                      className={cn('flex items-center gap-2 px-4 py-2 text-[12px] font-bold rounded-xl transition-all',
+                      className={cn('flex items-center gap-2 px-3 md:px-4 py-2 text-[11px] md:text-[12px] font-bold rounded-xl transition-all whitespace-nowrap flex-1 md:flex-none justify-center',
                         indTab === id ? 'bg-white text-violet-700 shadow-sm ring-1 ring-violet-200/50' : 'text-slate-500 hover:text-slate-900 hover:bg-white/40')}>
                       <Icon className={cn('w-3.5 h-3.5', indTab === id ? 'text-violet-500' : 'text-slate-400')} />
                       {label}
@@ -1873,10 +1952,10 @@ export default function AblationPage() {
             {/* SCENARIO TAB */}
             {parentTab === 'scenario' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="flex items-center gap-1 bg-blue-50/50 p-1 rounded-2xl border border-blue-100/50 w-fit">
+                <div className="flex items-center gap-1 bg-blue-50/50 p-1 rounded-2xl border border-blue-100/50 w-full md:w-fit overflow-x-auto no-scrollbar scrollbar-hide">
                   {SCENARIO_TABS.map(({ id, label, icon: Icon }) => (
                     <button key={id} onClick={() => setScenTab(id)}
-                      className={cn('flex items-center gap-2 px-4 py-2 text-[12px] font-bold rounded-xl transition-all',
+                      className={cn('flex items-center gap-2 px-3 md:px-4 py-2 text-[11px] md:text-[12px] font-bold rounded-xl transition-all whitespace-nowrap flex-1 md:flex-none justify-center',
                         scenTab === id ? 'bg-white text-blue-700 shadow-sm ring-1 ring-blue-200/50' : 'text-slate-500 hover:text-slate-900 hover:bg-white/40')}>
                       <Icon className={cn('w-3.5 h-3.5', scenTab === id ? 'text-blue-500' : 'text-slate-400')} />
                       {label}
@@ -1892,10 +1971,10 @@ export default function AblationPage() {
             {/* BATCHES TAB */}
             {parentTab === 'batches' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="flex items-center gap-1 bg-amber-50/50 p-1 rounded-2xl border border-amber-100/50 w-fit">
+                <div className="flex items-center gap-1 bg-amber-50/50 p-1 rounded-2xl border border-amber-100/50 w-full md:w-fit overflow-x-auto no-scrollbar scrollbar-hide">
                   {BATCH_TABS.map(({ id, label, icon: Icon }) => (
                     <button key={id} onClick={() => setBatchTab(id)}
-                      className={cn('flex items-center gap-2 px-4 py-2 text-[12px] font-bold rounded-xl transition-all',
+                      className={cn('flex items-center gap-2 px-3 md:px-4 py-2 text-[11px] md:text-[12px] font-bold rounded-xl transition-all whitespace-nowrap flex-1 md:flex-none justify-center',
                         batchTab === id ? 'bg-white text-amber-700 shadow-sm ring-1 ring-amber-200/50' : 'text-slate-500 hover:text-slate-900 hover:bg-white/40')}>
                       <Icon className={cn('w-3.5 h-3.5', batchTab === id ? 'text-amber-500' : 'text-slate-400')} />
                       {label}

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { count, countDistinct, eq } from 'drizzle-orm';
+import { count, countDistinct, eq, sql, desc } from 'drizzle-orm';
 import {
   FileText,
   ArrowUpFromLine,
@@ -15,11 +15,20 @@ import {
 
 import { db } from '@/lib/db';
 import { documents, documentChunks, extractedImages, enrichments } from '@/lib/db/schema';
+import { getCurrentUser } from '@/lib/db/auth';
+import { AdminHome } from '@/components/dashboard/AdminHome';
+import { TecnicoHome } from '@/components/dashboard/TecnicoHome';
+import { AuditorHome } from '@/components/dashboard/AuditorHome';
 
 /* ────────────────────────────────────────────────────────────────────────── */
 
 export default async function HomePage() {
-  // ── Fetch dynamic stats ───────────────────────────────────────────────────
+  const user = await getCurrentUser();
+  const isAdmin = user?.role === "Administrador de Sistema";
+  const isTecnico = user?.role === "Especialista Técnico";
+  const isAuditor = user?.role === "Auditor";
+
+  // ── Fetch dynamic stats (Legacy/Common) ───────────────────────────────────
   const [totalModelsRes, readyModelsRes, totalDocsRes, totalImagesRes, totalChunksRes, totalEnrichRes] = await Promise.all([
     db.select({ count: countDistinct(documents.equipmentModel) }).from(documents),
     db.select({ count: countDistinct(documents.equipmentModel) }).from(documents).where(eq(documents.status, 'ready')),
@@ -30,19 +39,46 @@ export default async function HomePage() {
   ]);
 
   const totalModels = totalModelsRes[0]?.count ?? 0;
-  const readyModels = readyModelsRes[0]?.count ?? 0;
-  const totalDocs = totalDocsRes[0]?.count ?? 0;
+  // readyModels not used directly in new views but kept for legacy
+  // const readyModels = readyModelsRes[0]?.count ?? 0;
   const totalImages = totalImagesRes[0]?.count ?? 0;
   const totalChunks = totalChunksRes[0]?.count ?? 0;
   const totalEnrich = totalEnrichRes[0]?.count ?? 0;
 
+  if (isAdmin) {
+    const [resolvedRes, topModelsRes] = await Promise.all([
+      db.select({ count: count() }).from(documents).where(sql`created_at >= date('now')`),
+      db.select({ model: documents.equipmentModel, docCount: count() })
+        .from(documents)
+        .groupBy(documents.equipmentModel)
+        .orderBy(desc(count()))
+        .limit(3)
+    ]);
+
+    const adminStats = {
+      resolvedToday: resolvedRes[0]?.count ?? 0,
+      precisionRate: 98,
+      topModels: topModelsRes.map(r => ({ model: r.model ?? 'General', count: r.docCount })),
+    };
+
+    return <AdminHome stats={adminStats} />;
+  }
+
+  if (isTecnico) {
+    return <TecnicoHome />;
+  }
+
+  if (isAuditor) {
+    return <AuditorHome isDevMode={user?.isDevMode || false} />;
+  }
+
+  // Legacy/Default View
   return (
     <div className="space-y-8">
 
       {/* ── Hero section ─────────────────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-3xl p-8 shadow-sm border border-sky-100"
         style={{ background: 'linear-gradient(135deg, #ffffff 0%, #e0f3ff 50%, #bae6fd 100%)' }}>
-        {/* Decorative blobs */}
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-sky-200/40 to-transparent pointer-events-none" />
         <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-blue-300/20 blur-3xl pointer-events-none" />
         <div className="absolute -left-10 bottom-0 w-48 h-48 rounded-full bg-cyan-200/30 blur-2xl pointer-events-none" />
@@ -79,13 +115,10 @@ export default async function HomePage() {
 
       {/* ── Main Modules ─────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-        {/* 1. CONTROL DE DOCUMENTACIÓN */}
         <Link
           href="/dashboard/documentacion"
           className="group relative bg-white border border-slate-200 rounded-3xl p-8 shadow-sm hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col overflow-hidden"
         >
-          {/* Subtle bg pattern */}
           <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity">
             <Boxes className="w-32 h-32" />
           </div>
@@ -116,12 +149,10 @@ export default async function HomePage() {
           </div>
         </Link>
 
-        {/* 2. SYNAPSIS GO */}
         <Link
           href="/dashboard/go"
           className="group relative bg-slate-50 border border-slate-200 rounded-3xl p-8 shadow-sm hover:shadow-xl hover:border-amber-300 transition-all duration-300 flex flex-col overflow-hidden"
         >
-          {/* Subtle bg pattern */}
           <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity">
             <Zap className="w-32 h-32" />
           </div>

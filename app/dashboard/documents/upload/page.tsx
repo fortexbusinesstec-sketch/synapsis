@@ -24,27 +24,27 @@ type PipelineStatus =
   | "error";
 
 interface StatusStep {
-  key:     PipelineStatus;
-  label:   string;
+  key: PipelineStatus;
+  label: string;
   detail?: string;
 }
 
 interface PollResponse {
-  id:           string;
-  status:       string;
+  id: string;
+  status: string;
   statusDetail: string | null;
-  pageCount:    number | null;
+  pageCount: number | null;
 }
 
 /* ── Pipeline steps definition ──────────────────────────────────────────── */
 
 const STEPS: StatusStep[] = [
-  { key: "uploading",  label: "Subiendo PDF"           },
-  { key: "analyzing",  label: "Analizando estructura"  },
-  { key: "ocr",        label: "Extrayendo OCR"         },
-  { key: "processing", label: "Procesando imágenes"    },
-  { key: "embedding",  label: "Generando embeddings"   },
-  { key: "ready",      label: "¡Listo!"                },
+  { key: "uploading", label: "Subiendo PDF" },
+  { key: "analyzing", label: "Analizando estructura" },
+  { key: "ocr", label: "Extrayendo OCR" },
+  { key: "processing", label: "Procesando imágenes" },
+  { key: "embedding", label: "Generando embeddings" },
+  { key: "ready", label: "¡Listo!" },
 ];
 
 const STATUS_ORDER: PipelineStatus[] = [
@@ -59,8 +59,8 @@ function getStepIndex(status: PipelineStatus): number {
 
 function ProgressBar({ status }: { status: PipelineStatus }) {
   const activeIdx = getStepIndex(status);
-  const isError   = status === "error";
-  const isDone    = status === "ready";
+  const isError = status === "error";
+  const isDone = status === "ready";
 
   return (
     <div className="w-full space-y-3">
@@ -82,8 +82,8 @@ function ProgressBar({ status }: { status: PipelineStatus }) {
       {/* Steps */}
       <ol className="grid grid-cols-3 gap-y-3 sm:grid-cols-6">
         {STEPS.map((step, i) => {
-          const done    = !isError && activeIdx > i;
-          const active  = !isError && activeIdx === i;
+          const done = !isError && activeIdx > i;
+          const active = !isError && activeIdx === i;
           const pending = !active && !done;
 
           return (
@@ -91,8 +91,8 @@ function ProgressBar({ status }: { status: PipelineStatus }) {
               <span
                 className={cn(
                   "flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs font-semibold transition-colors",
-                  done    && "border-emerald-500 bg-emerald-500 text-white",
-                  active  && "border-blue-500 bg-blue-50 text-blue-600",
+                  done && "border-emerald-500 bg-emerald-500 text-white",
+                  active && "border-blue-500 bg-blue-50 text-blue-600",
                   pending && "border-slate-200 bg-white text-slate-400",
                   isError && i === activeIdx && "border-red-500 bg-red-50 text-red-600",
                 )}
@@ -110,8 +110,8 @@ function ProgressBar({ status }: { status: PipelineStatus }) {
               <span
                 className={cn(
                   "text-[10px] leading-tight",
-                  done    && "text-emerald-600 font-medium",
-                  active  && "text-blue-600 font-semibold",
+                  done && "text-emerald-600 font-medium",
+                  active && "text-blue-600 font-semibold",
                   pending && "text-slate-400",
                 )}
               >
@@ -128,21 +128,64 @@ function ProgressBar({ status }: { status: PipelineStatus }) {
 /* ── Página principal ───────────────────────────────────────────────────── */
 
 export default function UploadDocumentPage() {
+  const [user, setUser] = useState<{ role: string } | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(r => r.json())
+      .then(u => setUser(u))
+      .catch(() => { })
+      .finally(() => setAuthLoading(false));
+  }, []);
+
+  if (authLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 space-y-4">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Validando...</p>
+      </div>
+    );
+  }
+
+  if (user?.role === "Técnico") {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 text-center space-y-6 animate-in fade-in zoom-in-95 duration-500">
+        <div className="w-20 h-20 bg-red-50 rounded-[2.5rem] flex items-center justify-center border-2 border-red-100 shadow-xl shadow-red-500/10">
+          <AlertCircle className="w-10 h-10 text-red-500" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Acceso Bloqueado</h1>
+          <p className="text-slate-500 max-w-sm mx-auto leading-relaxed font-medium">
+            La Ingesta de Documentos es exclusiva para perfiles <span className="text-slate-900 font-bold">Administrativos</span>.
+          </p>
+        </div>
+        <div className="pt-4">
+          <button
+            onClick={() => window.location.href = '/dashboard/home'}
+            className="px-8 py-3 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-black transition-all active:scale-95 shadow-2xl"
+          >
+            Volver al Inicio
+          </button>
+        </div>
+      </div>
+    );
+  }
   /* ── Estado del formulario ─────────────────────────────────────────── */
-  const [file,           setFile]           = useState<File | null>(null);
-  const [isDragging,     setIsDragging]     = useState(false);
-  const [title,          setTitle]          = useState("");
-  const [brand,          setBrand]          = useState("Schindler");
-  const [model,          setModel]          = useState("");
-  const [docType,        setDocType]        = useState("manual");
+  const [file, setFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [title, setTitle] = useState("");
+  const [brand, setBrand] = useState("Schindler");
+  const [model, setModel] = useState("");
+  const [docType, setDocType] = useState("manual");
   const inputRef = useRef<HTMLInputElement>(null);
 
   /* ── Estado del pipeline ───────────────────────────────────────────── */
   const [pipelineStatus, setPipelineStatus] = useState<PipelineStatus>("idle");
-  const [statusDetail,   setStatusDetail]   = useState<string>("");
-  const [pageCount,      setPageCount]      = useState<number | null>(null);
-  const [documentId,     setDocumentId]     = useState<string | null>(null);
-  const [errorMsg,       setErrorMsg]       = useState<string | null>(null);
+  const [statusDetail, setStatusDetail] = useState<string>("");
+  const [pageCount, setPageCount] = useState<number | null>(null);
+  const [documentId, setDocumentId] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   /* ── Polling ─────────────────────────────────────────────────────────── */
@@ -157,7 +200,7 @@ export default function UploadDocumentPage() {
     stopPolling();
     pollRef.current = setInterval(async () => {
       try {
-        const res  = await fetch(`/api/documents/${docId}/status`);
+        const res = await fetch(`/api/documents/${docId}/status`);
         if (!res.ok) return;
         const data: PollResponse = await res.json();
 
@@ -179,9 +222,9 @@ export default function UploadDocumentPage() {
   useEffect(() => () => stopPolling(), [stopPolling]);
 
   /* ── Drag & Drop ─────────────────────────────────────────────────────── */
-  const onDragOver  = useCallback((e: React.DragEvent) => { e.preventDefault(); setIsDragging(true);  }, []);
+  const onDragOver = useCallback((e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); }, []);
   const onDragLeave = useCallback(() => setIsDragging(false), []);
-  const onDrop      = useCallback((e: React.DragEvent) => {
+  const onDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
     const f = e.dataTransfer.files[0];
@@ -205,11 +248,11 @@ export default function UploadDocumentPage() {
 
     try {
       const form = new FormData();
-      form.append("file",           file);
-      form.append("title",          title || file.name);
-      form.append("brand",          brand);
+      form.append("file", file);
+      form.append("title", title || file.name);
+      form.append("brand", brand);
       form.append("equipmentModel", model);
-      form.append("docType",        docType);
+      form.append("docType", docType);
 
       const res = await fetch("/api/upload", { method: "POST", body: form });
 
@@ -234,8 +277,8 @@ export default function UploadDocumentPage() {
 
   /* ── Helpers ─────────────────────────────────────────────────────────── */
   const isRunning = !["idle", "ready", "error"].includes(pipelineStatus);
-  const isDone    = pipelineStatus === "ready";
-  const isError   = pipelineStatus === "error";
+  const isDone = pipelineStatus === "ready";
+  const isError = pipelineStatus === "error";
 
   const resetForm = () => {
     setFile(null);
@@ -282,8 +325,8 @@ export default function UploadDocumentPage() {
             isDragging
               ? "border-blue-400 bg-blue-50"
               : file
-              ? "border-emerald-400 bg-emerald-50"
-              : "border-slate-200 bg-slate-50 hover:border-blue-300 hover:bg-blue-50/50",
+                ? "border-emerald-400 bg-emerald-50"
+                : "border-slate-200 bg-slate-50 hover:border-blue-300 hover:bg-blue-50/50",
             isRunning && "pointer-events-none opacity-60",
           )}
         >

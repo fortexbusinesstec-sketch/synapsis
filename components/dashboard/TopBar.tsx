@@ -18,13 +18,23 @@ import { useState } from 'react';
 import { logoutAction } from '@/app/login/actions';
 
 const NAV_LINKS = [
-  { label: 'Home',          href: '/dashboard/home',           Icon: Home },
-  { label: 'Documentación', href: '/dashboard/documentacion',  Icon: FileText },
-  { label: 'Synapsis Go',   href: '/dashboard/go',             Icon: Activity },
-  { label: 'Ablación',      href: '/dashboard/ablation',       Icon: FlaskConical },
+  { label: 'Home', href: '/dashboard/home', Icon: Home },
+  { label: 'Documentación', href: '/dashboard/documentacion', Icon: FileText },
+  { label: 'Synapsis Go', href: '/dashboard/go', Icon: Activity },
+  { label: 'Ablación', href: '/dashboard/ablation', Icon: FlaskConical },
 ];
 
-export function TopBar() {
+export default function TopBar({
+  userName = "Admin HTL",
+  userEmail = "admin@synapsis.go",
+  userRole = "Administrator",
+  isDevMode = false
+}: {
+  userName?: string;
+  userEmail?: string;
+  userRole?: string;
+  isDevMode?: boolean;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -34,6 +44,24 @@ export function TopBar() {
     await logoutAction();
     router.push('/login');
   };
+
+  const initials = userName
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
+  // Helper para filtrar los links por rol
+  const filteredLinks = NAV_LINKS.filter(link => {
+    const role = userRole?.trim();
+    if (role === "Administrador de Sistema" && link.label === "Ablación") return false;
+    if (role === "Auditor" && link.label === "Ablación" && !isDevMode) return false;
+    if (role === "Especialista Técnico") {
+      return link.label === "Home" || link.label === "Synapsis Go";
+    }
+    return true;
+  });
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/60 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_4px_6px_-2px_rgba(0,0,0,0.05)]">
@@ -58,7 +86,7 @@ export function TopBar() {
 
         {/* Navigation - Centered Desktop */}
         <nav className="hidden md:flex items-center gap-1 bg-slate-100/50 p-1 rounded-2xl border border-slate-200/50">
-          {NAV_LINKS.map(({ label, href, Icon }) => {
+          {filteredLinks.map(({ label, href, Icon }) => {
             const active = pathname === href || pathname.startsWith(href + '/');
             return (
               <Link
@@ -80,12 +108,12 @@ export function TopBar() {
 
         {/* Right Section: User & Actions */}
         <div className="flex items-center gap-2 sm:gap-4">
-          
+
           <div className="h-8 w-px bg-slate-200/60 hidden sm:block" />
 
           {/* User Profile Dropdown */}
           <div className="relative">
-            <button 
+            <button
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
               className={cn(
                 "flex items-center gap-2 sm:gap-3 pl-1 pr-2 py-1 rounded-xl transition-all group",
@@ -93,11 +121,11 @@ export function TopBar() {
               )}
             >
               <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-700 flex items-center justify-center text-white text-[12px] font-black shadow-md shadow-blue-500/10 shrink-0">
-                AH
+                {initials}
               </div>
               <div className="hidden sm:flex flex-col leading-none text-left">
-                <span className="text-slate-900 text-[13px] font-bold">Admin HTL</span>
-                <span className="text-slate-400 text-[10px] mt-0.5 font-medium">Administrator</span>
+                <span className="text-slate-900 text-[13px] font-bold">{userName}</span>
+                <span className="text-slate-400 text-[10px] mt-0.5 font-medium">{userRole}</span>
               </div>
               <ChevronDown className={cn(
                 "w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-all",
@@ -110,9 +138,9 @@ export function TopBar() {
               <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 overflow-hidden animate-in fade-in zoom-in-95 duration-200 origin-top-right">
                 <div className="px-4 py-2 border-b border-slate-50 mb-1">
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Cuenta</p>
-                  <p className="text-xs font-semibold text-slate-700 truncate">admin@synapsis.go</p>
+                  <p className="text-xs font-semibold text-slate-700 truncate">{userEmail}</p>
                 </div>
-                
+
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 font-bold transition-colors group"
@@ -140,7 +168,7 @@ export function TopBar() {
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-slate-100 bg-white animate-in slide-in-from-top duration-300">
           <nav className="flex flex-col p-4 gap-2">
-            {NAV_LINKS.map(({ label, href, Icon }) => {
+            {filteredLinks.map(({ label, href, Icon }) => {
               const active = pathname === href || pathname.startsWith(href + '/');
               return (
                 <Link

@@ -10,7 +10,9 @@ import {
   Send, Loader2, ChevronDown, AlertTriangle,
   Cpu, Trash2, ExternalLink, Zap, Activity, ShieldCheck,
   Layout, Sparkles, FlaskConical, BookMarked,
-  Copy, Check, Plus, SlidersHorizontal, X
+  Copy, Check, Plus, SlidersHorizontal, X,
+  Maximize2, ZoomIn, ZoomOut, RotateCcw,
+  History as HistoryIcon, MessageSquare, Clock
 } from "lucide-react";
 import TextareaAutosize from 'react-textarea-autosize';
 import { cn } from "@/lib/utils";
@@ -25,23 +27,103 @@ const URGENCY = {
   critica: { label: "Crítica", bg: "bg-red-500/10", text: "text-red-600", border: "border-red-500/20", dot: "bg-red-500", pulse: true },
 } as const;
 
-/* ── Synthetic empty stream (when clarification is intercepted) ──────────── */
+/* ── ZoomableImage Component ─────────────────────────────────────────────── */
 
-function makeEmptyDataStream(): Response {
-  const encoder = new TextEncoder();
-  const stream = new ReadableStream({
-    start(controller) {
-      controller.enqueue(encoder.encode('0:""\n'));
-      controller.enqueue(encoder.encode('d:{"finishReason":"stop","usage":{"promptTokens":0,"completionTokens":0}}\n'));
-      controller.close();
-    },
-  });
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/plain; charset=utf-8",
-      "x-vercel-ai-data-stream": "v1",
-    },
-  });
+function ZoomableImage({ src, alt }: { src: string; alt?: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  const reset = () => { setScale(1); setPosition({ x: 0, y: 0 }); };
+
+  return (
+    <>
+      <div className="relative group cursor-zoom-in my-6 rounded-2xl overflow-hidden border border-zinc-200 shadow-sm transition-all hover:shadow-xl hover:border-blue-400">
+        <img
+          src={src}
+          alt={alt}
+          className="w-full h-auto object-contain bg-zinc-50"
+          onClick={() => setIsOpen(true)}
+        />
+        <div className="absolute inset-0 bg-blue-600/0 group-hover:bg-blue-600/5 flex items-center justify-center transition-colors pointer-events-none">
+          <Maximize2 className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
+        </div>
+        {alt && (
+          <div className="absolute bottom-0 left-0 right-0 p-3 bg-white/90 backdrop-blur-sm border-t border-zinc-100 text-[10px] font-black text-slate-500 uppercase tracking-widest truncate">
+            {alt}
+          </div>
+        )}
+      </div>
+
+      {isOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="absolute top-6 right-6 flex items-center gap-3">
+            <div className="flex items-center gap-1 bg-white/10 p-1 rounded-xl backdrop-blur-lg">
+              <button onClick={() => setScale(s => Math.min(s + 0.5, 4))} className="p-2 text-white hover:bg-white/10 rounded-lg"><ZoomIn className="w-5 h-5" /></button>
+              <button onClick={() => setScale(s => Math.max(s - 0.5, 1))} className="p-2 text-white hover:bg-white/10 rounded-lg"><ZoomOut className="w-5 h-5" /></button>
+              <button onClick={reset} className="p-2 text-white hover:bg-white/10 rounded-lg border-l border-white/10"><RotateCcw className="w-5 h-5" /></button>
+            </div>
+            <button
+              onClick={() => { setIsOpen(false); reset(); }}
+              className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center hover:bg-red-500 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+          <div className="w-full h-full flex items-center justify-center p-8 overflow-hidden">
+            <img
+              src={src}
+              alt={alt}
+              className="max-w-full max-h-full transition-transform duration-200 cursor-grab active:cursor-grabbing shadow-2xl"
+              style={{
+                transform: `scale(${scale}) translate(${position.x}px, ${position.y}px)`,
+              }}
+            />
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ── Dynamic Thinking State ──────────────────────────────────────────────── */
+
+function ThinkingState() {
+  const [step, setStep] = useState(0);
+  const steps = [
+    "Consultando manuales de Schindler...",
+    "Analizando diagramas técnicos...",
+    "Orquestando comité de agentes...",
+    "Validando códigos de error...",
+    "Generando diagnóstico experto..."
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStep(s => (s + 1) % steps.length);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex justify-start py-8 max-w-4xl mx-auto px-4 md:px-6 animate-in fade-in slide-in-from-left-4 duration-500">
+      <div className="w-9 h-9 rounded-2xl bg-zinc-100 flex items-center justify-center mr-5 flex-shrink-0 animate-pulse">
+        <Activity className="w-5 h-5 text-zinc-400" />
+      </div>
+      <div className="flex flex-col gap-3">
+        <div className="flex gap-2 items-center bg-zinc-50 border border-zinc-100 px-6 py-4 rounded-[2rem] rounded-tl-sm shadow-sm">
+          <div className="flex gap-1.5 mr-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce [animation-duration:0.8s]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce [animation-duration:0.8s] [animation-delay:0.2s]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce [animation-duration:0.8s] [animation-delay:0.4s]" />
+          </div>
+          <span className="text-xs font-black text-slate-500 uppercase tracking-widest animate-pulse">
+            {steps[step]}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /* ── RatingBar ───────────────────────────────────────────────────────────── */
@@ -116,11 +198,11 @@ const UserMessageItem = memo(({ content }: { content: string }) => {
 
   return (
     <div className="w-full flex flex-col items-end mb-8 group">
-      <div className="max-w-[85%] sm:max-w-2xl px-6 py-4 rounded-[2rem] rounded-tr-sm bg-zinc-100 border border-zinc-200/50 text-zinc-800 text-sm leading-relaxed shadow-sm transition-all group-hover:shadow-md">
-        <div 
-          ref={textRef} 
+      <div className="max-w-[85%] sm:max-w-2xl px-6 py-4 rounded-[2.5rem] rounded-tr-sm bg-zinc-900 border border-zinc-900 text-white text-sm leading-relaxed shadow-xl shadow-zinc-900/10 transition-all group-hover:scale-[1.01]">
+        <div
+          ref={textRef}
           className={cn(
-            "overflow-hidden transition-all duration-300", 
+            "overflow-hidden transition-all duration-300 font-medium",
             !expanded && "line-clamp-3 md:line-clamp-5"
           )}
         >
@@ -129,7 +211,7 @@ const UserMessageItem = memo(({ content }: { content: string }) => {
         {(isClamped || expanded) && (
           <button
             onClick={() => setExpanded(!expanded)}
-            className="mt-3 text-[11px] font-black uppercase tracking-widest text-zinc-400 hover:text-blue-600 transition-colors"
+            className="mt-3 text-[11px] font-black uppercase tracking-widest text-zinc-400 hover:text-blue-400 transition-colors"
           >
             {expanded ? "Mostrar menos" : "Ver más"}
           </button>
@@ -151,43 +233,49 @@ const AiMessageItem = memo(({ m, rated, onRate, sessionMode, servMsgId, sessionI
 
   return (
     <div className={cn(
-      "w-full py-8 transition-colors duration-500 rounded-[2rem]",
-      isStreaming ? "bg-white" : "bg-zinc-50/30"
+      "w-full py-8 transition-colors duration-500 rounded-[2.5rem]",
+      isStreaming ? "bg-white" : "bg-zinc-50/20"
     )}>
       <div className="flex items-start gap-5 max-w-4xl mx-auto px-4 md:px-6">
         {/* Logo */}
-        <div className="w-9 h-9 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20 flex-shrink-0 mt-0.5">
+        <div className="w-9 h-9 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20 flex-shrink-0 mt-0.5 border border-blue-400">
           <Activity className="w-5 h-5 text-white" />
         </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="text-sm leading-relaxed text-zinc-800 w-full font-sans">
-            <div className="prose prose-neutral max-w-none text-gray-800 leading-snug prose-p:my-4 prose-ul:my-3 prose-ol:my-3 prose-li:my-0.5 prose-li:marker:text-gray-500">
+          <div className="text-sm text-zinc-800 w-full font-sans">
+            <div className="prose prose-neutral max-w-none text-gray-900 leading-[1.8] prose-p:my-5 prose-ul:my-5 prose-ol:my-5 prose-li:my-1 prose-li:marker:text-blue-600 prose-li:marker:font-black">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
-                  h2: ({ children }) => <h2 className="text-sm font-black text-zinc-900 mt-4 mb-2 uppercase tracking-wider">{children}</h2>,
-                  h3: ({ children }) => <h3 className="text-xs font-black text-zinc-900 mt-3 mb-1 uppercase tracking-widest">{children}</h3>,
-                  strong: ({ children }) => <strong className="font-bold text-zinc-900">{children}</strong>,
-                  ul: ({ children }) => <ul className="list-disc list-outside space-y-2 my-3 ml-4">{children}</ul>,
-                  ol: ({ children }) => <ol className="list-decimal list-outside space-y-2 my-3 ml-4">{children}</ol>,
-                  li: ({ children }) => <li className="pl-1 leading-relaxed">{children}</li>,
-                  p: ({ children }) => <p className="leading-relaxed text-zinc-800 mb-4 last:mb-0">{children}</p>,
-                  hr: () => <hr className="my-5 border-zinc-100" />
+                  h2: ({ children }) => <h2 className="text-[13px] font-black text-zinc-900 mt-8 mb-4 uppercase tracking-wider flex items-center gap-2">
+                    <span className="w-1.5 h-4 bg-blue-600 rounded-full" />
+                    {children}
+                  </h2>,
+                  h3: ({ children }) => <h3 className="text-xs font-black text-zinc-900 mt-6 mb-2 uppercase tracking-widest text-blue-700">{children}</h3>,
+                  strong: ({ children }) => <strong className="font-extrabold text-zinc-950 bg-blue-50 px-1 rounded-sm">{children}</strong>,
+                  ul: ({ children }) => <ul className="list-disc list-outside space-y-3 my-4 ml-6">{children}</ul>,
+                  ol: ({ children }) => <ol className="list-decimal list-outside space-y-3 my-4 ml-6">{children}</ol>,
+                  li: ({ children }) => <li className="pl-1 leading-relaxed font-medium text-zinc-800">{children}</li>,
+                  p: ({ children }) => <p className="leading-relaxed text-zinc-900 mb-5 last:mb-0 font-medium">{children}</p>,
+                  hr: () => <hr className="my-8 border-zinc-100" />,
+                  img: ({ src, alt }: any) => <ZoomableImage src={String(src || '')} alt={String(alt || '')} />,
+                  table: ({ children }) => <div className="overflow-x-auto my-6 border border-zinc-200 rounded-2xl shadow-sm"><table className="w-full text-xs text-left border-collapse">{children}</table></div>,
+                  th: ({ children }) => <th className="bg-zinc-50 p-4 font-black uppercase tracking-widest text-[10px] text-zinc-600 border-b border-zinc-200">{children}</th>,
+                  td: ({ children }) => <td className="p-4 border-b border-zinc-100 text-zinc-800 font-bold">{children}</td>
                 }}
               >
                 {m.content}
               </ReactMarkdown>
             </div>
             {isStreaming && (
-              <span className="inline-block w-1 h-3 mt-1 bg-blue-600 animate-pulse align-middle opacity-50" />
+              <span className="inline-block w-1 h-4 mt-1 bg-blue-600 animate-pulse align-middle opacity-50" />
             )}
           </div>
 
-          {/* Action Bar - Only visible when done */}
           {!isStreaming && m.content && (
-            <div className="flex items-center justify-between mt-6 text-sm text-zinc-500 border-t border-zinc-100/50 pt-4 animate-in fade-in duration-700">
+            <div className="flex items-center justify-between mt-8 text-sm text-zinc-500 border-t border-zinc-100/80 pt-6 animate-in fade-in duration-700">
               <div className="flex-1">
                 {sessionMode === "record" && servMsgId && (
                   <RatingBar
@@ -200,11 +288,10 @@ const AiMessageItem = memo(({ m, rated, onRate, sessionMode, servMsgId, sessionI
               </div>
               <button
                 onClick={handleCopy}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-zinc-200 hover:bg-zinc-50 hover:border-zinc-300 transition-all text-[11px] font-black uppercase tracking-widest text-zinc-500 shadow-sm"
-                title="Copiar respuesta"
+                className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-white border border-zinc-200 hover:bg-zinc-50 hover:border-blue-400 transition-all text-[11px] font-black uppercase tracking-widest text-zinc-500 hover:text-blue-600 shadow-sm active:scale-95"
               >
                 {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-                {copied ? <span className="text-emerald-500">Copiado</span> : "Copiar"}
+                {copied ? <span className="text-emerald-500">Copiado</span> : "Copiar Diagnóstico"}
               </button>
             </div>
           )}
@@ -218,49 +305,57 @@ AiMessageItem.displayName = "AiMessageItem";
 /* ── AgentFlags ──────────────────────────────────────────────────────────── */
 
 interface AgentFlags {
-  clarifier:  boolean;
-  planner:    boolean;
+  clarifier: boolean;
+  planner: boolean;
   textSearch: boolean;
-  imgSearch:  boolean;
-  analyst:    boolean;
-  metrifier:  boolean;
+  imgSearch: boolean;
+  analyst: boolean;
+  metrifier: boolean;
 }
 
 const DEFAULT_AGENT_FLAGS: AgentFlags = {
-  clarifier:  true,
-  planner:    true,
+  clarifier: true,
+  planner: false,
   textSearch: true,
-  imgSearch:  true,
-  analyst:    true,
-  metrifier:  true,
+  imgSearch: true,
+  analyst: true,
+  metrifier: true,
 };
 
 const AGENT_LABELS: Record<keyof AgentFlags, { label: string; desc: string }> = {
-  clarifier:  { label: "Clarificador",       desc: "Expande y clasifica la query (N0)" },
-  planner:    { label: "Planificador",        desc: "Genera plan de búsqueda dual (N1)" },
-  textSearch: { label: "Búsqueda Texto",      desc: "Retrieval vectorial de chunks (N2A)" },
-  imgSearch:  { label: "Búsqueda Imágenes",   desc: "Retrieval vectorial de diagramas (N2B)" },
-  analyst:    { label: "Analista",            desc: "Evalúa suficiencia y controla loops (N3)" },
-  metrifier:  { label: "Metrificador",        desc: "Persiste métricas y mensajes (N5)" },
+  clarifier: { label: "Clarificador", desc: "Expande y clasifica la query (N0)" },
+  planner: { label: "Planificador", desc: "Genera plan de búsqueda dual (N1)" },
+  textSearch: { label: "Búsqueda Texto", desc: "Retrieval vectorial de chunks (N2A)" },
+  imgSearch: { label: "Búsqueda Imágenes", desc: "Retrieval vectorial de diagramas (N2B)" },
+  analyst: { label: "Analista", desc: "Evalúa suficiencia y controla loops (N3)" },
+  metrifier: { label: "Metrificador", desc: "Persiste métricas y mensajes (N5)" },
 };
 
 /* ── SynapsisGoChat ──────────────────────────────────────────────────────── */
 
-export function SynapsisGoChat({ models }: { models: EquipmentModel[] }) {
+export function SynapsisGoChat({
+  models,
+  userRole = null,
+  isDevMode = false
+}: {
+  models: EquipmentModel[];
+  userRole?: string | null;
+  isDevMode?: boolean;
+}) {
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [sessionMode, setSessionMode] = useState<"test" | "record">("test");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [urgency, setUrgency] = useState<string | null>(null);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const [agentFlags, setAgentFlags] = useState<AgentFlags>(DEFAULT_AGENT_FLAGS);
   const [agentPanelOpen, setAgentPanelOpen] = useState(false);
-  const agentFlagsRef = useRef<AgentFlags>(DEFAULT_AGENT_FLAGS);
-  // messageServerIds[i] maps assistant message index → server messageId for rating
-  const messageServerIdsRef = useRef<string[]>([]);
-  const assistantMsgIndexRef = useRef(0);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [sessionHistory, setSessionHistory] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
-  // Refs used inside fetch override closure (avoid stale closures)
+  const agentFlagsRef = useRef<AgentFlags>(DEFAULT_AGENT_FLAGS);
+  const messageServerIdsRef = useRef<string[]>([]);
+
   const sessionIdRef = useRef<string | null>(null);
   const sessionModeRef = useRef<"test" | "record">("test");
   const selectedModelRef = useRef<string>("");
@@ -268,7 +363,6 @@ export function SynapsisGoChat({ models }: { models: EquipmentModel[] }) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Keep refs in sync
   useEffect(() => { sessionIdRef.current = sessionId; }, [sessionId]);
   useEffect(() => { sessionModeRef.current = sessionMode; }, [sessionMode]);
   useEffect(() => { selectedModelRef.current = selectedModel; }, [selectedModel]);
@@ -281,48 +375,38 @@ export function SynapsisGoChat({ models }: { models: EquipmentModel[] }) {
       sessionId,
       sessionMode,
     },
-
     fetch: useCallback(async (url: RequestInfo | URL, init?: RequestInit) => {
-      // Inyectar agentFlags en el body de cada request
       let modifiedInit = init;
       if (init?.body) {
         try {
           const parsed = JSON.parse(init.body as string);
           parsed.agentFlags = agentFlagsRef.current;
           modifiedInit = { ...init, body: JSON.stringify(parsed) };
-        } catch { /* silencioso — usar init original */ }
+        } catch { /* ignore */ }
       }
-
       const res = await fetch(url, modifiedInit);
-
-      // Read metrics headers from streaming response
       try {
         const urgencyLevel = res.headers.get("x-urgency-level");
-        const servMsgId    = res.headers.get("x-message-id");
-
+        const servMsgId = res.headers.get("x-message-id");
         if (urgencyLevel) setUrgency(urgencyLevel);
-        if (servMsgId)    messageServerIdsRef.current.push(servMsgId);
-
-      } catch { /* silencioso */ }
-
+        if (servMsgId) messageServerIdsRef.current.push(servMsgId);
+      } catch { /* ignore */ }
       return res;
     }, []),
   });
 
-  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
-  // Clear empty assistant messages injected by the synthetic empty stream
   useEffect(() => {
+    if (isLoading) return;
     const last = messages[messages.length - 1];
     if (last && last.role === "assistant" && last.content === "") {
       setMessages(prev => prev.slice(0, -1));
     }
-  }, [messages, setMessages]);
+  }, [messages, isLoading, setMessages]);
 
-  // ── Create session on first submit ──────────────────────────────────────
   const ensureSession = useCallback(async (): Promise<string | null> => {
     if (sessionIdRef.current) return sessionIdRef.current;
     try {
@@ -339,7 +423,7 @@ export function SynapsisGoChat({ models }: { models: EquipmentModel[] }) {
       setSessionId(data.sessionId);
       return data.sessionId;
     } catch (err) {
-      console.error("[session] Error creating session:", err);
+      console.error("[session] Error:", err);
       return null;
     }
   }, []);
@@ -351,84 +435,80 @@ export function SynapsisGoChat({ models }: { models: EquipmentModel[] }) {
     handleSubmit(e);
   }, [input, isLoading, ensureSession, handleSubmit]);
 
-  const toggleAgent = useCallback((key: keyof AgentFlags) => {
-    setAgentFlags(prev => {
-      const next = { ...prev, [key]: !prev[key] };
-      agentFlagsRef.current = next;
-      return next;
-    });
-  }, []);
-
-  const activeCount = Object.values(agentFlags).filter(Boolean).length;
-
-
-
-  // ── Clear / reset ────────────────────────────────────────────────────────
   const handleClear = useCallback(async () => {
     const sid = sessionIdRef.current;
     if (sid && sessionModeRef.current === "test") {
-      try {
-        await fetch(`/api/chat/sessions/${sid}`, { method: "DELETE" });
-      } catch { /* ignore */ }
+      try { await fetch(`/api/chat/sessions/${sid}`, { method: "DELETE" }); } catch { /* ignore */ }
     }
-    // Always clear local state
     setMessages([]);
     setSessionId(null);
     sessionIdRef.current = null;
     setUrgency(null);
     messageServerIdsRef.current = [];
-    assistantMsgIndexRef.current = 0;
     setRatings({});
   }, [setMessages]);
 
-  // ── Derive visible messages (skip empty assistant stubs) ─────────────────
+  const fetchHistory = async () => {
+    setHistoryLoading(true);
+    setHistoryOpen(true);
+    try {
+      const res = await fetch("/api/chat/sessions");
+      if (res.ok) {
+        const data = await res.json();
+        setSessionHistory(data);
+      }
+    } catch { }
+    finally { setHistoryLoading(false); }
+  };
+
+  const loadSession = async (sid: string) => {
+    setHistoryOpen(false);
+    setHistoryLoading(true);
+    try {
+      const res = await fetch(`/api/chat/sessions/${sid}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSessionId(data.session.id);
+        setSessionMode(data.session.mode);
+        setSelectedModel(data.session.equipment_model || "");
+        setMessages(data.messages.map((m: any) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+        })));
+      }
+    } catch { }
+    finally { setHistoryLoading(false); }
+  };
+
   const visibleMessages = messages.filter(m => m.content !== "");
-  const assistantMessages = visibleMessages.filter(m => m.role === "assistant");
-
-  const modelLabel = (m: EquipmentModel) => m.equipmentModel || "General";
-
-  // Auto-scroll inteligence: keep scrolled to bottom on new messages
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isLoading]);
 
   return (
-    <div className="flex flex-col h-full max-h-full overflow-hidden bg-white rounded-3xl border border-slate-200 shadow-2xl relative">
-
-      {/* ── CSS Reset for Spin Buttons and Scrollbars ── */}
+    <div className="flex flex-col h-full max-h-full overflow-hidden bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl relative">
       <style jsx global>{`
-        textarea::-webkit-inner-spin-button, 
-        textarea::-webkit-outer-spin-button { 
-          -webkit-appearance: none; 
-          margin: 0; 
-        }
+        textarea::-webkit-inner-spin-button, textarea::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .scrollbar-hidden::-webkit-scrollbar { display: none; }
       `}</style>
 
-      {/* ── Chat Experience ── */}
       <div className="flex flex-col flex-1 min-w-0 relative">
-
         {/* Header */}
-        <div className="sticky top-0 z-20 flex-shrink-0 flex flex-col md:flex-row md:items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-md border-b border-slate-100 gap-4">
-
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <Activity className="w-5 h-5 text-white" />
+        <div className="sticky top-0 z-20 flex-shrink-0 flex flex-col md:flex-row md:items-center justify-between px-8 py-5 bg-white/90 backdrop-blur-xl border-b border-slate-100 gap-4 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-[1.25rem] bg-zinc-900 flex items-center justify-center shadow-xl shadow-zinc-900/10">
+              <Activity className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-sm font-black text-slate-900 tracking-tight">Comité de Diagnóstico</h1>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Multimodal Activo</span>
-                {urgency && (
+              <h1 className="text-[15px] font-black text-slate-950 tracking-tight leading-none">Comité Synapsis Go</h1>
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">Pipeline Multi-Agente Activo</span>
+                {urgency && URGENCY[urgency as keyof typeof URGENCY] && (
                   <div className={cn(
-                    "px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1",
+                    "px-2.5 py-1 rounded-full text-[9px] font-black flex items-center gap-1.5 uppercase tracking-widest bg-white shadow-sm border",
                     URGENCY[urgency as keyof typeof URGENCY]?.text,
+                    URGENCY[urgency as keyof typeof URGENCY]?.border,
                   )}>
-                    <div className={cn(
-                      "w-1.5 h-1.5 rounded-full",
-                      URGENCY[urgency as keyof typeof URGENCY]?.dot,
-                      URGENCY[urgency as keyof typeof URGENCY]?.pulse && "animate-pulse",
-                    )} />
+                    <div className={cn("w-1.5 h-1.5 rounded-full", URGENCY[urgency as keyof typeof URGENCY]?.dot)} />
                     {URGENCY[urgency as keyof typeof URGENCY]?.label}
                   </div>
                 )}
@@ -436,299 +516,248 @@ export function SynapsisGoChat({ models }: { models: EquipmentModel[] }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-hidden shrink-0">
-
-            {/* ── Agent Panel Toggle ── */}
-            <div className="relative">
-              <button
-                onClick={() => setAgentPanelOpen(v => !v)}
-                title="Configurar agentes"
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold transition-all border",
-                  agentPanelOpen
-                    ? "bg-slate-900 text-white border-slate-900"
-                    : activeCount < 6
-                      ? "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
-                      : "bg-slate-100 text-slate-500 border-transparent hover:bg-slate-200",
-                )}
-              >
-                <SlidersHorizontal className="w-3 h-3" />
-                <span>{activeCount}/6</span>
-              </button>
-
-              {agentPanelOpen && (
-                <div className="absolute right-0 top-full mt-2 z-50 w-72 bg-white border border-slate-200 rounded-2xl shadow-2xl shadow-slate-200/60 p-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[11px] font-black text-slate-900 uppercase tracking-widest">
-                      Agentes del Comité
-                    </span>
-                    <button
-                      onClick={() => setAgentPanelOpen(false)}
-                      className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    {(Object.keys(AGENT_LABELS) as Array<keyof AgentFlags>).map(key => {
-                      const { label, desc } = AGENT_LABELS[key];
-                      const enabled = agentFlags[key];
-                      return (
-                        <button
-                          key={key}
-                          onClick={() => toggleAgent(key)}
-                          className={cn(
-                            "w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all text-left group",
-                            enabled
-                              ? "bg-slate-50 hover:bg-slate-100"
-                              : "bg-red-50/50 hover:bg-red-50 opacity-70",
-                          )}
-                        >
-                          <div>
-                            <p className={cn(
-                              "text-[12px] font-bold leading-none",
-                              enabled ? "text-slate-800" : "text-slate-400 line-through",
-                            )}>
-                              {label}
-                            </p>
-                            <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">{desc}</p>
-                          </div>
-                          <div className={cn(
-                            "w-8 h-4.5 rounded-full transition-all flex-shrink-0 relative",
-                            enabled ? "bg-blue-600" : "bg-slate-200",
-                          )} style={{ height: "18px", width: "32px" }}>
-                            <div className={cn(
-                              "absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow transition-all",
-                              enabled ? "left-[14px]" : "left-0.5",
-                            )} />
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {activeCount < 6 && (
-                    <div className="mt-3 px-3 py-2 bg-amber-50 border border-amber-100 rounded-xl">
-                      <p className="text-[10px] font-bold text-amber-700 uppercase tracking-widest">
-                        Modo degradado activo
-                      </p>
-                      <p className="text-[10px] text-amber-600 mt-0.5 leading-tight">
-                        Los agentes deshabilitados usan fallbacks automáticos. El flujo no se rompe.
-                      </p>
-                    </div>
-                  )}
-
-                  <button
-                    onClick={() => { setAgentFlags(DEFAULT_AGENT_FLAGS); agentFlagsRef.current = DEFAULT_AGENT_FLAGS; }}
-                    className="mt-2 w-full text-[10px] font-bold text-slate-400 hover:text-blue-600 uppercase tracking-widest py-1.5 transition-colors"
-                  >
-                    Restaurar todos
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* ── Mode Switcher ── */}
-            <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1">
+          <div className="flex items-center gap-3">
+            {/* Mode Switcher */}
+            <div className="flex items-center gap-1 bg-zinc-100 p-1 rounded-2xl border border-zinc-200/50">
               <button
                 onClick={() => { setSessionMode("test"); sessionModeRef.current = "test"; }}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all",
-                  sessionMode === "test"
-                    ? "bg-white text-slate-700 shadow-sm"
-                    : "text-slate-400 hover:text-slate-600",
+                  "flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-black tracking-widest uppercase transition-all",
+                  sessionMode === "test" ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600",
                 )}
               >
-                <FlaskConical className="w-3 h-3" /> Prueba
+                <FlaskConical className="w-3.5 h-3.5" /> Prueba
               </button>
               <button
                 onClick={() => { setSessionMode("record"); sessionModeRef.current = "record"; }}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all",
-                  sessionMode === "record"
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-600",
+                  "flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-black tracking-widest uppercase transition-all",
+                  sessionMode === "record" ? "bg-blue-600 text-white shadow-lg" : "text-slate-400 hover:text-slate-600",
                 )}
               >
-                <BookMarked className="w-3 h-3" /> Registro
+                <BookMarked className="w-3.5 h-3.5" /> Registro
               </button>
             </div>
 
+            <button
+              onClick={fetchHistory}
+              className="w-11 h-11 rounded-2xl bg-white border border-slate-200 text-slate-500 hover:border-blue-400 hover:text-blue-600 flex items-center justify-center transition-all shadow-sm"
+              title="Historial de diagnóstico"
+            >
+              <HistoryIcon className="w-5 h-5" />
+            </button>
+
+            <button
+              onClick={() => setAgentPanelOpen(v => !v)}
+              className={cn(
+                "w-11 h-11 rounded-2xl flex items-center justify-center transition-all border shadow-sm",
+                agentPanelOpen ? "bg-zinc-900 border-zinc-900 text-white" : "bg-white border-slate-200 text-slate-500 hover:border-blue-400 hover:text-blue-600"
+              )}
+            >
+              <SlidersHorizontal className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
+        {/* Agent Panel Overlay - Editable for Admin/Auditor DevMode */}
+        {agentPanelOpen && (
+          <div className="absolute right-8 top-20 z-50 w-80 bg-white/95 backdrop-blur-xl border border-slate-200 rounded-3xl shadow-2xl p-6 animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="flex items-center justify-between mb-5">
+              <span className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em]">Configuración del Comité</span>
+              <button onClick={() => setAgentPanelOpen(false)} className="text-slate-400 hover:text-red-500 transition-colors"><X className="w-5 h-5" /></button>
+            </div>
+            <p className="text-[9px] text-slate-400 font-bold uppercase mb-4 px-1">
+              {(userRole === "Admin" || (userRole === "Auditor" && isDevMode))
+                ? "Ajusta la respuesta del sistema activando o desactivando agentes."
+                : "Estado actual de los agentes (Solo lectura)."
+              }
+            </p>
+            <div className="space-y-2">
+              {(Object.keys(AGENT_LABELS) as Array<keyof AgentFlags>).map(key => {
+                const canEdit = userRole === "Admin" || (userRole === "Auditor" && isDevMode);
+
+                return (
+                  <div
+                    key={key}
+                    onClick={() => {
+                      if (canEdit) {
+                        setAgentFlags(prev => ({ ...prev, [key]: !prev[key] }));
+                      }
+                    }}
+                    className={cn(
+                      "w-full flex items-center justify-between p-3 rounded-2xl transition-all border",
+                      agentFlags[key] ? "bg-blue-50/50 border-blue-100" : "bg-slate-50 border-slate-100",
+                      canEdit && "cursor-pointer hover:border-blue-400"
+                    )}
+                  >
+                    <div className="text-left">
+                      <p className={cn("text-[10px] font-black uppercase tracking-tight", agentFlags[key] ? "text-blue-700" : "text-slate-400")}>{AGENT_LABELS[key].label}</p>
+                      <p className="text-[9px] text-slate-400 font-bold mt-0.5">{AGENT_LABELS[key].desc}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={cn("text-[9px] font-black uppercase", agentFlags[key] ? "text-blue-600" : "text-slate-300")}>
+                        {agentFlags[key] ? "Activo" : "Inactivo"}
+                      </span>
+                      <div className={cn(
+                        "w-2 h-2 rounded-full",
+                        agentFlags[key] ? "bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.6)] animate-pulse" : "bg-slate-300"
+                      )} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* History Sidebar/Overlay */}
+        {historyOpen && (
+          <div className="absolute right-8 top-20 z-50 w-80 bg-white border border-slate-200 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[70vh] animate-in fade-in slide-in-from-right-4 duration-300">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-zinc-50">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-blue-600" />
+                <span className="text-[11px] font-black text-slate-900 uppercase tracking-widest">Sesiones Recientes</span>
+              </div>
+              <button onClick={() => setHistoryOpen(false)} className="text-slate-400 hover:text-red-500"><X className="w-5 h-5" /></button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-3 space-y-1">
+              {historyLoading && sessionHistory.length === 0 ? (
+                <div className="py-10 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-500" /></div>
+              ) : sessionHistory.length === 0 ? (
+                <div className="py-10 text-center text-xs text-slate-400 font-bold uppercase">No hay sesiones grabadas</div>
+              ) : (
+                sessionHistory.map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => loadSession(s.id)}
+                    className="w-full p-4 rounded-2xl text-left hover:bg-blue-50 border border-transparent hover:border-blue-100 transition-all group"
+                  >
+                    <div className="flex justify-between items-start mb-1">
+                      <span className={cn("text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md", s.mode === 'record' ? 'bg-blue-100 text-blue-700' : 'bg-zinc-100 text-zinc-500')}>
+                        {s.mode === 'record' ? 'Registro' : 'Prueba'}
+                      </span>
+                      <span className="text-[9px] text-zinc-400 font-bold">{new Date(s.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <p className="text-[11px] font-bold text-slate-800 line-clamp-1 group-hover:text-blue-700">Modelo {s.equipment_model || 'Gral.'}</p>
+                    <p className="text-[10px] text-slate-400 font-medium mt-1">{s.message_count} mensajes en el hilo</p>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Message Pool */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col px-0 py-8 scroll-smooth scrollbar-hidden">
-          <div className="max-w-4xl mx-auto px-4 md:px-6 w-full space-y-2">
+          <div className="max-w-4xl mx-auto px-4 md:px-6 w-full space-y-4">
             {visibleMessages.length === 0 && (
-              <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center">
+              <div className="flex flex-col items-center justify-center min-h-[60vh] gap-8 text-center animate-in zoom-in duration-700">
                 <div className="relative">
-                  <div className="absolute inset-0 rounded-[2.5rem] bg-blue-500/10 blur-2xl animate-pulse" />
-                  <div className="relative w-24 h-24 rounded-[2.5rem] bg-white border border-slate-100 flex items-center justify-center shadow-2xl transition-transform hover:scale-105 duration-500">
-                    <Activity className="w-12 h-12 text-blue-600" />
+                  <div className="absolute inset-0 rounded-[3rem] bg-blue-500/20 blur-3xl animate-pulse" />
+                  <div className="relative w-28 h-28 rounded-[3rem] bg-zinc-900 text-white flex items-center justify-center shadow-2xl border border-white/5 group transition-transform hover:scale-110 duration-500">
+                    <Activity className="w-14 h-14" />
                   </div>
                 </div>
-                <div>
-                  <h3 className="text-2xl font-black text-slate-900 tracking-tight">Synapsis Go Intelligence</h3>
-                  <p className="text-sm text-slate-400 mt-3 max-w-[340px] leading-relaxed mx-auto font-medium">
-                    Selecciona el equipo para iniciar un diagnóstico experto con manuales en tiempo real.
+                <div className="space-y-4">
+                  <h3 className="text-3xl font-black text-slate-950 tracking-tight">IA Multimodal de Diagnóstico</h3>
+                  <p className="text-[13px] text-slate-500 mt-3 max-w-[360px] leading-relaxed mx-auto font-bold uppercase tracking-tight">
+                    Elige un modelo operativo para activar el comité de agentes expertos.
                   </p>
-                  
-                    {/* Selector de Modelos Estilo Cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-12 w-full">
-                      {models
-                        .filter(m => m.equipmentModel === "3300" || m.equipmentModel === "5500")
-                        .map(m => {
-                          const active = selectedModel === m.equipmentModel;
-                          return (
-                            <button
-                              key={m.equipmentModel || "gen"}
-                              onClick={() => { setSelectedModel(m.equipmentModel || ""); ensureSession(); }}
-                              className={cn(
-                                "p-6 rounded-[2rem] border transition-all text-left flex items-center gap-5 group",
-                                active
-                                  ? "bg-blue-600 border-blue-600 shadow-xl shadow-blue-100" 
-                                  : "bg-white border-zinc-100 hover:border-zinc-200 hover:bg-zinc-50"
-                              )}
-                            >
-                              <div className={cn(
-                                "w-12 h-12 rounded-2xl flex items-center justify-center transition-all",
-                                active ? "bg-white/10 text-white shadow-lg" : "bg-zinc-100 text-zinc-400"
-                              )}>
-                                <Cpu className="w-6 h-6" />
-                              </div>
-                              <div>
-                                <p className={cn(
-                                  "text-[13px] font-black uppercase tracking-tight",
-                                  active ? "text-white" : "text-zinc-900"
-                                )}>Schindler {m.equipmentModel}</p>
-                                <p className={cn(
-                                  "text-[9px] font-bold uppercase tracking-widest mt-1",
-                                  active ? "text-blue-100" : "text-zinc-400"
-                                )}>Manuales Listos</p>
-                              </div>
-                            </button>
-                          )
-                        })}
-                    </div>
-                  
-                  {selectedModel !== "" && (
-                    <div className="mt-10 animate-in fade-in slide-in-from-top-4 duration-700">
-                      <div className="inline-flex items-center gap-3 bg-emerald-50 border border-emerald-100 px-5 py-2.5 rounded-full">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="text-[11px] font-black text-emerald-700 uppercase tracking-widest">
-                          Estrategia para Schindler {selectedModel} Cargada
-                        </span>
-                      </div>
-                    </div>
-                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8 w-full max-w-md">
+                    {models.filter(m => m.equipmentModel === "3300" || m.equipmentModel === "5500").map(m => (
+                      <button
+                        key={m.equipmentModel}
+                        onClick={() => { setSelectedModel(m.equipmentModel || ""); ensureSession(); }}
+                        className={cn(
+                          "p-6 rounded-[2.5rem] border-2 transition-all text-left flex items-center gap-5 shadow-sm group active:scale-95",
+                          selectedModel === m.equipmentModel ? "bg-blue-600 border-blue-600 shadow-blue-200" : "bg-white border-slate-100 hover:border-blue-400 hover:shadow-xl"
+                        )}
+                      >
+                        <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-all", selectedModel === m.equipmentModel ? "bg-white/20 text-white" : "bg-blue-50 text-blue-500")}>
+                          <Cpu className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <p className={cn("text-lg font-black tracking-tight", selectedModel === m.equipmentModel ? "text-white" : "text-slate-900")}>Schindler {m.equipmentModel}</p>
+                          <p className={cn("text-[9px] font-black uppercase tracking-widest mt-0.5", selectedModel === m.equipmentModel ? "text-blue-100" : "text-slate-400")}>Base Lista</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Render messages */}
-            {(() => {
-              let assistantIdx = 0;
-              return visibleMessages.map((m, idx) => {
-                if (m.role === "assistant") {
-                  const sIdx = assistantIdx++;
-                  const servMsgId = messageServerIdsRef.current[sIdx] ?? null;
-                  const rated = servMsgId ? (ratings[servMsgId] ?? null) : null;
-                  const isLatest = idx === visibleMessages.length - 1;
-                  return (
-                    <AiMessageItem
-                      key={m.id}
-                      m={m}
-                      rated={rated}
-                      onRate={(r: number) => setRatings(prev => ({ ...prev, [servMsgId]: r }))}
-                      sessionMode={sessionMode}
-                      servMsgId={servMsgId}
-                      sessionId={sessionId}
-                      isStreaming={isLatest && isLoading}
-                    />
-                  );
-                }
+            {visibleMessages.map((m, idx) => {
+              if (m.role === "assistant") {
+                const isLatest = idx === visibleMessages.length - 1;
+                const sIdx = visibleMessages.filter((msg, i) => msg.role === 'assistant' && i <= idx).length - 1;
+                const servMsgId = messageServerIdsRef.current[sIdx] ?? null;
+                return (
+                  <AiMessageItem key={m.id} m={m} rated={ratings[servMsgId!] ?? null} onRate={(r: number) => setRatings(p => ({ ...p, [servMsgId!]: r }))} sessionMode={sessionMode} servMsgId={servMsgId} sessionId={sessionId} isStreaming={isLatest && isLoading} />
+                );
+              }
+              return <UserMessageItem key={m.id} content={m.content} />;
+            })}
 
-                // User message
-                return <UserMessageItem key={m.id} content={m.content} />;
-              });
-            })()}
-
-            {isLoading && !messages[messages.length - 1]?.content && (
-              <div className="flex justify-start py-8 max-w-4xl mx-auto px-4 md:px-6">
-                <div className="w-9 h-9 rounded-2xl bg-zinc-100 flex items-center justify-center mr-5 flex-shrink-0 animate-pulse">
-                  <Activity className="w-5 h-5 text-zinc-400" />
-                </div>
-                <div className="flex gap-1.5 items-center bg-zinc-50 border border-zinc-100 px-6 py-4 rounded-[2rem] rounded-tl-sm">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce [animation-duration:0.8s]" />
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce [animation-duration:0.8s] [animation-delay:0.2s]" />
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce [animation-duration:0.8s] [animation-delay:0.4s]" />
-                </div>
-              </div>
-            )}
-
+            {isLoading && !messages[messages.length - 1]?.content && <ThinkingState />}
             <div ref={messagesEndRef} className="h-10" />
           </div>
         </div>
 
         {/* Input Bar */}
-        <div className="bg-white border-t border-zinc-100 pb-8 pt-4">
-          <div className="max-w-4xl mx-auto px-4 md:px-6">
-            <form
-              onSubmit={onSubmitWithSession}
-              className="group relative flex items-end gap-3 bg-zinc-100/50 border border-zinc-200 rounded-[2rem] px-6 py-4 focus-within:bg-white focus-within:border-blue-400 focus-within:ring-8 focus-within:ring-blue-500/5 transition-all duration-500 shadow-sm"
-            >
+        <div className="bg-white border-t border-slate-100 pb-10 pt-4 px-4">
+          <div className="max-w-4xl mx-auto">
+            {/* Quick Actions (HU0031) */}
+            {selectedModel && visibleMessages.length === 0 && (
+              <div className="flex flex-wrap gap-2 mb-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
+                {[
+                  { label: "Tengo un problema...", text: "Tengo un problema con " },
+                  { label: "Quiero consultar...", text: "Quiero consultar sobre " },
+                  { label: "Existe algún error...", text: "Existe algún error relacionado a " },
+                  { label: "Cómo reseteo...", text: "Solicito procedimiento para resetear " }
+                ].map(action => (
+                  <button
+                    key={action.label}
+                    onClick={() => {
+                      handleInputChange({ target: { value: action.text } } as any);
+                      textareaRef.current?.focus();
+                    }}
+                    className="px-4 py-2 rounded-2xl bg-white border border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-all shadow-sm active:scale-95"
+                  >
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <form onSubmit={onSubmitWithSession} className={cn("group flex items-end gap-3 border-2 rounded-[2.5rem] px-8 py-5 transition-all duration-500 shadow-sm", !selectedModel ? "bg-slate-50 border-slate-100 opacity-60" : "bg-zinc-100 border-zinc-200 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-[12px] focus-within:ring-blue-500/5 focus-within:shadow-2xl")}>
               <TextareaAutosize
                 ref={textareaRef as any}
                 value={input}
                 onChange={handleInputChange}
-                minRows={1}
-                maxRows={8}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    if (input.trim()) onSubmitWithSession(e as any);
-                  }
-                }}
-                placeholder="Explica la falla o el código de error..."
-                className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-[15px] py-1.5 text-zinc-800 placeholder:text-zinc-400 resize-none selection:bg-blue-100 leading-relaxed font-sans"
+                minRows={1} maxRows={8}
+                disabled={!selectedModel}
+                placeholder={!selectedModel ? "Seleccione un modelo operativo..." : "Indica la falla, código de error o comportamiento..."}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (input.trim() && selectedModel) onSubmitWithSession(e as any); } }}
+                className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-[15px] py-1 text-slate-900 placeholder:text-slate-400 resize-none font-bold disabled:cursor-not-allowed leading-relaxed"
               />
-              <div className="flex items-center gap-3 mb-1">
+              <div className="flex items-center gap-4 mb-0.5">
                 {visibleMessages.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleClear}
-                    title="Nueva Consulta (Limpia contexto)"
-                    className="p-2.5 text-zinc-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-                  >
-                    <Plus className="w-5 h-5" />
-                  </button>
+                  <button type="button" onClick={handleClear} className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all shadow-sm"><Plus className="w-6 h-6" /></button>
                 )}
-                <button
-                  type="submit"
-                  disabled={!input.trim() || isLoading}
-                  className={cn(
-                    "w-11 h-11 rounded-2xl flex items-center justify-center transition-all duration-300",
-                    !input.trim() || isLoading
-                      ? "bg-zinc-200 text-zinc-400 cursor-not-allowed"
-                      : "bg-blue-600 text-white shadow-xl shadow-blue-500/20 hover:scale-105 active:scale-95",
-                  )}
-                >
-                  {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                <button type="submit" disabled={!input.trim() || isLoading || !selectedModel} className={cn("w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500", !input.trim() || isLoading || !selectedModel ? "bg-slate-200 text-slate-400" : "bg-zinc-950 text-white shadow-2xl shadow-zinc-950/20 hover:scale-105 active:scale-95")}>
+                  {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Send className="w-6 h-6" />}
                 </button>
               </div>
             </form>
-
-            <div className="mt-4 flex flex-col items-center justify-center">
-              <p className="text-[10px] text-center text-zinc-400 font-bold uppercase tracking-widest opacity-80">
-                Diagnóstico basado en manuales. Valide físicamente antes de intervenir.
-              </p>
-            </div>
+            <p className="text-[10px] text-center text-slate-400 font-black uppercase tracking-[0.2em] mt-6 flex items-center justify-center gap-3">
+              <ShieldCheck className="w-3.5 h-3.5" /> Conocimiento Verificado por Ingenieros Jefe
+            </p>
           </div>
         </div>
       </div>
-
     </div>
   );
 }

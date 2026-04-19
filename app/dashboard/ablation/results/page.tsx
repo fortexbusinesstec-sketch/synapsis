@@ -58,21 +58,15 @@ interface LoopHealthRow {
   is_baseline: number;
   n_runs: number;
   // Loop metrics
-  avg_loops: number | null;
-  avg_confidence: number | null;
+  max_loop_count: number;
   avg_chunks_final: number | null;
   avg_redundancy: number | null;
-  max_loop_count: number;
   min_confidence: number | null;
-  // Gap Engine metrics
-  pct_gap_resolved: number | null;
   loops_resolved: number;
   loops_stuck: number;
   loops_no_gain: number;
   loops_maxed: number;
   n_multi_loop: number;
-  n_low_confidence: number;
-  n_high_confidence: number;
 }
 
 interface RunRow {
@@ -121,8 +115,6 @@ interface ScenRunRow {
   turns_planned: number;
   resolution_reached: number;
   turns_to_resolution: number | null;
-  total_loops_fired: number;
-  avg_confidence_session: number | null;
   total_latency_ms?: number;
   total_cost_usd?: number | null;
   scenario_title?: string;
@@ -347,7 +339,7 @@ function ComposedChartDual({ scenarios, summaryAll }: { scenarios: ScenRunRow[],
 function BarChartLoops({ scenarios }: { scenarios: ScenRunRow[] }) {
   const data = ['A', 'B', 'C', 'D'].map(cid => {
     const cfgRuns = scenarios.filter(s => s.config_id === cid);
-    const avgLoops = cfgRuns.length ? cfgRuns.reduce((sum, r) => sum + (r.total_loops_fired ?? 0), 0) / cfgRuns.length : 0;
+    const avgLoops = cfgRuns.length ? cfgRuns.reduce((sum, r) => sum + (r.turns_completed ?? 0), 0) / cfgRuns.length : 0;
     return { name: cid, loops: Number(avgLoops.toFixed(3)) };
   }).sort((a, b) => b.loops - a.loops);
 
@@ -425,83 +417,6 @@ function HeatmapAcademic({ data }: { data: any[] }) {
   );
 }
 
-// 5. Confidence Over Turns Chart
-function ConfidenceTrendChart({ turnStats }: { turnStats: Record<string, any[]> }) {
-  const configs = ['B', 'D']; // Comparativa clave
-  const turns = [1, 2, 3, 4, 5];
-
-  const data = turns.map(t => {
-    const obj: any = { turn: `Turno ${t}` };
-    configs.forEach(cid => {
-      const stats = turnStats[cid] || [];
-      const turnData = stats.find(s => s.turn === t);
-      obj[cid] = turnData ? Number(turnData.avgConf.toFixed(3)) : null;
-    });
-    return obj;
-  });
-
-  const CustomLabel = (props: any) => {
-    const { x, y, value, index, color } = props;
-    if (index === data.length - 1) {
-      return (
-        <text x={x} y={y - 12} fill={color} fontSize={12} fontWeight={900} textAnchor="middle">
-          {value}
-        </text>
-      );
-    }
-    return null;
-  };
-
-  return (
-    <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={data} margin={{ top: 30, right: 40, left: 10, bottom: 20 }}>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-        <XAxis dataKey="turn" tick={{ fontSize: 10, fontWeight: 800, fill: '#475569' }} axisLine={false} tickLine={false} />
-        <YAxis
-          domain={[0.4, 1]}
-          tickCount={7}
-          tick={{ fontSize: 10, fill: '#94a3b8' }}
-          axisLine={false}
-          tickLine={false}
-        />
-        <Tooltip
-          contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontSize: '11px' }}
-        />
-        <Legend
-          verticalAlign="top"
-          align="right"
-          height={40}
-          iconType="circle"
-          wrapperStyle={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}
-        />
-        <Line
-          type="monotone"
-          dataKey="B"
-          name="Config B (MAS)"
-          stroke="#2563eb"
-          strokeWidth={5}
-          dot={{ r: 6, fill: '#2563eb', strokeWidth: 2, stroke: '#fff' }}
-          activeDot={{ r: 8, strokeWidth: 0 }}
-          animationDuration={2000}
-        >
-          <LabelList dataKey="B" content={(props: any) => <CustomLabel {...props} color="#2563eb" />} />
-        </Line>
-        <Line
-          type="monotone"
-          dataKey="D"
-          name="Config D (RAG Base)"
-          stroke="#64748b"
-          strokeWidth={3}
-          strokeDasharray="8 4"
-          dot={{ r: 5, fill: '#f1f5f9', strokeWidth: 2, stroke: '#64748b' }}
-          activeDot={{ r: 7 }}
-        >
-          <LabelList dataKey="D" content={(props: any) => <CustomLabel {...props} color="#64748b" />} />
-        </Line>
-      </LineChart>
-    </ResponsiveContainer>
-  );
-}
 
 // ── B6. Score Breakdown por Dimensión (Stacked Bar) ─────────────────────────
 function ScoreBreakdownChart({ scenarios, summaryAll }: { scenarios: ScenRunRow[], summaryAll: SummaryRow[] }) {
@@ -544,61 +459,6 @@ function ScoreBreakdownChart({ scenarios, summaryAll }: { scenarios: ScenRunRow[
   );
 }
 
-// ── B7. Latencia por Fase del Pipeline ───────────────────────────────────────
-function LatencyEfficiencyChart({ data }: { data: any[] }) {
-  if (!data.length) return <div className="flex items-center justify-center h-full text-slate-300 text-sm italic">Sin datos de eficiencia temporal</div>;
-
-  const chartData = data.map(d => ({
-    name: `Config ${d.config_id}`,
-    latency: d.avg_latency,
-    loops: Number(d.avg_loops.toFixed(2))
-  }));
-
-  return (
-    <ResponsiveContainer width="100%" height="100%">
-      <ComposedChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-        <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 900, fill: '#475569' }} axisLine={false} tickLine={false} />
-
-        <YAxis
-          yAxisId="left"
-          tickFormatter={v => `${(v / 1000).toFixed(0)}s`}
-          tick={{ fontSize: 10, fill: '#6366f1' }}
-          axisLine={false}
-          tickLine={false}
-          label={{ value: 'Latencia (s)', angle: -90, position: 'insideLeft', style: { fontSize: 9, fontWeight: 700, fill: '#6366f1' } }}
-        />
-
-        <YAxis
-          yAxisId="right"
-          orientation="right"
-          tick={{ fontSize: 10, fill: '#ec4899' }}
-          axisLine={false}
-          tickLine={false}
-          label={{ value: 'Loops avg', angle: 90, position: 'insideRight', style: { fontSize: 9, fontWeight: 700, fill: '#ec4899' } }}
-        />
-
-        <Tooltip
-          contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontSize: '11px' }}
-          formatter={(value: any, name: any) => {
-            if (name === 'Latencia') return [`${(value / 1000).toFixed(2)}s`, 'Tiempo Total'];
-            return [value, 'Ciclos de Razonamiento'];
-          }}
-        />
-
-        <Legend
-          iconType="circle"
-          verticalAlign="top"
-          align="right"
-          wrapperStyle={{ fontSize: 10, fontWeight: 800, paddingBottom: 20 }}
-        />
-
-        <Bar yAxisId="left" dataKey="latency" name="Latencia" fill="#6366f1" radius={[8, 8, 0, 0]} barSize={40} />
-        <Line yAxisId="right" type="monotone" dataKey="loops" name="Loops (avg)" stroke="#ec4899" strokeWidth={3} dot={{ r: 6, fill: '#ec4899', strokeWidth: 2, stroke: '#fff' }} />
-      </ComposedChart>
-    </ResponsiveContainer>
-  );
-}
 
 // ── B8. Costo por Configuración (estimado) ───────────────────────────────────
 function CostEffectivenessChart({ scenarios }: { scenarios: ScenRunRow[] }) {
@@ -1581,7 +1441,7 @@ function ClipboardExportPanel({
     // ── Encabezado ────────────────────────────────────────────────────────────
     lines.push(`# INFORME DE ABLACIÓN — ${batch}`);
     lines.push(`Exportado: ${ts}`);
-    lines.push(`Configuraciones: ${configIds.join(', ')} | Preguntas evaluadas: ${[...new Set(runs.map(r => r.question_id))].length}`);
+    lines.push(`Configuraciones: ${configIds.join(', ')} | Preguntas: ${runs.length}`);
     lines.push('');
 
     // ── 1. Loop Health & Gap Engine ───────────────────────────────────────────
@@ -1590,7 +1450,7 @@ function ClipboardExportPanel({
       lines.push('(sin datos de loop health)');
     } else if (loopRows.length > 0) {
       // Loop health de preguntas individuales
-      const H = ['Config', 'Nombre', 'N', 'AvgLoops', 'AvgConf', 'GapRes%', 'Stuck', 'MaxLoops', 'MultiLoop', 'LowConf', 'HighConf'];
+      const H = ['Config', 'Nombre', 'N', 'ChunksF', 'Stuck', 'MaxLoops', 'MultiLoop'];
       lines.push(H.join(' | '));
       lines.push(H.map(h => '-'.repeat(h.length)).join(' | '));
       for (const r of loopRows) {
@@ -1598,14 +1458,10 @@ function ClipboardExportPanel({
           pad(r.config_id, 6),
           pad(r.config_name, 22),
           pad(r.n_runs, 3),
-          pad(fmt(r.avg_loops, 2), 8),
-          pad(fmt(r.avg_confidence, 2), 7),
-          pad(r.pct_gap_resolved != null ? `${r.pct_gap_resolved.toFixed(0)}%` : 'N/A', 7),
+          pad(fmt(r.avg_chunks_final, 1), 7),
           pad(r.loops_stuck, 5),
           pad(r.max_loop_count, 8),
           pad(r.n_multi_loop, 9),
-          pad(r.n_low_confidence, 7),
-          pad(r.n_high_confidence, 8),
         ].join(' | '));
       }
     }
@@ -1617,27 +1473,25 @@ function ClipboardExportPanel({
         return (scenRows.find(r => r.config_id === a)?.display_order ?? 99) -
           (scenRows.find(r => r.config_id === b)?.display_order ?? 99);
       });
-      const SH = ['Config', 'Nombre', 'N', 'AvgLoopsTot', 'AvgConf', 'PctResuelto', 'AvgTurnos'];
+      const SH = ['Config', 'Nombre', 'N', 'TurnsDone', 'PctResuelto', 'AvgTurnosRes'];
       lines.push(SH.join(' | '));
       lines.push(SH.map(h => '-'.repeat(h.length)).join(' | '));
       for (const cid of scenCfgIds) {
         const cfgRuns = scenRows.filter(r => r.config_id === cid);
         const cfgName = cfgRuns[0]?.config_name ?? cid;
         const n = cfgRuns.length;
-        const avgLoops = cfgRuns.reduce((s, r) => s + (r.total_loops_fired ?? 0), 0) / n;
-        const confVals = cfgRuns.filter(r => r.avg_confidence_session != null).map(r => r.avg_confidence_session as number);
-        const avgConf = confVals.length ? confVals.reduce((a, b) => a + b, 0) / confVals.length : null;
+        const avgLoops = cfgRuns.reduce((s, r) => s + (r.turns_completed ?? 0), 0) / n;
         const pctRes = (cfgRuns.filter(r => (r.judge_resolution_reached ?? r.resolution_reached) === 1).length / n * 100);
         const turnVals = cfgRuns.filter(r => r.turns_to_resolution != null).map(r => r.turns_to_resolution as number);
         const avgTurns = turnVals.length ? turnVals.reduce((a, b) => a + b, 0) / turnVals.length : null;
+
         lines.push([
           pad(cid, 6),
           pad(cfgName.slice(0, 22), 22),
           pad(n, 3),
-          pad(fmt(avgLoops, 2), 11),
-          pad(fmt(avgConf, 2), 7),
+          pad(fmt(avgLoops, 1), 9),
           pad(`${pctRes.toFixed(0)}%`, 11),
-          pad(fmt(avgTurns, 1), 9),
+          pad(fmt(avgTurns, 1), 12),
         ].join(' | '));
       }
     }
@@ -2146,9 +2000,6 @@ function LoopHealthPanel({ batch }: { batch: string }) {
 
   /* Badges globales de alerta */
   const stuckConfigs = rows.filter(r => (r.loops_stuck ?? 0) > 2);
-  const lowGapResolve = rows.filter(r => (r.pct_gap_resolved ?? 100) < 30 && r.n_multi_loop > 0);
-  const highGapResolve = rows.filter(r => (r.pct_gap_resolved ?? 0) > 70 && r.n_multi_loop > 0);
-  const efficientLoops = rows.filter(r => { const a = r.avg_loops ?? 0; return a >= 1.2 && a <= 1.6; });
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
@@ -2163,21 +2014,6 @@ function LoopHealthPanel({ batch }: { batch: string }) {
               <AlertCircle className="w-3 h-3" /> Loop atascado frecuente ({stuckConfigs.length})
             </span>
           )}
-          {lowGapResolve.length > 0 && (
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-black border border-red-200">
-              <AlertCircle className="w-3 h-3" /> Gap Engine no progresa ({lowGapResolve.length})
-            </span>
-          )}
-          {highGapResolve.length > 0 && (
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black border border-emerald-200">
-              <CheckCircle2 className="w-3 h-3" /> Re-búsqueda efectiva ({highGapResolve.length})
-            </span>
-          )}
-          {efficientLoops.length > 0 && (
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black border border-emerald-200">
-              <CheckCircle2 className="w-3 h-3" /> Loop eficiente ({efficientLoops.length})
-            </span>
-          )}
         </div>
       </div>
 
@@ -2185,7 +2021,7 @@ function LoopHealthPanel({ batch }: { batch: string }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/80">
-              {['Config', 'Avg loops', 'Conf. avg', 'Chunks finales', 'Gap resuelto', 'Stop reason', 'Stuck', 'Baja conf.', 'Max loops'].map(h => (
+              {['Config', 'Chunks finales', 'Stop reason', 'Stuck', 'Max loops'].map(h => (
                 <th key={h} className="text-left px-3 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">
                   {h}
                 </th>
@@ -2194,35 +2030,16 @@ function LoopHealthPanel({ batch }: { batch: string }) {
           </thead>
           <tbody className="divide-y divide-slate-50">
             {rows.map(row => {
-              const avgLoops = row.avg_loops ?? 0;
-              const avgConf = row.avg_confidence ?? null;
-              const pctRes = row.pct_gap_resolved ?? null;
-              const isStuck = (row.loops_stuck ?? 0) > 2;
-              const isNoGap = pctRes !== null && pctRes < 30 && row.n_multi_loop > 0;
-              const isAlert = isStuck || isNoGap || (row.n_low_confidence ?? 0) > 0;
-
-              const confColor = avgConf === null ? 'text-slate-300'
-                : avgConf >= 0.7 ? 'text-emerald-700'
-                  : avgConf >= 0.5 ? 'text-amber-700'
-                    : 'text-red-700';
-              const loopColor = avgLoops <= 1 ? 'text-emerald-700'
-                : avgLoops <= 1.6 ? 'text-amber-700'
-                  : 'text-red-700';
-
-              // Razón de stop dominante
-              const stopCounts = [
+              const loopColor = 'text-slate-700';
+              const topStop = [
                 { label: 'resolved', n: row.loops_resolved ?? 0, color: 'text-emerald-600' },
                 { label: 'no_gain', n: row.loops_no_gain ?? 0, color: 'text-amber-600' },
                 { label: 'stuck', n: row.loops_stuck ?? 0, color: 'text-red-600' },
                 { label: 'max_loops', n: row.loops_maxed ?? 0, color: 'text-red-700' },
-              ].sort((a, b) => b.n - a.n);
-              const topStop = stopCounts[0];
+              ].sort((a, b) => b.n - a.n)[0];
 
               return (
-                <tr key={row.config_id} className={cn(
-                  'transition-colors',
-                  isAlert ? 'bg-amber-50/40' : 'hover:bg-slate-50/60',
-                )}>
+                <tr key={row.config_id} className="transition-colors hover:bg-slate-50/60">
                   {/* Config */}
                   <td className="px-3 py-3">
                     <div className="flex items-center gap-1.5">
@@ -2234,61 +2051,13 @@ function LoopHealthPanel({ batch }: { batch: string }) {
                     </div>
                   </td>
 
-                  {/* Avg loops */}
-                  <td className="px-3 py-3">
-                    <span className={cn('font-bold tabular-nums text-xs', loopColor)}>
-                      {avgLoops.toFixed(2)}
-                    </span>
-                  </td>
-
-                  {/* Avg confidence */}
-                  <td className="px-3 py-3">
-                    {avgConf !== null ? (
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                          <div
-                            className={cn('h-full rounded-full',
-                              avgConf >= 0.7 ? 'bg-emerald-500' : avgConf >= 0.5 ? 'bg-amber-400' : 'bg-red-400'
-                            )}
-                            style={{ width: `${avgConf * 100}%` }}
-                          />
-                        </div>
-                        <span className={cn('font-bold tabular-nums text-[11px]', confColor)}>
-                          {(avgConf * 100).toFixed(0)}%
-                        </span>
-                      </div>
-                    ) : <span className="text-slate-300 text-xs">—</span>}
-                  </td>
-
-                  {/* Avg chunks finales */}
+                  {/* Chunks finales */}
                   <td className="px-3 py-3">
                     <span className="text-slate-600 font-bold tabular-nums text-xs">
                       {(row.avg_chunks_final ?? 0).toFixed(1)}
                     </span>
                   </td>
 
-                  {/* Gap resuelto % */}
-                  <td className="px-3 py-3">
-                    {row.n_multi_loop > 0 ? (
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-10 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                          <div
-                            className={cn('h-full rounded-full',
-                              (pctRes ?? 0) >= 70 ? 'bg-emerald-500'
-                                : (pctRes ?? 0) >= 30 ? 'bg-amber-400' : 'bg-red-400'
-                            )}
-                            style={{ width: `${pctRes ?? 0}%` }}
-                          />
-                        </div>
-                        <span className={cn('text-[11px] font-bold',
-                          (pctRes ?? 0) >= 70 ? 'text-emerald-700'
-                            : (pctRes ?? 0) >= 30 ? 'text-amber-700' : 'text-red-700'
-                        )}>
-                          {pctRes !== null ? `${pctRes.toFixed(0)}%` : '—'}
-                        </span>
-                      </div>
-                    ) : <span className="text-slate-300 text-[11px]">N/A</span>}
-                  </td>
 
                   {/* Razón de stop dominante */}
                   <td className="px-3 py-3">
@@ -2310,18 +2079,6 @@ function LoopHealthPanel({ batch }: { batch: string }) {
                     )}
                   </td>
 
-                  {/* Baja confianza */}
-                  <td className="px-3 py-3">
-                    {(row.n_low_confidence ?? 0) > 0 ? (
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-100 text-red-700 text-[10px] font-black border border-red-200">
-                        <AlertCircle className="w-2.5 h-2.5" />{row.n_low_confidence}
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-emerald-600 text-[10px] font-black">
-                        <CheckCircle2 className="w-3 h-3" />0
-                      </span>
-                    )}
-                  </td>
 
                   {/* Max loops */}
                   <td className="px-3 py-3">
@@ -2616,21 +2373,6 @@ function ResultsContent() {
             <HeatmapAcademic data={scenHeatmap} />
           </ChartCard>
 
-          <ChartCard
-            title="EFICIENCIA TEMPORAL: LATENCIA VS CICLOS"
-            description="Correlación entre el tiempo de respuesta total y los ciclos de razonamiento (Loops) por configuración."
-            accent="teal"
-          >
-            <LatencyEfficiencyChart data={scenEfficiency} />
-          </ChartCard>
-
-          {/* Fila 5: Confianza multiturno + Costo por Config */}
-          <ChartCard
-            title="Evolución de Confianza Multiturno"
-            description="Comparativa de aprendizaje dinámico: Turno 1 al 5."
-          >
-            <ConfidenceTrendChart turnStats={turnStats} />
-          </ChartCard>
 
           <ChartCard
             title="EFICIENCIA COMPUTACIONAL Y COSTO-EFECTIVIDAD"
@@ -2759,6 +2501,51 @@ function ResultsContent() {
 }
 
 export default function ResultsPage() {
+  const [user, setUser] = useState<{ role: string; isDevMode: boolean } | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((u) => setUser(u))
+      .finally(() => setAuthLoading(false));
+  }, []);
+
+  if (authLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 space-y-4">
+        <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
+        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Validando Seguridad...</p>
+      </div>
+    );
+  }
+
+  const isAuditorDev = user?.role === "Auditor" && user?.isDevMode;
+
+  if (!isAuditorDev) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 text-center space-y-6 animate-in fade-in zoom-in-95 duration-500">
+        <div className="w-20 h-20 bg-red-50 rounded-[2rem] flex items-center justify-center border-2 border-red-100 shadow-xl shadow-red-500/10">
+          <AlertCircle className="w-10 h-10 text-red-500" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Acceso Restringido</h1>
+          <p className="text-slate-500 max-w-sm mx-auto leading-relaxed font-medium">
+            Este módulo de visualización científico es exclusivo para el <span className="text-slate-900 font-bold">Rol Auditor</span> en <span className="text-violet-600 font-bold">Modo Desarrollador</span>.
+          </p>
+        </div>
+        <div className="pt-4">
+          <button
+            onClick={() => window.location.href = '/dashboard/home'}
+            className="px-8 py-3 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-black transition-all active:scale-95 shadow-2xl"
+          >
+            Volver al Inicio
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Suspense fallback={<div className="flex items-center justify-center min-h-[400px]"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>}>
       <ResultsContent />

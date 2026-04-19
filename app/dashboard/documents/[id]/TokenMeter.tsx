@@ -18,58 +18,60 @@ import type { AgentLogSummary } from "@/lib/db/schema";
 const CURIOUS_RATE = { input: 0.15 / 1_000_000, output: 0.60 / 1_000_000 };
 
 interface AgentEntry {
-  label:    string;
-  color:    string;
+  label: string;
+  color: string;
   docField: string | null;   // null → calcular desde tokens
-  model:    string;
+  model: string;
 }
 
 const AGENT_CONFIG: Record<string, AgentEntry> = {
-  orchestrator: { label: "Orchestrator",    color: "bg-blue-400",    docField: "costOrchestrator", model: "gpt-4o-mini"        },
-  ocr:          { label: "OCR (Mistral)",   color: "bg-teal-400",    docField: "costOcr",          model: "mistral-ocr-latest" },
-  vision:       { label: "Vision (Pixtral)",color: "bg-amber-400",   docField: "costVision",       model: "pixtral-12b"        },
-  chunker:      { label: "Chunker",         color: "bg-emerald-400", docField: "costChunker",      model: "gpt-4o-mini"        },
-  embedder:     { label: "Embedder",        color: "bg-violet-400",  docField: "costEmbedder",     model: "text-embedding-3-small"},
-  curious:      { label: "Curioso",         color: "bg-pink-400",    docField: null,               model: "gpt-4o-mini"        },
+  orchestrator: { label: "Orchestrator", color: "bg-blue-400", docField: "costOrchestrator", model: "gpt-4o-mini" },
+  ocr: { label: "OCR (Mistral)", color: "bg-teal-400", docField: "costOcr", model: "mistral-ocr-latest" },
+  vision: { label: "Vision (Pixtral)", color: "bg-amber-400", docField: "costVision", model: "pixtral-12b" },
+  chunker: { label: "Chunker", color: "bg-emerald-400", docField: "costChunker", model: "gpt-4o-mini" },
+  embedder: { label: "Embedder", color: "bg-violet-400", docField: "costEmbedder", model: "text-embedding-3-small" },
+  curious: { label: "Curioso", color: "bg-pink-400", docField: null, model: "gpt-4o-mini" },
 };
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
 
 function formatCost(usd: number): string {
   if (usd === 0 || !usd) return "$0.000000";
-  if (usd < 0.000001)    return `$${usd.toExponential(2)}`;
+  if (usd < 0.000001) return `$${usd.toExponential(2)}`;
   return `$${usd.toFixed(6)}`;
 }
 
 function formatTokens(n: number | null): string {
   if (!n || n === 0) return "0";
-  if (n >= 1000)     return `${(n / 1000).toFixed(1)}K`;
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
   return String(n);
 }
 
 /* ── Tipos de recalculo ──────────────────────────────────────────────────── */
 
 interface RecalcData {
-  pageCount:  number;
+  pageCount: number;
   hitlImages: number;
-  costOcr:    number;
+  costOcr: number;
   costVision: number;
-  totalCost:  number;
+  totalCost: number;
 }
 
 /* ── Componente ──────────────────────────────────────────────────────────── */
 
 export function TokenMeter({
   agentLogs,
-  document
+  document,
+  userRole
 }: {
   agentLogs: AgentLogSummary[];
-  document: any
+  document: any;
+  userRole: string | null;
 }) {
   // ── Estado local de costos (se actualiza sin recargar la página) ────────
-  const [liveDoc,      setLiveDoc]    = useState<any>(document);
-  const [recalcState,  setRecalc]     = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
-  const [recalcDetail, setDetail]     = useState<string | null>(null);
+  const [liveDoc, setLiveDoc] = useState<any>(document);
+  const [recalcState, setRecalc] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
+  const [recalcDetail, setDetail] = useState<string | null>(null);
 
   // Inicializar recalcData desde los costos ya guardados en la BD.
   // Si costOcr > 0 ó costVision > 0, el usuario ya había recalculado antes —
@@ -77,15 +79,15 @@ export function TokenMeter({
   //   pageCount  = costOcr    / 0.001   (inverso de páginas × $0.001)
   //   hitlImages = costVision / 0.0002  (inverso de imgs × $0.0002)
   const [recalcData, setRecalcData] = useState<RecalcData | null>(() => {
-    const costOcr    = document?.costOcr    ?? 0;
+    const costOcr = document?.costOcr ?? 0;
     const costVision = document?.costVision ?? 0;
     if (costOcr > 0 || costVision > 0) {
       return {
-        pageCount:  Math.round(costOcr    / 0.001),
+        pageCount: Math.round(costOcr / 0.001),
         hitlImages: Math.round(costVision / 0.0002),
         costOcr,
         costVision,
-        totalCost:  document?.totalCost ?? 0,
+        totalCost: document?.totalCost ?? 0,
       };
     }
     return null;
@@ -108,9 +110,9 @@ export function TokenMeter({
       // Actualizar los campos de costo en el estado local
       setLiveDoc((prev: any) => ({
         ...prev,
-        costOcr:    r.costOcr,
+        costOcr: r.costOcr,
         costVision: r.costVision,
-        totalCost:  r.totalCost,
+        totalCost: r.totalCost,
       }));
       setRecalcData(r);
       setDetail(
@@ -125,7 +127,7 @@ export function TokenMeter({
   }, [liveDoc.id]);
 
   // Usamos liveDoc en vez de document para reflejar datos recalculados
-  const doc   = liveDoc;
+  const doc = liveDoc;
   const ORDER = ["orchestrator", "ocr", "vision", "chunker", "embedder", "curious"];
 
   // Agrupamos logs por agente (último log gana si hay reintentos)
@@ -135,30 +137,30 @@ export function TokenMeter({
   }, {} as Record<string, AgentLogSummary>);
 
   // Costo del Curioso desde tokens × tasa (no tiene docField)
-  const curiousLog  = logsMap["curious"];
+  const curiousLog = logsMap["curious"];
   const curiousCost = curiousLog
-    ? (curiousLog.inputTokens  ?? 0) * CURIOUS_RATE.input +
-      (curiousLog.outputTokens ?? 0) * CURIOUS_RATE.output
+    ? (curiousLog.inputTokens ?? 0) * CURIOUS_RATE.input +
+    (curiousLog.outputTokens ?? 0) * CURIOUS_RATE.output
     : 0;
 
-  const totalInput  = agentLogs.reduce((s, l) => s + (l.inputTokens  ?? 0), 0);
+  const totalInput = agentLogs.reduce((s, l) => s + (l.inputTokens ?? 0), 0);
   const totalOutput = agentLogs.reduce((s, l) => s + (l.outputTokens ?? 0), 0);
   // Total exacto (liveDoc ya tiene los costos recalculados si se presionó el botón)
-  const exactTotal  = (doc?.totalCost ?? 0) + curiousCost;
+  const exactTotal = (doc?.totalCost ?? 0) + curiousCost;
 
   const maxTokens = Math.max(1, ...agentLogs.map((l) => (l.inputTokens ?? 0) + (l.outputTokens ?? 0)));
 
   // Para barras de OCR/Vision tras recalculo, escalar por costo relativo al máximo costo de todos los agentes
   const recalcMaxCost = recalcData
     ? Math.max(
-        doc?.costOrchestrator ?? 0,
-        recalcData.costOcr,
-        recalcData.costVision,
-        doc?.costChunker      ?? 0,
-        doc?.costEmbedder     ?? 0,
-        curiousCost,
-        0.000001,
-      )
+      doc?.costOrchestrator ?? 0,
+      recalcData.costOcr,
+      recalcData.costVision,
+      doc?.costChunker ?? 0,
+      doc?.costEmbedder ?? 0,
+      curiousCost,
+      0.000001,
+    )
     : 1;
 
   return (
@@ -182,14 +184,14 @@ export function TokenMeter({
           ? (doc?.[cfg.docField] ?? 0)
           : curiousCost;
 
-        const inputToks   = log?.inputTokens  ?? 0;
-        const outputToks  = log?.outputTokens ?? 0;
+        const inputToks = log?.inputTokens ?? 0;
+        const outputToks = log?.outputTokens ?? 0;
         const totalTokens = inputToks + outputToks;
 
-        const isCurious    = agentKey === "curious";
+        const isCurious = agentKey === "curious";
         const isBackground = isCurious && !log;
-        const isOcr        = agentKey === "ocr";
-        const isVision     = agentKey === "vision";
+        const isOcr = agentKey === "ocr";
+        const isVision = agentKey === "vision";
 
         // Tras recalcular, OCR y Vision usan costo relativo para la barra
         const wasRecalculated = recalcData !== null && (isOcr || isVision);
@@ -205,8 +207,8 @@ export function TokenMeter({
         const unitLabel = isOcr && recalcData
           ? `${recalcData.pageCount} págs`
           : isVision && recalcData
-          ? `${recalcData.hitlImages} imgs`
-          : null;
+            ? `${recalcData.hitlImages} imgs`
+            : null;
 
         return (
           <div
@@ -257,7 +259,7 @@ export function TokenMeter({
               {wasRecalculated ? (
                 <span className={cn(
                   "inline-block px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide",
-                  isOcr    ? "bg-teal-100 text-teal-700"   : "",
+                  isOcr ? "bg-teal-100 text-teal-700" : "",
                   isVision ? "bg-amber-100 text-amber-700" : "",
                 )}>
                   {isOcr ? "pág" : "img"}
@@ -280,8 +282,8 @@ export function TokenMeter({
               {wasRecalculated && (
                 <span className={cn(
                   "block text-[9px] font-bold",
-                  isOcr    ? "text-teal-500"   : "",
-                  isVision ? "text-amber-500"  : "",
+                  isOcr ? "text-teal-500" : "",
+                  isVision ? "text-amber-500" : "",
                 )}>
                   recalculado ✓
                 </span>
@@ -319,49 +321,51 @@ export function TokenMeter({
         </p>
       </div>
 
-      {/* ── Botón Recalcular Costos ─────────────────────────────── */}
-      <div className="mt-4 pt-4 border-t border-slate-100">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <button
-            onClick={handleRecalculate}
-            disabled={recalcState === 'loading'}
-            className={cn(
-              "inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 shadow-sm border",
-              recalcState === 'ok'
-                ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                : recalcState === 'error'
-                ? "bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
-                : "bg-blue-600 hover:bg-blue-700 text-white border-transparent disabled:bg-blue-400",
-            )}
-          >
-            {recalcState === 'loading' ? (
-              <><RefreshCw className="h-3.5 w-3.5 animate-spin" /> Recalculando…</>
-            ) : recalcState === 'ok' ? (
-              <><CheckCircle2 className="h-3.5 w-3.5" /> Costos actualizados</>
-            ) : recalcState === 'error' ? (
-              <><AlertCircle className="h-3.5 w-3.5" /> Reintentar</>
-            ) : (
-              <><RefreshCw className="h-3.5 w-3.5" /> Recalcular Costos</>
-            )}
-          </button>
+      {/* ── Botón Recalcular Costos (Oculto para Auditor) ─────────────── */}
+      {userRole !== "Auditor" && (
+        <div className="mt-4 pt-4 border-t border-slate-100">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <button
+              onClick={handleRecalculate}
+              disabled={recalcState === 'loading'}
+              className={cn(
+                "inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 shadow-sm border",
+                recalcState === 'ok'
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                  : recalcState === 'error'
+                    ? "bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
+                    : "bg-blue-600 hover:bg-blue-700 text-white border-transparent disabled:bg-blue-400",
+              )}
+            >
+              {recalcState === 'loading' ? (
+                <><RefreshCw className="h-3.5 w-3.5 animate-spin" /> Recalculando…</>
+              ) : recalcState === 'ok' ? (
+                <><CheckCircle2 className="h-3.5 w-3.5" /> Costos actualizados</>
+              ) : recalcState === 'error' ? (
+                <><AlertCircle className="h-3.5 w-3.5" /> Reintentar</>
+              ) : (
+                <><RefreshCw className="h-3.5 w-3.5" /> Recalcular Costos</>
+              )}
+            </button>
 
-          <div className="flex items-start gap-1.5 min-w-0">
-            <Info className="h-3.5 w-3.5 text-slate-300 flex-shrink-0 mt-0.5" />
-            {recalcDetail ? (
-              <p className={cn(
-                "text-[10px] leading-relaxed",
-                recalcState === 'error' ? "text-red-500" : "text-slate-500"
-              )}>
-                {recalcDetail}
-              </p>
-            ) : (
-              <p className="text-[10px] text-slate-400 leading-relaxed">
-                Suma OCR (págs × $0.001) + Visión HITL (imgs × $0.0002). Preserva costos del pipeline automático.
-              </p>
-            )}
+            <div className="flex items-start gap-1.5 min-w-0">
+              <Info className="h-3.5 w-3.5 text-slate-300 flex-shrink-0 mt-0.5" />
+              {recalcDetail ? (
+                <p className={cn(
+                  "text-[10px] leading-relaxed",
+                  recalcState === 'error' ? "text-red-500" : "text-slate-500"
+                )}>
+                  {recalcDetail}
+                </p>
+              ) : (
+                <p className="text-[10px] text-slate-400 leading-relaxed">
+                  Suma OCR (págs × $0.001) + Visión HITL (imgs × $0.0002). Preserva costos del pipeline automático.
+                </p>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
