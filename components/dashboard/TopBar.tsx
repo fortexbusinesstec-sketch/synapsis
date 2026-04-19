@@ -45,8 +45,9 @@ export default function TopBar({
     router.push('/login');
   };
 
-  const initials = userName
+  const initials = (userName || "??")
     .split(' ')
+    .filter(Boolean)
     .map(n => n[0])
     .join('')
     .toUpperCase()

@@ -42,8 +42,11 @@ interface DocEntry {
   createdBy: string | null;
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+function formatDate(iso: string | null | undefined) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 /* ── helpers ─────────────────────────────────────────────────────────────── */
@@ -118,7 +121,12 @@ export default function DocumentacionPage() {
 
     fetch('/api/documents')
       .then((r) => r.json())
-      .then((data: any[]) => {
+      .then((data) => {
+        if (!Array.isArray(data)) {
+          console.error('Invalid documents data:', data);
+          setUploadError('Error al cargar la lista de documentos.');
+          return;
+        }
         const entries: DocEntry[] = data.map((d) => ({
           id: d.id,
           name: d.title,
