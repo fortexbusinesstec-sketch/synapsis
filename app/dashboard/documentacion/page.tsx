@@ -148,6 +148,27 @@ export default function DocumentacionPage() {
       .finally(() => setIsLoading(false));
   }, []);
 
+  const onDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const onDragLeave = useCallback(() => setIsDragging(false), []);
+
+  const onDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        setUploadError("Solo se permiten archivos PDF.");
+        return;
+      }
+      setSelectedFile(file);
+      setUploadError(null);
+    }
+  }, []);
+
   if (authLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4">
@@ -157,7 +178,7 @@ export default function DocumentacionPage() {
     );
   }
 
-  const isTechnician = userInfo.role === "Técnico";
+  const isTechnician = userInfo.role === "Técnico" || userInfo.role === "Especialista Técnico";
 
   if (isTechnician) {
     return (
@@ -187,26 +208,6 @@ export default function DocumentacionPage() {
   const isAuditor = userInfo.role === "Auditor";
   const isDevMode = userInfo.isDevMode;
 
-  const onDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const onDragLeave = useCallback(() => setIsDragging(false), []);
-
-  const onDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      if (file.type !== 'application/pdf') {
-        setUploadError("Solo se permiten archivos PDF.");
-        return;
-      }
-      setSelectedFile(file);
-      setUploadError(null);
-    }
-  }, []);
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;

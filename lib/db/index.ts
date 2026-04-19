@@ -12,8 +12,8 @@ if (!process.env.TURSO_URL_TESIS && !process.env.TURSO_URL) {
 }
 
 export const client = createClient({
-  url: process.env.TURSO_URL || process.env.TURSO_URL_TESIS || 'libsql://dummy-url',
-  authToken: process.env.TURSO_TOKEN || process.env.TURSO_TOKEN_TESIS,
+  url: process.env.TURSO_URL_TESIS || process.env.TURSO_URL || 'libsql://dummy-url',
+  authToken: process.env.TURSO_TOKEN_TESIS || process.env.TURSO_TOKEN,
 });
 
 export const db = drizzle(client, { schema });
