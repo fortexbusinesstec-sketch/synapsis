@@ -3,8 +3,8 @@ import { createClient } from "@libsql/client";
 import { cookies } from "next/headers";
 
 export const authClient = createClient({
-    url: process.env.TURSO_URL_TESIS!,
-    authToken: process.env.TURSO_TOKEN_TESIS,
+    url: process.env.TURSO_URL || process.env.TURSO_URL_TESIS!,
+    authToken: process.env.TURSO_TOKEN || process.env.TURSO_TOKEN_TESIS,
 });
 
 export async function getCurrentUser() {

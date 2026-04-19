@@ -19,6 +19,7 @@ import { getCurrentUser } from '@/lib/db/auth';
 import { AdminHome } from '@/components/dashboard/AdminHome';
 import { TecnicoHome } from '@/components/dashboard/TecnicoHome';
 import { AuditorHome } from '@/components/dashboard/AuditorHome';
+import { cn } from '@/lib/utils';
 
 /* ────────────────────────────────────────────────────────────────────────── */
 
@@ -204,7 +205,4 @@ export default async function HomePage() {
   );
 }
 
-// Utility to merge classnames
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(' ');
-}
+// Fin de archivo - cn se importa ahora de @/lib/utils

@@ -7,13 +7,13 @@ import * as schema from './schema';
  * Cliente configurado para comunicación de baja latencia con el EDGE.
  */
 
-if (!process.env.TURSO_URL_TESIS) {
-  console.warn('⚠️  WARNING: TURSO_URL_TESIS is not defined. Database connection will likely fail.');
+if (!process.env.TURSO_URL_TESIS && !process.env.TURSO_URL) {
+  console.warn('⚠️  WARNING: Neither TURSO_URL_TESIS nor TURSO_URL is defined. Database connection will likely fail.');
 }
 
 export const client = createClient({
-  url: process.env.TURSO_URL_TESIS || 'libsql://dummy-url',
-  authToken: process.env.TURSO_TOKEN_TESIS,
+  url: process.env.TURSO_URL || process.env.TURSO_URL_TESIS || 'libsql://dummy-url',
+  authToken: process.env.TURSO_TOKEN || process.env.TURSO_TOKEN_TESIS,
 });
 
 export const db = drizzle(client, { schema });

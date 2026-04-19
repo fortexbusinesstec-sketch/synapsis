@@ -114,9 +114,12 @@ export default function DocumentacionPage() {
 
   useEffect(() => {
     fetch('/api/auth/me')
-      .then(r => r.json())
+      .then(async r => {
+        if (!r.ok) return { id: null, role: null, isDevMode: false };
+        return r.json();
+      })
       .then(u => setUserInfo({ id: u.id, role: u.role, isDevMode: u.isDevMode }))
-      .catch(() => { })
+      .catch(() => setUserInfo({ id: null, role: null, isDevMode: false }))
       .finally(() => setAuthLoading(false));
 
     fetch('/api/documents')
