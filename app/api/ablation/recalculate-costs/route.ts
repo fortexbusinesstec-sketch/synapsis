@@ -9,8 +9,8 @@
  *  - agentes activos según ablation_configurations
  *
  * Modelos y precios (tarifa OpenAI):
- *  - gpt-4o-mini : $0.15/M input  · $0.60/M output   (Clarifier, Planner, Selector, Analista)
- *  - gpt-4o      : $2.50/M input  · $10.00/M output   (Ingeniero Jefe — siempre activo)
+ *  - gpt-4o-mini : $0.15/M input  · $0.60/M output   (Clarifier, Planner, Selector)
+ *  - gpt-4o      : $2.50/M input  · $10.00/M output   (Analista, Ingeniero Jefe)
  */
 
 import { NextResponse } from 'next/server';
@@ -69,12 +69,12 @@ function estimateTurn(
     cost   += inp * MINI_IN + out * MINI_OUT;
   }
 
-  /* ── Analista (gpt-4o-mini, × loops) ────────────────── */
+  /* ── Analista (gpt-4o, × loops) ─────────────────────── */
   if (cfg.analista_enabled) {
     const inp = 620 + chunks * 180;
     const out = 175;
     tokens += (inp + out) * loops;
-    cost   += (inp * MINI_IN + out * MINI_OUT) * loops;
+    cost   += (inp * GPT4_IN + out * GPT4_OUT) * loops;
   }
 
   /* ── Ingeniero Jefe (gpt-4o, siempre) ───────────────── */
@@ -249,7 +249,7 @@ export async function POST(req: Request) {
       clarifier:  'gpt-4o-mini  ~520 in + 120 out / turno',
       planner:    'gpt-4o-mini  ~880 in + 210 out / loop adicional',
       selector:   'gpt-4o-mini  ~(1200+chunks×155) in + 75 out / turno',
-      analista:   'gpt-4o-mini  ~(620+chunks×180) in + 175 out / loop × loops_fired',
+      analista:   'gpt-4o       ~(620+chunks×180) in + 175 out / loop × loops_fired',
       ij:         'gpt-4o       ~(1000+chunks×200+priorTurns×360) in + 650 out / turno',
     },
   });

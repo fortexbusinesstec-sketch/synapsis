@@ -222,7 +222,7 @@ const CONFIG_COLORS: Record<string, string> = {
 
 function ChartCard({ title, description, children, height = 450, accent = 'blue' }: {
   title: string; description: string; children: React.ReactNode;
-  height?: number; accent?: 'blue' | 'violet' | 'emerald' | 'amber' | 'teal';
+  height?: number | string; accent?: 'blue' | 'violet' | 'emerald' | 'amber' | 'teal';
 }) {
   const accentMap: Record<string, string> = {
     blue: 'bg-blue-50 border-blue-200 text-blue-700',
@@ -261,7 +261,7 @@ function RadarChartAcademic({ scenarios }: { scenarios: ScenRunRow[] }) {
     const obj: any = { subject: d.label };
     configs.forEach(cid => {
       const cfgRuns = scenarios.filter(s => s.config_id === cid && s[d.key as keyof ScenRunRow] !== null);
-      const avg = cfgRuns.length ? cfgRuns.reduce((sum, r) => sum + (r[d.key as keyof ScenRunRow] as number), 0) / cfgRuns.length : 0;
+      const avg = cfgRuns.length ? cfgRuns.reduce((sum, r) => sum + Number(r[d.key as keyof ScenRunRow] ?? 0), 0) / cfgRuns.length : 0;
       obj[cid] = Number(avg.toFixed(2));
     });
     return obj;
@@ -302,7 +302,7 @@ function ComposedChartDual({ scenarios, summaryAll }: { scenarios: ScenRunRow[],
 
     // Si hay datos de escenarios, calculamos el promedio directamente
     const avgScoreScen = scenRuns.length
-      ? scenRuns.reduce((sum, r) => sum + (r.score_total ?? 0), 0) / scenRuns.length
+      ? scenRuns.reduce((sum, r) => sum + Number(r.score_total ?? 0), 0) / scenRuns.length
       : 0;
 
     const scoreTotal = avgScoreScen > 0 ? avgScoreScen : (summary?.avg_score_total ?? 0);
@@ -347,7 +347,7 @@ function ComposedChartDual({ scenarios, summaryAll }: { scenarios: ScenRunRow[],
 function BarChartLoops({ scenarios }: { scenarios: ScenRunRow[] }) {
   const data = ['A', 'B', 'C', 'D'].map(cid => {
     const cfgRuns = scenarios.filter(s => s.config_id === cid);
-    const avgLoops = cfgRuns.length ? cfgRuns.reduce((sum, r) => sum + (r.total_loops_fired ?? 0), 0) / cfgRuns.length : 0;
+    const avgLoops = cfgRuns.length ? cfgRuns.reduce((sum, r) => sum + Number(r.total_loops_fired ?? 0), 0) / cfgRuns.length : 0;
     return { name: cid, loops: Number(avgLoops.toFixed(3)) };
   }).sort((a, b) => b.loops - a.loops);
 
@@ -395,14 +395,14 @@ function HeatmapAcademic({ data }: { data: any[] }) {
   };
 
   return (
-    <div className="flex flex-col h-full border border-slate-100 rounded-xl overflow-hidden">
+    <div className="flex flex-col border border-slate-100 rounded-xl overflow-hidden">
       <div className="grid grid-cols-[140px_repeat(4,1fr)] bg-slate-50 border-b border-slate-100">
         <div className="p-3"></div>
         {configs.map(cid => (
           <div key={cid} className="p-3 text-center text-[11px] font-black text-slate-500 uppercase tracking-widest">{cid}</div>
         ))}
       </div>
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1">
         {cats.map(cat => (
           <div key={cat} className="grid grid-cols-[140px_repeat(4,1fr)] border-b border-slate-50 last:border-0 h-16">
             <div className="p-3 flex items-center text-[10px] font-black text-slate-600 uppercase tracking-tight bg-slate-50/50">
@@ -509,7 +509,7 @@ function ScoreBreakdownChart({ scenarios, summaryAll }: { scenarios: ScenRunRow[
   const data = cfgIds.map(cid => {
     const sRows = scenarios.filter(r => r.config_id === cid && r.score_total !== null);
     const avg = (f: keyof ScenRunRow) => sRows.length
-      ? sRows.reduce((s, r) => s + ((r[f] as number) ?? 0), 0) / sRows.length : 0;
+      ? sRows.reduce((s, r) => s + Number(r[f] ?? 0), 0) / sRows.length : 0;
     return {
       name: `Config ${cid}`,
       cid,
@@ -2375,6 +2375,13 @@ function ScenariosResultsContent() {
   const [indexingData, setIndexingData] = useState<{ agg: IndexingAgg | null; docs: IndexingDocRow[]; agentLogs: AgentLogRow[] }>({ agg: null, docs: [], agentLogs: [] });
   const [indexingLoading, setIndexingLoading] = useState(false);
 
+  // Sincronizar selBatch cuando cambie el batch en la URL
+  useEffect(() => {
+    if (initialBatch) {
+      setSelBatch(initialBatch);
+    }
+  }, [initialBatch]);
+
   // Cargar batches al montar
   useEffect(() => {
     fetch('/api/ablation/batches')
@@ -2401,14 +2408,19 @@ function ScenariosResultsContent() {
   useEffect(() => {
     if (!selBatch) { setSummary([]); setRuns([]); setScenarios([]); setLoopRows([]); setScenHeatmap([]); setScenEfficiency([]); return; }
     setLoadingData(true);
+    const safeJson = (url: string) => fetch(url)
+      .then(r => r.ok ? r.json() : [])
+      .catch(err => { console.error(`Error fetching ${url}:`, err); return []; });
+
     Promise.all([
-      fetch(`/api/ablation/summary?batch=${encodeURIComponent(selBatch)}`).then((r) => r.json()),
-      fetch(`/api/ablation/runs?batch=${encodeURIComponent(selBatch)}`).then((r) => r.json()),
-      fetch(`/api/ablation/scenarios/runs?batch=${encodeURIComponent(selBatch)}`).then((r) => r.json()),
-      fetch(`/api/ablation/scenarios/turn-stats?batch=${encodeURIComponent(selBatch)}`).then((r) => r.json()),
-      fetch(`/api/ablation/loop-health?batch=${encodeURIComponent(selBatch)}`).then((r) => r.json()),
-      fetch(`/api/ablation/scenarios/heatmap?batch=${encodeURIComponent(selBatch)}`).then((r) => r.json()),
-      fetch(`/api/ablation/scenarios/efficiency?batch=${encodeURIComponent(selBatch)}`).then((r) => r.json()),
+      safeJson(`/api/ablation/summary?batch=${encodeURIComponent(selBatch)}`),
+      safeJson(`/api/ablation/runs?batch=${encodeURIComponent(selBatch)}`),
+      safeJson(`/api/ablation/scenarios/runs?batch=${encodeURIComponent(selBatch)}`),
+      fetch(`/api/ablation/scenarios/turn-stats?batch=${encodeURIComponent(selBatch)}`)
+        .then(r => r.ok ? r.json() : {}).catch(() => ({})),
+      safeJson(`/api/ablation/loop-health?batch=${encodeURIComponent(selBatch)}`),
+      safeJson(`/api/ablation/scenarios/heatmap?batch=${encodeURIComponent(selBatch)}`),
+      safeJson(`/api/ablation/scenarios/efficiency?batch=${encodeURIComponent(selBatch)}`),
     ])
       .then(([s, r, sc, ts, lh, sh, se]) => {
         setSummary(Array.isArray(s) ? s : []);
@@ -2612,6 +2624,7 @@ function ScenariosResultsContent() {
           <ChartCard
             title="Heatmap de Resiliencia por Categoría"
             description="Identificación de puntos ciegos en arquitecturas base vs robustez MAS."
+            height="auto"
           >
             <HeatmapAcademic data={scenHeatmap} />
           </ChartCard>

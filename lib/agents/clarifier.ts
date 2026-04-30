@@ -12,7 +12,7 @@ import { openai }       from '@ai-sdk/openai';
 
 export interface ClarifierOutput {
   is_ambiguous:       boolean;
-  intent:             'troubleshooting' | 'education_info' | 'procedure' | 'emergency_protocol';
+  intent:             'troubleshooting' | 'education_info' | 'emergency_protocol';
   entities:           string[];   // CN7, E07, SCIC, puerta, freno, 3300, etc.
   confidence:         number;     // 0.0–1.0 sobre el intent detectado
   use_original_query: boolean;    // siempre true si is_ambiguous = false
@@ -31,64 +31,26 @@ const CLARIFIER_FAILSAFE: ClarifierOutput = {
 /* ── Prompt ───────────────────────────────────────────────────────────────── */
 
 const SYSTEM_PROMPT =
-  'Eres un analizador semántico para consultas de técnicos de ascensores.\n' +
-  'Tu única función es analizar, NO reescribir ni mejorar la consulta.\n\n' +
+  `Eres un analizador semántico para consultas de técnicos de ascensores. Tu única función es analizar, NO reescribir ni expandir la consulta.
 
-  'REGLA MULTI-TURNO (prioridad ABSOLUTA — se evalúa antes que cualquier otra regla):\n' +
-  'Si el campo "Historial reciente" contiene mensajes previos, el técnico está en el medio\n' +
-  'de un diagnóstico en curso. En este caso:\n' +
-  '  • is_ambiguous = false SIEMPRE, sin excepción.\n' +
-  '  • El contexto del historial completa cualquier información que falte en el mensaje actual.\n' +
-  '  • Infiere el intent a partir del historial (si el historial es troubleshooting, mantén troubleshooting).\n' +
-  '  • Extrae entidades del mensaje ACTUAL más cualquier entidad clave que aparezca en el historial.\n\n' +
+REGLAS:
+1. NUNCA modifiques, parafrasees ni expandas la consulta original del técnico.
+2. EXTRAE ENTIDADES QUIRÚRGICAS: códigos de error (E07, F12, 0301), nombres de placas (SCIC, SMIC, SCOP), componentes (KSKB, freno, variador) y modelos (3300, 5500).
+3. 'is_ambiguous' = true SOLO si el técnico reporta un síntoma vago ("no funciona", "hace ruido", "falla algo") SIN especificar código de error NI modelo de equipo.
+4. 'intent' = 'troubleshooting' | 'education_info' | 'emergency_protocol'.
+5. 'use_original_query' = true siempre. Nunca reescribas la query para el embedding.
 
-  'REGLA CRÍTICA — FALSOS POSITIVOS DE AMBIGÜEDAD (prioridad máxima):\n' +
-  'Las siguientes consultas son SIEMPRE is_ambiguous = false, sin excepción:\n' +
-  '  A) Extracción de valor nominal o especificación técnica:\n' +
-  '     "¿cuál es la resistencia de...?", "¿qué voltaje tiene...?", "¿qué rango de...?"\n' +
-  '  B) Ubicación física de un elemento:\n' +
-  '     "¿dónde están las baterías?", "¿dónde se encuentra la HMI?", "¿dónde está el fusible?"\n' +
-  '  C) Significado de código, abreviatura o estado:\n' +
-  '     "¿qué significa E07?", "¿qué indica BatFlt?", "¿qué es KTC?"\n' +
-  '  D) Pasos de un procedimiento del manual:\n' +
-  '     "¿cómo se registran las LOP?", "¿cómo evacuo manualmente?", "pasos para calibrar..."\n' +
-  '  E) Definición o concepto técnico:\n' +
-  '     "¿qué es el SCIC?", "¿qué función tiene la TSU?"\n' +
-  'Para los casos A–E, usa intent = "education_info" (A–C y E) o intent = "procedure" (D).\n\n' +
-
-  'REGLAS GENERALES:\n' +
-  '1. Nunca modifiques, parafrasees ni expandas la consulta original.\n' +
-  '2. EXTRAE ENTIDADES QUIRÚRGICAS: Solo códigos de error (E07, F12), nombres de placas (SCIC, SMIC),\n' +
-  '   componentes críticos (freno, variador, sensor) o series (3300, 5500).\n' +
-  '3. IGNORA RUIDO: No extraigas palabras genéricas como "ascensor", "problema", "mantenimiento".\n' +
-  '4. is_ambiguous = true SOLO si el técnico reporta un síntoma vago ("no funciona", "hace ruido",\n' +
-  '   "no sube") SIN especificar código de error NI modelo del equipo.\n' +
-  '5. use_original_query es siempre true si is_ambiguous es false.\n\n' +
-
-  'Ejemplos is_ambiguous = false:\n' +
-  '- "¿Qué significa el código 0020 en un 3300?"          → intent: education_info\n' +
-  '- "¿Cuál es la resistencia de la bobina MGB?"          → intent: education_info\n' +
-  '- "¿Dónde están las baterías en el Schindler 3300?"    → intent: education_info\n' +
-  '- "¿Cómo registro las LOP en el Menú 40?"              → intent: procedure\n' +
-  '- "Evacuación manual PEBO en el 5500, pasos"           → intent: procedure\n' +
-  '- "SCIC del 3300 muestra E07 y las puertas no abren"   → intent: troubleshooting\n\n' +
-
-  'Ejemplos is_ambiguous = true:\n' +
-  '- "El ascensor no sube"          (síntoma sin código ni modelo)\n' +
-  '- "Hay un problema con las puertas" (síntoma sin contexto)\n' +
-  '- "Falla rara"                   (sin ningún dato técnico)\n\n' +
-
-  'Devuelve SOLO JSON válido, sin texto adicional:\n' +
-  '{\n' +
-  '  "is_ambiguous": boolean,\n' +
-  '  "intent": "troubleshooting" | "education_info" | "procedure" | "emergency_protocol",\n' +
-  '  "entities": string[],\n' +
-  '  "confidence": number,\n' +
-  '  "use_original_query": boolean\n' +
-  '}';
+OUTPUT JSON:
+{
+  "is_ambiguous": boolean,
+  "intent": "troubleshooting|education_info|emergency_protocol",
+  "entities": ["string"],
+  "confidence": 0.0-1.0,
+  "use_original_query": true
+}`;
 
 const VALID_INTENTS = new Set<string>([
-  'troubleshooting', 'education_info', 'procedure', 'emergency_protocol',
+  'troubleshooting', 'education_info', 'emergency_protocol',
 ]);
 
 /* ── Función pública: resolveQuery ────────────────────────────────────────── */

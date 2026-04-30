@@ -3,8 +3,8 @@
  *
  * FASE 0 — CLARIFICADOR    : gpt-4o-mini. Solo en primer mensaje corto sin contexto técnico.
  * FASE 1 — BIBLIOTECARIO   : Retrieval vectorial en Turso (chunks + imágenes)
- * FASE 2 — ANALISTA        : Internal monologue con gpt-4o-mini (no stream)
- * FASE 3 — INGENIERO JEFE  : Streaming response con gpt-4o
+ * FASE 2 — ANALISTA        : Internal monologue con gpt-4o (no stream)
+ * FASE 3 — INGENIERO JEFE  : Streaming response con gpt-4o-mini
  * AGENTE 4 — VALIDADOR     : Filtrado puro de imágenes antes de enviar
  * AGENTE 5 — METRIFICADOR  : Persiste métricas en modo 'record'
  *
@@ -24,14 +24,16 @@
  *   x-enrichments-used   → '1' si se incluyeron notas de experto
  */
 
-import { embed, generateText, streamText } from 'ai';
+import { embed, streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { createId } from '@paralleldrive/cuid2';
 import type { Message } from 'ai';
 import { client } from '@/lib/db';
 
 import { runClarifier } from '@/lib/agents/clarifier';
+import { runAnalista, ANALISTA_FAILSAFE } from '@/lib/agents/analista';
 import { saveChatMessage } from '@/lib/agents/metrifier';
+import type { AnalistaOutput } from '@/lib/types/agents';
 
 export const maxDuration = 60;
 
@@ -90,18 +92,7 @@ interface RetrievedImage {
   distance: number;
 }
 
-interface AnalystOutput {
-  urgency: 'baja' | 'media' | 'alta' | 'critica';
-  insight_1: string;
-  insight_2: string;
-  verification_method: string;
-  mentor_guidance: string;
-}
 
-interface AnalystResult {
-  output: AnalystOutput;
-  totalTokens: number;
-}
 
 interface BibliotecarioResult {
   groundTruth: string;
@@ -113,13 +104,7 @@ interface BibliotecarioResult {
 
 /* ── Fallback del Analista ──────────────────────────────────────────────── */
 
-const ANALYST_FALLBACK: AnalystOutput = {
-  urgency: 'media',
-  insight_1: 'Desgaste de componentes mecánicos o interferencia eléctrica.',
-  insight_2: 'Posible degradación en sensores de posición o humedad en cuadro de control.',
-  verification_method: 'Inspeccionar visualmente componentes mecánicos accesibles y verificar tensiones.',
-  mentor_guidance: 'Inicia con calma y solicita al operario una verificación visual básica primero. No compliques el diagnóstico de entrada.',
-};
+
 
 /* ── FASE 1: Retrieval vectorial ─────────────────────────────────────────── */
 
@@ -317,61 +302,6 @@ async function runBibliotecario(
   };
 }
 
-/* ── FASE 2: Internal Monologue (Analista) ──────────────────────────────── */
-
-async function runAnalista(
-  userQuery: string,
-  groundTruth: string,
-  intent: string,
-): Promise<AnalystResult> {
-  const { text, usage } = await generateText({
-    model: openai('gpt-4o-mini'),
-    maxTokens: 400,
-    messages: [
-      {
-        role: 'system',
-        content:
-          "Eres el Agente 2 (Analista y Estratega Pedagógico) de Synapsis Go. Recibes el problema del usuario, el intent (intención) y los manuales recuperados. Tu trabajo es crear un monólogo interno estructurado en JSON para guiar al Agente 3 (Ingeniero Jefe).\n\n" +
-          "REGLAS SEGÚN EL 'INTENT':\n\n" +
-          "Si es troubleshooting: insight_1 e insight_2 deben ser hipótesis complejas de causa raíz (fallos en cascada, mecánica oculta). verification_method debe ser una prueba de campo (ej. medir voltaje).\n\n" +
-          "Si es education_info: insight_1 e insight_2 deben ser analogías pedagógicas, principios de funcionamiento o errores comunes de concepto. verification_method debe ser una pregunta de reflexión para el usuario.\n\n" +
-          "Si es emergency_protocol: insight_1 e insight_2 deben ser pasos estrictos de seguridad o estabilización. verification_method debe ser una confirmación de seguridad innegociable.\n\n" +
-          "REGLA PARA 'MENTOR_GUIDANCE':\n" +
-          "En el campo mentor_guidance, debes darle instrucciones directas al Agente 3 sobre CÓMO hablar. Define el tono emocional (calmado, autoritario, alentador), qué analogías usar, y recuérdale que no dé toda la información de golpe, sino que termine con una llamada a la acción o pregunta para mantener el diálogo abierto.\n\n" +
-          'Responde ÚNICAMENTE con este JSON (sin markdown, sin texto extra):\n' +
-          '{"urgency":"baja"|"media"|"alta"|"critica",' +
-          '"insight_1":"string","insight_2":"string","verification_method":"string","mentor_guidance":"string"}',
-      },
-      {
-        role: 'user',
-        content: `INTENT: ${intent}\nSÍNTOMA REPORTADO: ${userQuery}\n\nCONTEXTO DEL MANUAL:\n${groundTruth.slice(0, 3000)}`,
-      },
-    ],
-  });
-
-  const totalTokens = usage.totalTokens ?? (usage.promptTokens + usage.completionTokens);
-
-  try {
-    const stripped = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
-    const jsonMatch = stripped.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('No JSON found');
-
-    const parsed = JSON.parse(jsonMatch[0]) as Partial<AnalystOutput>;
-    if (
-      !parsed.urgency ||
-      !parsed.insight_1 ||
-      !parsed.insight_2 ||
-      !parsed.verification_method ||
-      !parsed.mentor_guidance
-    ) throw new Error('Estructura inválida');
-
-    return { output: parsed as AnalystOutput, totalTokens };
-  } catch (e) {
-    console.error('[chat:fase2] Parse del Analista falló, usando fallback:', (e as Error).message);
-    return { output: ANALYST_FALLBACK, totalTokens };
-  }
-}
-
 /* ── HANDLER ─────────────────────────────────────────────────────────────── */
 
 export async function POST(req: Request) {
@@ -488,7 +418,7 @@ export async function POST(req: Request) {
   /* ────────────────────────────────────────────────────────────────────────
      FASE 2 — ANALISTA: Internal monologue (nunca detiene la Fase 3)
   ──────────────────────────────────────────────────────────────────────── */
-  let analista: AnalystOutput = ANALYST_FALLBACK;
+  let analista: AnalistaOutput = ANALISTA_FAILSAFE;
   let phase2Tokens = 0;
 
   let t2start = Date.now();
@@ -496,7 +426,14 @@ export async function POST(req: Request) {
   if (agentFlags.analyst) {
     t2start = Date.now();
     try {
-      const analyzeResult = await runAnalista(enrichedQuery, groundTruth, queryIntent);
+      const analyzeResult = await runAnalista({
+        userQuery: enrichedQuery,
+        groundTruth,
+        imageContext: '',
+        intent: queryIntent,
+        historyContext: '',
+        loopIndex: 0,
+      });
       analista = analyzeResult.output;
       phase2Tokens = analyzeResult.totalTokens;
     } catch (e) {
@@ -529,15 +466,21 @@ export async function POST(req: Request) {
         {
           role: 'system',
           content:
-            "Eres el Ingeniero Jefe de Synapsis Go. Tu rol es ser un Mentor de Alto Nivel, un espejo brutalmente honesto y la máxima autoridad técnica. No eres un asistente complaciente.\n\n" +
-            "REGLAS DE PERSONALIDAD Y TONO:\n\n" +
-            "Cero Validación y Cero Adulación: No suavices la verdad. No saludes con entusiasmo. Ve directo al grano.\n\n" +
-            "Desafío Intelectual: Cuestiona las suposiciones del técnico.\n\n" +
-            "REGLAS DE FORMATO:\n" +
-            "1. Ve directo al grano.\n" +
-            "2. Máximo 4 pasos numerados.\n" +
-            "3. Negritas solo en palabras clave.\n" +
-            "4. Termina con una pregunta incisiva.",
+            `Eres el Ingeniero Jefe de Synapsis Go. Mentor senior, brutalmente honesto, máxima autoridad técnica. Eres un VOCERO: transmites el análisis del Agente Analista, NO reinterpretes ni añadas hipótesis propias.
+
+REGLAS DE HIERRO:
+1. Usa EXACTAMENTE la información del Analista. Si el Analista dice 'missing_info', admítelo directamente.
+2. PROHIBIDO decir: "consulte el capítulo", "revise el menú", "busque en la sección", "identifique el código en el manual".
+3. PROHIBIDO inventar valores numéricos que no estén en el análisis.
+4. PROHIBIDO saludar, validar al técnico ("buen trabajo"), o ser amable. Ve directo al grano.
+5. Formato: Máximo 4 pasos numerados. Negritas SOLO en nombres técnicos (placas, códigos, componentes).
+6. Termina con UNA pregunta incisiva que verifique una sola cosa física o medible.
+
+SI hay 'missing_info' en el análisis:
+"No tengo información suficiente en la documentación indexada para interpretar [X]. Requiere validación de un experto senior. Mientras tanto, verifique [lo que sí sepa con certeza]."
+
+SI NO hay missing_info:
+Entrega los pasos directamente del 'root_cause_hypothesis' y 'next_step'.`,
         },
         {
           role: 'user',
@@ -545,12 +488,14 @@ export async function POST(req: Request) {
             `SÍNTOMA: ${enrichedQuery}\n\n` +
             `${contextBlock}\n\n` +
             `IMÁGENES DISPONIBLES:\n${validatedImages.map(img => `URL: ${img.image_url} | Descripción: ${img.description}`).join('\n') || 'No hay imágenes disponibles para este caso.'}\n\n` +
-            `ANÁLISIS DEL COMITÉ:\n` +
-            `Nivel de urgencia: ${analista.urgency}\n` +
-            `Consideración (Insight) 1: ${analista.insight_1}\n` +
-            `Consideración (Insight) 2: ${analista.insight_2}\n` +
-            `Método de Verificación: ${analista.verification_method}\n` +
-            `INSTRUCCIONES DE DIRECCIÓN DE ESCENA (Mentor Guidance): ${analista.mentor_guidance}`,
+            `ANÁLISIS DEL AGENTE ANALISTA:\n` +
+            `Hipótesis de causa raíz: ${analista.root_cause_hypothesis}\n` +
+            `Confianza: ${analista.confidence}\n` +
+            `Requiere verificación: ${analista.requires_verification}\n` +
+            `Siguiente paso: ${analista.next_step}\n` +
+            `Modo de respuesta: ${analista.response_mode}\n` +
+            `Necesita más información: ${analista.needs_more_info}\n` +
+            `${analista.gap ? `Gap detectado: ${analista.gap.type} | ${analista.gap.target} | ${analista.gap.reason}` : ''}`,
         },
       ],
 
@@ -580,8 +525,8 @@ export async function POST(req: Request) {
     return result.toDataStreamResponse({
       headers: {
         'x-retrieved-images': encodeURIComponent(JSON.stringify(imagesForHeader)),
-        'x-urgency-level': analista.urgency,
-        'x-analyst-reasoning': encodeURIComponent(analista.mentor_guidance),
+        'x-urgency-level': analista.response_mode === 'EMERGENCY' ? 'critica' : analista.response_mode === 'DEEP_ANALYSIS' ? 'alta' : 'media',
+        'x-analyst-reasoning': encodeURIComponent(analista.root_cause_hypothesis),
         'x-session-id': sessionId ?? '',
         'x-message-id': messageId,
         'x-phase0-used': agentFlags.clarifier ? '1' : '0',

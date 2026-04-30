@@ -22,18 +22,21 @@ const NAV_LINKS = [
   { label: 'Documentación', href: '/dashboard/documentacion', Icon: FileText },
   { label: 'Synapsis Go', href: '/dashboard/go', Icon: Activity },
   { label: 'Ablación', href: '/dashboard/ablation', Icon: FlaskConical },
+  { label: 'Experimento Juez', href: '/dashboard/judge', Icon: FlaskConical },
 ];
 
 export default function TopBar({
   userName = "Admin HTL",
   userEmail = "admin@synapsis.go",
   userRole = "Administrator",
-  isDevMode = false
+  isDevMode = false,
+  prodExperiment = false
 }: {
   userName?: string;
   userEmail?: string;
   userRole?: string;
   isDevMode?: boolean;
+  prodExperiment?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -59,8 +62,11 @@ export default function TopBar({
     if (role === "Administrador de Sistema" && link.label === "Ablación") return false;
     if (role === "Auditor" && link.label === "Ablación" && !isDevMode) return false;
     if (role === "Especialista Técnico") {
-      return link.label === "Home" || link.label === "Synapsis Go";
+      const links = [link.label === "Home", link.label === "Synapsis Go"];
+      if (prodExperiment && link.label === "Experimento Juez") return true;
+      return links.some(Boolean);
     }
+    if (link.label === "Experimento Juez") return false; // Default off for others unless specified
     return true;
   });
 

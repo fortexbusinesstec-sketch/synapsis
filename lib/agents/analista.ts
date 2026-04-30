@@ -1,6 +1,6 @@
 /**
  * Agente 2 — Analista v3 (Evaluador Estratégico con Gap Engine)
- * Modelo: gpt-4o-mini | temperature: 0.2
+ * Modelo: gpt-4o | temperature: 0.1
  *
  * Output tipado con GapDescriptor estructurado en lugar de missing_info libre.
  * shouldLoop verifica progreso real del gap entre iteraciones.
@@ -79,7 +79,7 @@ export function shouldLoop(
 /* ── Helpers internos ─────────────────────────────────────────────────────── */
 
 const VALID_MODES = new Set<string>([
-  'EMERGENCY', 'TROUBLESHOOTING', 'LEARNING', 'QUICK_CONFIRM', 'PROCEDURAL', 'AMBIGUOUS', 'DEEP_ANALYSIS',
+  'EMERGENCY', 'TROUBLESHOOTING', 'LEARNING', 'QUICK_CONFIRM', 'AMBIGUOUS', 'DEEP_ANALYSIS',
 ]);
 
 const VALID_GAP_TYPES = new Set<string>([
@@ -135,103 +135,39 @@ export async function runAnalista(
   }
 
   const isLastIteration = input.loopIndex + 1 >= 3;
-  const hasHistory      = input.historyContext.trim().length > 10;
 
   const systemPrompt =
-    'Eres el Analista Estratégico de Synapsis Go. Evalúas la suficiencia de la ' +
-    'documentación recuperada y generas una hipótesis de causa raíz con alta consistencia.\n\n' +
-    
-    // ── REGLA: EVOLUCIÓN DE HIPÓTESIS (Fix Anchoring Bias) ──────────────────
-    'EVOLUCIÓN DE HIPÓTESIS: Eres un diagnosticador dinámico. Si en el historial\n' +
-    'de la conversación el técnico reporta que un paso ya se realizó, una medida\n' +
-    'es correcta, o un componente fue reparado, TIENES ESTRICTAMENTE PROHIBIDO\n' +
-    'volver a pedir que se revise ese componente. Debes descartar esa hipótesis\n' +
-    'inmediatamente y avanzar a la SIGUIENTE causa probable según el manual.\n\n' +
+    `Eres el Agente Analista de Synapsis Go. Tu trabajo es interpretar el Ground Truth recuperado del RAG y producir un diagnóstico estructurado para el Ingeniero Jefe.
 
-    // ── REGLA DE RAZONAMIENTO ESTRUCTURADO (Chain of Thought) ──────────────
-    'REGLA ESTRATÉGICA (CoT): Antes de generar tu diagnóstico final, DEBES generar\n' +
-    'un razonamiento interno en el campo "thought_process". En él debes listar:\n' +
-    '1) Síntoma_Actual: qué reporta el técnico exactamente ahora.\n' +
-    '2) Componentes_Descartados y Cambios de Estado: qué se ha medido/reparado y\n' +
-    '   cómo ha cambiado el equipo. REGLA DE PIVOTE: Si tras una reparación un indicador\n' +
-    '   cambia su estado (ej: un LED pasa de fijo a parpadear), ASUME que el problema\n' +
-    '   eléctrico fue resuelto. Cambia inmediatamente el vector de diagnóstico hacia\n' +
-    '   causas MECÁNICAS (alineación, limpieza, ajuste físico).\n' +
-    '3) Error_Code_Activo: el código que persiste en el equipo.\n' +
-    '4) Flash Rule: En sensores ópticos (ej. RPHT), el parpadeo (flashing) suele indicar\n' +
-    '   desalineación física o suciedad, NO un fallo de voltaje. Prioriza alineación.\n' +
-    'REGLA DE NO-CONTAMINACIÓN: Tienes estrictamente PROHIBIDO basar tu diagnóstico\n' +
-    'en componentes que ya estén en la lista de Componentes_Descartados.\n\n' +
+REGLA CRÍTICA — ANTI-REDIRECCIÓN:
+NUNCA indiques que el técnico "consulte el capítulo X", "revise el menú Y" o "busque en la sección Z". Si el Ground Truth contiene una referencia cruzada, tú debes haberla resuelto internamente. Si el contenido no está disponible, declara una laguna real en 'missing_info'.
 
-    // ── REGLA MULTI-TURNO (Fix de Amnesia) ──────────────────────────────────
-    'USO OBLIGATORIO DEL HISTORIAL DE CONVERSACIÓN:\n' +
-    '• LEE el historial completo antes de analizar. Cada turno del técnico aporta datos nuevos.\n' +
-    '• Basa tu hipótesis en el síntoma INICIAL combinado con TODOS los datos de los turnos previos.\n' +
-    '• Si el técnico ya respondió una pregunta en el historial, ESA RESPUESTA cuenta como dato conocido.\n' +
-    '• NUNCA indiques needs_more_info = true para información que el técnico ya proveyó en el historial.\n' +
-    '• Si el historial contiene mediciones, valores o estados (ej: "450 Ω", "LED apagado"),\n' +
-    '  incorpóralos directamente en root_cause_hypothesis — no los pierdas entre iteraciones.\n' +
-    (hasHistory
-      ? '• SESIÓN MULTI-TURNO ACTIVA: el técnico está en medio de un diagnóstico. Incrementa tu\n' +
-        '  confianza con cada nuevo dato que el historial confirme. No reinicies el análisis desde cero.\n'
-      : '') +
-    '\n' +
+REGLA DE INTERPRETACIÓN DIRECTA:
+- Si hay códigos de error (ej: 3 destellos rojos, E07, 0301): interpreta su significado técnico exacto.
+- Si hay valores nominales (voltajes, resistencias, tiempos): extrae los números con unidades.
+- Si hay procedimientos: enumera los pasos concretos, no digas "siga el procedimiento".
+- Si hay múltiples hipótesis: ordénalas por probabilidad y justifica brevemente.
 
-    'REGLAS DE ANÁLISIS:\n' +
-    '• ANALIZA la documentación recuperada para identificar la causa raíz más probable.\n' +
-    '• REGLA DE DECISIÓN: Si el contexto actual permite formular una hipótesis sólida y coherente,\n' +
-    '  DEBES asignar un confidence de 0.8 o superior y poner needs_more_info = false.\n' +
-    '• Solo pide info adicional si es IMPOSIBLE dar un paso técnico seguro sin ella.\n' +
-    '• confidence refleja qué tan bien cubre la documentación el síntoma reportado.\n' +
-    '• Si confidence < 0.6: usa response_mode = "DEEP_ANALYSIS" y explora más.\n' +
-    '• Si confidence < 0.4: establece needs_more_info = true y describe el gap.\n' +
-    (isLastIteration
-      ? '• ITERACIÓN FINAL: needs_more_info DEBE ser false — gap DEBE ser null — ' +
-        'responde con lo mejor disponible.\n'
-      : '') +
+OUTPUT JSON ESTRICTO:
+{
+  "root_cause_hypothesis": "string — interpretación directa del problema, con componente y valor anómalo",
+  "confidence": 0.0-1.0,
+  "requires_verification": boolean,
+  "next_step": "string — acción inmediata específica",
+  "response_mode": "EMERGENCY|TROUBLESHOOTING|LEARNING|QUICK_CONFIRM|DEEP_ANALYSIS",
+  "needs_more_info": boolean,
+  "gap": {
+    "type": "component|error_code|measurement|procedure|location",
+    "target": "string",
+    "reason": "string",
+    "search_hint": "string"
+  } | null
+}
 
-    '\nDESCRIPCIÓN DEL GAP (solo si needs_more_info = true):\n' +
-    '  Usa el campo "gap" para describir con precisión técnica lo que falta:\n' +
-    '  • type: categoría de información faltante:\n' +
-    '    - component   → falta info de un componente físico específico\n' +
-    '    - error_code  → falta definición o causa de un código de error\n' +
-    '    - measurement → falta un valor técnico (voltaje, resistencia, torque)\n' +
-    '    - procedure   → falta un procedimiento paso a paso\n' +
-    '    - location    → falta ubicación física de un elemento\n' +
-    '  • target: objeto técnico específico SIN texto adicional\n' +
-    '    BIEN: "CN3 pin 5", "E07 SCIC", "bobina KM1", "freno 5500"\n' +
-    '    MAL: "más información sobre el sistema de puertas"\n' +
-    '  • reason: por qué ese dato es necesario para el diagnóstico\n' +
-    '  • search_hint: 2-4 palabras técnicas para buscar en el manual\n' +
-    '  Si gap es null → needs_more_info DEBE ser false.\n' +
-    '  Si needs_more_info es true → gap NO puede ser null.\n\n' +
-
-    'MODOS DE RESPUESTA (primera regla que aplica):\n' +
-    '• EMERGENCY     → intent = emergency_protocol O síntoma menciona: atrapado, ' +
-    'accidente, rescate, peligro\n' +
-    '• PROCEDURAL    → intent = procedure O query contiene: pasos, cómo hacer, procedimiento. ' +
-    'PROHIBIDO usar DEEP_ANALYSIS en este caso.\n' +
-    '• QUICK_CONFIRM → pregunta binaria o validación\n' +
-    '• LEARNING      → intent = education_info O query empieza con: cómo funciona, qué es\n' +
-    '• DEEP_ANALYSIS → confidence < 0.6, múltiples síntomas, análisis de causa raíz\n' +
-    '• TROUBLESHOOTING → cualquier otro caso de fallo activo\n\n' +
-
-    'Responde ÚNICAMENTE con este JSON válido:\n' +
-    '{\n' +
-    '  "thought_process": "Razonamiento CoT siguiendo las reglas de descarte...",\n' +
-    '  "root_cause_hypothesis": "string",\n' +
-    '  "confidence": 0.0–1.0,\n' +
-    '  "requires_verification": boolean,\n' +
-    '  "next_step": "string",\n' +
-    '  "response_mode": "EMERGENCY"|"TROUBLESHOOTING"|"LEARNING"|"QUICK_CONFIRM"|"PROCEDURAL"|"DEEP_ANALYSIS",\n' +
-    '  "needs_more_info": boolean,\n' +
-    '  "gap": {\n' +
-    '    "type": "component|error_code|measurement|procedure|location",\n' +
-    '    "target": "string",\n' +
-    '    "reason": "string",\n' +
-    '    "search_hint": "string"\n' +
-    '  } | null\n' +
-    '}';
+RESTRICCIONES:
+- 'root_cause_hypothesis' debe ser una sola oración con la causa raíz.
+- Si 'needs_more_info' es true, 'gap' NO puede ser null.
+- Si 'gap' es null, 'needs_more_info' debe ser false.`;
 
   const userContent =
     `INTENT: ${input.intent}\n` +
@@ -246,8 +182,8 @@ export async function runAnalista(
 
   try {
     const { text, usage } = await generateText({
-      model:       openai('gpt-4o-mini'),
-      temperature: 0.2,
+      model:       openai('gpt-4o'),
+      temperature: 0.1,
       maxTokens:   1000,
       messages: [
         { role: 'system', content: systemPrompt },
@@ -271,30 +207,22 @@ export async function runAnalista(
       ? parsed.response_mode as ResponseMode
       : deriveResponseMode(input.intent, confidence);
 
-    // BYPASS ESTRICTO: intent procedural → PROCEDURAL, nunca DEEP_ANALYSIS
-    const isProcedural = input.intent === 'procedure' ||
-      /\b(pasos|cómo hacer|procedimiento)\b/i.test(input.userQuery);
-    if (isProcedural && mode !== 'EMERGENCY') {
-      mode = 'PROCEDURAL';
-    } else if (input.intent === 'education_info') {
-      // No degradar LEARNING a DEEP_ANALYSIS
+    // BYPASS: education_info → LEARNING, nunca DEEP_ANALYSIS
+    if (input.intent === 'education_info') {
       mode = 'LEARNING';
     } else if (confidence < 0.6 && mode !== 'EMERGENCY') {
       mode = 'DEEP_ANALYSIS';
     }
 
-    // ── BYPASS DE CONFIANZA: LEARNING y PROCEDURAL no penalizan causa raíz ──
-    // Si hay documentación RAG disponible y el modo no es TROUBLESHOOTING/DEEP_ANALYSIS,
-    // la penalización de "falta causa raíz" no aplica — el técnico solo necesita
-    // información concreta del manual, no un diagnóstico de falla.
-    const isNonTroubleshooting = mode === 'LEARNING' || mode === 'PROCEDURAL';
+    // ── BYPASS DE CONFIANZA: LEARNING no penaliza causa raíz ──
+    const isLearning = mode === 'LEARNING';
     const hasContext            = input.groundTruth.trim().length > 100;  // hay chunks reales
 
     let finalConfidence = confidence;
     let needsMoreInfo: boolean;
     let gap: GapDescriptor | null;
 
-    if (isNonTroubleshooting && hasContext) {
+    if (isLearning && hasContext) {
       // Forzar confianza alta: el RAG tiene la info, no hay causa raíz que buscar
       finalConfidence = Math.max(confidence, 0.85);
       needsMoreInfo   = false;
@@ -335,12 +263,12 @@ export async function runAnalista(
           ? parsed.root_cause_hypothesis
           : 'Análisis pendiente de más contexto.',
         confidence:            finalConfidence,
-        requires_verification: isNonTroubleshooting ? false : parsed.requires_verification !== false,
+        requires_verification: isLearning ? false : parsed.requires_verification !== false,
         next_step:             typeof parsed.next_step === 'string' ? parsed.next_step : '',
         response_mode:         mode,
         needs_more_info:       needsMoreInfo,
         gap,
-        thought_process:       typeof parsed.thought_process === 'string' ? parsed.thought_process : undefined,
+
       },
       totalTokens,
     };

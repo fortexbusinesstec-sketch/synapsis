@@ -8,10 +8,12 @@ import {
     CheckCircle2,
     ChevronRight,
     Search,
-    Cpu
+    Cpu,
+    FlaskConical
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-export function TecnicoHome() {
+export function TecnicoHome({ prodExperiment = false }: { prodExperiment?: boolean }) {
     return (
         <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700 px-4 md:px-0">
 
@@ -30,7 +32,10 @@ export function TecnicoHome() {
             </div>
 
             {/* ── 3-STEP GUIDE ────────────────────────────────────────────────── */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+            <div className={cn(
+                "grid grid-cols-1 gap-4 md:gap-6",
+                prodExperiment ? "md:grid-cols-2 lg:grid-cols-4" : "md:grid-cols-3"
+            )}>
 
                 {/* PASO 1 */}
                 <div className="group bg-white p-5 md:p-6 rounded-[2rem] border border-slate-200 shadow-sm transition-all relative overflow-hidden text-center space-y-3 md:space-y-4">
@@ -70,6 +75,21 @@ export function TecnicoHome() {
                         </p>
                     </div>
                 </div>
+
+                {/* EXPERIMENTO JUEZ (Condicional) */}
+                {prodExperiment && (
+                    <Link href="/dashboard/judge" className="group bg-gradient-to-br from-blue-600 to-blue-700 p-5 md:p-6 rounded-[2rem] border border-blue-500 shadow-xl shadow-blue-500/20 transition-all relative overflow-hidden text-center space-y-3 md:space-y-4 hover:scale-105 active:scale-95">
+                        <div className="mx-auto w-12 h-12 bg-white/20 text-white rounded-xl flex items-center justify-center border border-white/10 group-hover:scale-110 transition-transform">
+                            <FlaskConical className="w-6 h-6" />
+                        </div>
+                        <div className="space-y-1">
+                            <h3 className="text-white font-bold text-sm md:text-base">Experimento Juez</h3>
+                            <p className="text-blue-100 text-xs leading-relaxed">
+                                Evalúa la precisión del sistema mediante el modo jurado.
+                            </p>
+                        </div>
+                    </Link>
+                )}
 
             </div>
 

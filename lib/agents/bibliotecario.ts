@@ -349,8 +349,30 @@ export async function runBibliotecario(
     }
   }
 
+  // Penalizar chunks que son puramente referencias cruzadas sin contenido sustantivo
+  const isPureCrossReference = (content: string): boolean => {
+    const patterns = [
+      /consulte\s+(el\s+)?cap[ií]tulo/i,
+      /v[eé]ase\s+(la\s+)?secci[oó]n/i,
+      /revise\s+(el\s+)?men[uú]\s*\d+/i,
+      /para\s+m[aá]s\s+detalles/i,
+      /referirse\s+a/i,
+      /ver\s+p[aá]gina/i,
+      /consultar\s+el\s+manual/i,
+      /ver\s+figura\s+\d+/i,
+    ];
+    return patterns.some(p => p.test(content));
+  };
+
+  const scoredChunks = [...consolidated.values()];
+  scoredChunks.forEach(chunk => {
+    if (isPureCrossReference(chunk.content) && chunk.content.length < 200) {
+      chunk.final_score = Math.max(0, chunk.final_score - 0.4);
+    }
+  });
+
   // Ordenar por final_score DESC → tomar los top 8 de texto/enrichment
-  const textChunks = [...consolidated.values()]
+  const textChunks = scoredChunks
     .sort((a, b) => b.final_score - a.final_score)
     .slice(0, 8);
 

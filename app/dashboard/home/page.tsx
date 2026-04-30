@@ -66,7 +66,7 @@ export default async function HomePage() {
   }
 
   if (isTecnico) {
-    return <TecnicoHome />;
+    return <TecnicoHome prodExperiment={process.env.PROD_EXPERIMENT === "true"} />;
   }
 
   if (isAuditor) {

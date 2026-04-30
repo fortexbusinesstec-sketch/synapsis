@@ -1,29 +1,49 @@
-# Scripts de Utilidad - SYNAPSE MAS
+# 🛠️ Guía de Scripts — Proyecto Synapsis
 
-Este directorio contiene scripts de automatización, migración y utilidades para el sistema SYNAPSE.
+Este directorio contiene todas las utilidades de automatización para la gestión de la base de datos, evaluación del sistema y generación de documentación técnica (diagramas).
 
-## Estructura de Carpetas
+## 📂 Estructura de Directorios
 
-- `diagrams/`: Scripts de Python para generar diagramas técnicos (ArchiMate, DB, Lógico/Físico). Ver su propio [README](./diagrams/README.md).
-- `tmp/`: Scripts temporales utilizados durante el desarrollo para pruebas puntuales o migraciones únicas. Pueden ser eliminados si ya no son necesarios.
+### 1. `scripts/diagrams/` 🎨
+Generadores de diagramas en HD usando Graphviz (Python).
+- `generar_arquitectura.py`: Arquitectura ArchiMate completa por capas.
+- `generar_pipeline_dataset.py`: [NUEVO] Visualización del flujo de colección y preprocesamiento de datos (Indexing Swarm).
+- `generar_diagrama_base_datos.py`: Esquema lógico de la base de datos Turso.
+- `generate_architecture_hd.py`: Versión simplificada y optimizada para publicaciones.
 
-## Scripts Principales
+**Uso:** `python scripts/diagrams/nombre_del_script.py`
+*Nota: Las imágenes se exportan automáticamente a la carpeta `/imagenes/`.*
 
-### 1. `check_last_doc.ts`
-Muestra el ID, título y estado de las métricas del último documento indexado en la base de datos. Útil para verificar rápidamente si el pipeline de indexación funcionó.
+### 2. `scripts/database/` 🗄️
+Scripts de migración, mantenimiento y corrección de datos en Turso.
+- `migrate-*`: Migraciones de esquema para experimentos de ablación y HITL.
+- `batch_fix_costs.mjs`: Recálculo masivo de costos de tokens y OCR.
+- `rebuild_metrics.ts`: Reconstrucción de métricas de sesión desde los logs de agentes.
+- `backfill-image-embeddings.ts`: Vectorización de imágenes existentes.
 
-### 2. `rebuild_metrics.ts`
-Script para recalcular y actualizar la tabla de métricas de indexación para todos los documentos. Útil si se han realizado cambios en la lógica de metrificación.
+**Uso:** `npx tsx scripts/database/nombre_del_script.ts`
 
-### 3. `rerun_curious_all.ts`
-Vuelve a ejecutar el Agente Curious (detección de gaps y herencia) para todos los documentos del sistema.
+### 3. `scripts/evaluation/` 🔬
+Motor de experimentos y simulaciones.
+- `run_ablation_experiment.ts`: Orquestador principal de pruebas de ablación (L0, L1, L2).
+- `evaluate_level0.ts`: Simulador de comportamiento humano basado en el modelo GOMS.
+- `seed-*`: Población de bancos de preguntas y escenarios de prueba.
 
-### 4. `proxy.ts`
-Un middleware de seguridad experimental (no activo).
+**Uso:** `npx tsx scripts/evaluation/nombre_del_script.ts`
+
+### 4. `scripts/utils/` 🔧
+Herramientas secundarias y proxies.
+- `proxy.ts`: Túnel para debugging de APIs locales.
+- `rerun_curious_all.ts`: Re-ejecución masiva del Agente Curioso sobre documentos indexados.
 
 ---
-### Cómo ejecutar los scripts
-Para los archivos `.ts`, utiliza `npx tsx`:
-```bash
-npx tsx scripts/check_last_doc.ts
-```
+
+## 🚀 Cómo ejecutar un nuevo diagrama
+Si deseas crear un diagrama adicional:
+1. Crea un archivo `.py` en `scripts/diagrams/`.
+2. Utiliza la librería `graphviz`.
+3. Asegúrate de que el script guarde en la carpeta `imagenes/` de la raíz del proyecto.
+4. Ejecútalo con `python scripts/diagrams/tu_script.py`.
+
+---
+*Mantenimiento: Fabrizio | Abril 2026*

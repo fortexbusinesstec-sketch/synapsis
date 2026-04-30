@@ -315,6 +315,7 @@ export const ablationConfigurations = sqliteTable('ablation_configurations', {
   plannerEnabled: integer('planner_enabled').default(1),
   selectorEnabled: integer('selector_enabled').default(1),
   imagesEnabled: integer('images_enabled').default(1),
+  imageValidatorEnabled: integer('image_validator_enabled').default(1),
   enrichmentsEnabled: integer('enrichments_enabled').default(1),
   ragEnabled: integer('rag_enabled').default(1),             // 0 = Config F (LLM base sin RAG)
   isBaseline: integer('is_baseline').default(0),             // 1 = Config A (techo) o F (piso)
@@ -370,6 +371,8 @@ export const ablationRuns = sqliteTable('ablation_runs', {
   redundantChunksAvoided: integer('redundant_chunks_avoided'),
   gapTypesSeen: text('gap_types_seen'),          // JSON Array
   loopStoppedReason: text('loop_stopped_reason'),      // 'resolved', 'max_loops', etc.
+  gapResolved: real('gap_resolved'),
+  finalConfidence: real('final_confidence').default(0),
 
   createdAt: integer('created_at').default(sql`(unixepoch())`),
 }, (table) => ({
@@ -405,6 +408,8 @@ export const ablationScores = sqliteTable('ablation_scores', {
 
   // Métricas de IR y Seguridad
   safeDecisionRate: integer('safe_decision_rate').default(0), // 1 si fue seguro o preguntó
+  recallAt3: real('recall_at_3'),
+  mrr: real('mrr'),
 
   evaluatedAt: integer('evaluated_at').default(sql`(unixepoch())`),
 }, (table) => ({
@@ -449,6 +454,10 @@ export const ablationSummary = sqliteTable('ablation_summary', {
 
   // Promedios de Seguridad
   avgSdr: real('avg_sdr'),
+  avgGapResolved: real('avg_gap_resolved'),
+  avgRecallAt3: real('avg_recall_at_3'),
+  avgMrr: real('avg_mrr'),
+  avgFinalConfidence: real('avg_final_confidence'),
 
   nRuns: integer('n_runs'),
   computedAt: integer('computed_at').default(sql`(unixepoch())`),
@@ -506,6 +515,8 @@ export const ablationScenarioRuns = sqliteTable('ablation_scenario_runs', {
   totalCostUsd: real('total_cost_usd').default(0),
   totalTokens: integer('total_tokens').default(0),
   totalLatencyMs: integer('total_latency_ms').default(0),
+  totalLoopsFired: integer('total_loops_fired').default(0),
+  avgConfidenceSession: real('avg_confidence_session'),
 
   errorMessage: text('error_message'),
   createdAt: integer('created_at').default(sql`(unixepoch())`),
@@ -529,6 +540,7 @@ export const ablationScenarioTurnResults = sqliteTable('ablation_scenario_turn_r
   responseMode: text('response_mode'),
   detectedIntent: text('detected_intent'),
   turnScore: real('turn_score'),
+  confidence: real('confidence'),
   createdAt: integer('created_at').default(sql`(unixepoch())`),
 }, (table) => ({
   idxScenTurnResultsRun: index('idx_scen_turn_results_run').on(table.scenarioRunId),
@@ -577,6 +589,122 @@ export const ablationScenarioSummary = sqliteTable('ablation_scenario_summary', 
   computedAt: integer('computed_at').default(sql`(unixepoch())`),
 }, (table) => ({
   uniqueScenSummary: uniqueIndex('idx_scen_summary_unique').on(table.configId, table.scenarioCategory),
+}));
+
+// ─── Judge Mode (Independent Evaluation) ─────────────────────────────────────
+
+// 23. Perfiles de Juez
+export const judgeProfiles = sqliteTable('judge_profiles', (table) => {
+  return {
+    id: text('id').primaryKey().$defaultFn(() => createId()),
+    fullName: text('full_name').notNull(),
+    company: text('company'),
+    yearsExperience: integer('years_experience'),
+    modelsWorked: text('models_worked'),                   // JSON: '["3300","5500","6200"]'
+    primaryRole: text('primary_role'),                    // "tecnico_campo" | "supervisor" | "jefe_taller"
+    phone: text('phone'),
+    createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  };
+}, (table) => ({
+  idxJudgeProfilesName: index('idx_judge_profiles_name').on(table.fullName),
+}));
+
+// 24. Casos creados por el Juez
+export const judgeCases = sqliteTable('judge_cases', (table) => {
+  return {
+    id: text('id').primaryKey().$defaultFn(() => createId()),
+    judgeProfileId: text('judge_profile_id').notNull().references(() => judgeProfiles.id, { onDelete: 'cascade' }),
+    
+    caseNumber: integer('case_number').notNull(),         // 1, 2, 3, 4, 5 (auto-asignado)
+    title: text('title').notNull(),
+    equipmentModel: text('equipment_model'),
+    
+    caseDescription: text('case_description').notNull(),
+    realExperience: text('real_experience').notNull(),
+    actualOutcome: text('actual_outcome'),
+    
+    maxMessages: integer('max_messages').notNull().default(10),
+    messagesUsed: integer('messages_used').notNull().default(0),
+    
+    status: text('status').notNull().default('draft'),    // 'draft' | 'in_progress' | 'completed' | 'abandoned'
+    
+    createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+    completedAt: text('completed_at'),
+  };
+}, (table) => ({
+  idxJudgeCasesProfile: index('idx_judge_cases_profile').on(table.judgeProfileId),
+  idxJudgeCasesStatus: index('idx_judge_cases_status').on(table.status),
+  uniqueCaseNumber: uniqueIndex('idx_judge_cases_unique_number').on(table.judgeProfileId, table.caseNumber),
+}));
+
+// 25. Sesiones de chat en modo jurado
+export const judgeSessions = sqliteTable('judge_sessions', (table) => {
+  return {
+    id: text('id').primaryKey().$defaultFn(() => createId()),
+    judgeProfileId: text('judge_profile_id').notNull().references(() => judgeProfiles.id, { onDelete: 'cascade' }),
+    judgeCaseId: text('judge_case_id').notNull().references(() => judgeCases.id, { onDelete: 'cascade' }),
+    
+    equipmentModel: text('equipment_model'),
+    
+    messageCount: integer('message_count').default(0),
+    totalTokens: integer('total_tokens').default(0),
+    totalCostUsd: real('total_cost_usd').default(0),
+    
+    loopsUsed: integer('loops_used').default(0),
+    phase1Ms: integer('phase1_ms').default(0),
+    phase2Ms: integer('phase2_ms').default(0),
+    phase3Ms: integer('phase3_ms').default(0),
+    finalConfidence: real('final_confidence').default(0),
+    stoppedReason: text('stopped_reason'),
+    
+    status: text('status').default('active'),             // 'active' | 'ended'
+    createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+    endedAt: text('ended_at'),
+  };
+}, (table) => ({
+  idxJudgeSessionsProfile: index('idx_judge_sessions_profile').on(table.judgeProfileId),
+  idxJudgeSessionsCase: index('idx_judge_sessions_case').on(table.judgeCaseId),
+}));
+
+// 26. Mensajes del chat jurado
+export const judgeMessages = sqliteTable('judge_messages', (table) => {
+  return {
+    id: text('id').primaryKey().$defaultFn(() => createId()),
+    sessionId: text('session_id').notNull().references(() => judgeSessions.id, { onDelete: 'cascade' }),
+    role: text('role').notNull(),                          // 'user' | 'assistant' | 'system'
+    content: text('content').notNull(),
+    createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  };
+}, (table) => ({
+  idxJudgeMessagesSession: index('idx_judge_messages_session').on(table.sessionId),
+}));
+
+// 27. Evaluación post-sesión
+export const judgeEvaluations = sqliteTable('judge_evaluations', (table) => {
+  return {
+    id: text('id').primaryKey().$defaultFn(() => createId()),
+    judgeCaseId: text('judge_case_id').notNull().unique().references(() => judgeCases.id, { onDelete: 'cascade' }),
+    judgeSessionId: text('judge_session_id').notNull().references(() => judgeSessions.id, { onDelete: 'cascade' }),
+    judgeProfileId: text('judge_profile_id').notNull().references(() => judgeProfiles.id, { onDelete: 'cascade' }),
+    
+    q1Resolved: text('q1_resolved'),                      // 'si' | 'no' | 'parcialmente'
+    q2Helpful: integer('q2_helpful'),                     // 1-5
+    q3WouldUse: integer('q3_would_use'),                   // 1-5
+    q4WouldRecommend: integer('q4_would_recommend'),       // 1-5
+    q5Clarity: integer('q5_clarity'),                     // 1-5
+    q6TimeSave: integer('q6_time_save'),                   // 1-5
+    
+    missingInfo: text('missing_info'),
+    
+    loopCount: integer('loop_count'),
+    totalMs: integer('total_ms'),
+    finalConfidence: real('final_confidence'),
+    stoppedReason: text('stopped_reason'),
+    
+    createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  };
+}, (table) => ({
+  idxJudgeEvalCase: index('idx_judge_eval_case').on(table.judgeCaseId),
 }));
 
 /* ── Tipos inferidos (útiles para el resto de la app) ──────────────────── */
@@ -629,6 +757,18 @@ export type AblationScenarioScore = typeof ablationScenarioScores.$inferSelect;
 export type NewAblationScenarioScore = typeof ablationScenarioScores.$inferInsert;
 export type AblationScenarioSummaryRow = typeof ablationScenarioSummary.$inferSelect;
 export type NewAblationScenarioSummaryRow = typeof ablationScenarioSummary.$inferInsert;
+
+// Judge Mode
+export type JudgeProfile = typeof judgeProfiles.$inferSelect;
+export type NewJudgeProfile = typeof judgeProfiles.$inferInsert;
+export type JudgeCase = typeof judgeCases.$inferSelect;
+export type NewJudgeCase = typeof judgeCases.$inferInsert;
+export type JudgeSession = typeof judgeSessions.$inferSelect;
+export type NewJudgeSession = typeof judgeSessions.$inferInsert;
+export type JudgeMessage = typeof judgeMessages.$inferSelect;
+export type NewJudgeMessage = typeof judgeMessages.$inferInsert;
+export type JudgeEvaluation = typeof judgeEvaluations.$inferSelect;
+export type NewJudgeEvaluation = typeof judgeEvaluations.$inferInsert;
 
 /** Subconjunto seguro para exponer en la API (sin campos internos de BD). */
 export interface AgentLogSummary {

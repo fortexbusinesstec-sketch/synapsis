@@ -151,6 +151,133 @@
 
 ---
 
+### Caso de Prueba: CP008 - GENERACIÓN DE METADATOS VISUALES
+**Autor:** Fabrizio Diaz  
+**Precondiciones:** Imágenes extraídas exitosamente.
+
+| #: | Pasos: | Datos de Prueba | Resultados Esperados: |
+| :--- | :--- | :--- | :--- |
+| 1 | Monitorear el Agente Pixtral | - | Analiza el contenido de cada imagen. |
+| 2 | Revisar descripciones técnicas | - | El campo `description` contiene detalles técnicos precisos. |
+| 3 | Verificar nivel de confianza | - | El valor `confidence` es mayor a 0.7. |
+
+**HU relacionada:** HU0008  
+**Postcondiciones:** Metadatos visuales enriquecidos para búsqueda multimodal.
+
+---
+
+### Caso de Prueba: CP009 - CURADURÍA DE UTILIDAD (HITL)
+**Autor:** Fabrizio Diaz  
+**Precondiciones:** Imágenes con metadatos generados.
+
+| #: | Pasos: | Datos de Prueba | Resultados Esperados: |
+| :--- | :--- | :--- | :--- |
+| 1 | Entrar a la pestaña "Imágenes" del detalle | - | Muestra el grid de imágenes extraídas. |
+| 2 | Marcar una imagen como "No Útil" | - | El sistema actualiza el registro en tiempo real. |
+| 3 | Agregar un comentario técnico | "Diagrama incompleto" | El comentario se persiste correctamente. |
+
+**HU relacionada:** HU0009  
+**Postcondiciones:** El pipeline RAG ignora imágenes marcadas como no útiles.
+
+---
+
+### Caso de Prueba: CP010 - TRAZABILIDAD DE IMÁGENES
+**Autor:** Fabrizio Diaz  
+**Precondiciones:** Imágenes curadas en la biblioteca.
+
+| #: | Pasos: | Datos de Prueba | Resultados Esperados: |
+| :--- | :--- | :--- | :--- |
+| 1 | Observar el footer de la tarjeta de imagen | - | Muestra número de página y sección origen. |
+| 2 | Comparar con el PDF original | - | El fragmento visual corresponde exactamente a la página indicada. |
+
+**HU relacionada:** HU0010  
+**Postcondiciones:** Integridad estructural entre el manual PDF y los activos visuales.
+
+---
+
+### Caso de Prueba: CP011 - INSPECCIÓN DE ALTA RESOLUCIÓN
+**Autor:** Fabrizio Diaz  
+**Precondiciones:** Tener imágenes en el detalle del documento.
+
+| #: | Pasos: | Datos de Prueba | Resultados Esperados: |
+| :--- | :--- | :--- | :--- |
+| 1 | Dar Click sobre la miniatura de la imagen | - | Se abre el Modal de Alta Resolución. |
+| 2 | Verificar nitidez del diagrama | Zoom al 100% | Las etiquetas de texto del diagrama son legibles. |
+
+**HU relacionada:** HU0011  
+**Postcondiciones:** Validación técnica exitosa por parte del administrador.
+
+---
+
+### Caso de Prueba: CP012 - GENERACIÓN AUTOMÁTICA DE DUDAS
+**Autor:** Fabrizio Diaz  
+**Precondiciones:** Fragmentos cargados con baja densidad de información.
+
+| #: | Pasos: | Datos de Prueba | Resultados Esperados: |
+| :--- | :--- | :--- | :--- |
+| 1 | Revisar el panel "Dudas del Sistema" | - | El Agente Curioso ha listado preguntas técnicas. |
+| 2 | Validar coherencia de la duda | - | La pregunta es específica sobre una laguna del manual. |
+
+**HU relacionada:** HU0012  
+**Postcondiciones:** Identificación de lagunas de conocimiento técnica.
+
+---
+
+### Caso de Prueba: CP013 - REGISTRO DE EXPERTISE HUMANA
+**Autor:** Fabrizio Diaz  
+**Precondiciones:** Existencia de dudas pendientes de respuesta.
+
+| #: | Pasos: | Datos de Prueba | Resultados Esperados: |
+| :--- | :--- | :--- | :--- |
+| 1 | Seleccionar una duda y escribir respuesta | "El reseteo se hace vía J6" | El texto se guarda en `expert_answer`. |
+| 2 | Guardar y verificar estado | - | La duda desaparece de la lista de pendientes. |
+
+**HU relacionada:** HU0013  
+**Postcondiciones:** Base de conocimiento enriquecida con experiencia real.
+
+---
+
+### Caso de Prueba: CP014 - REGISTRO DE AUTORÍA Y TIEMPO
+**Autor:** Fabrizio Diaz  
+**Precondiciones:** Haber respondido una duda.
+
+| #: | Pasos: | Datos de Prueba | Resultados Esperados: |
+| :--- | :--- | :--- | :--- |
+| 1 | Consultar metadatos del enriquecimiento | - | Muestra el ID del usuario y el timestamp exacto. |
+
+**HU relacionada:** HU0014  
+**Postcondiciones:** Trazabilidad completa de quién inyectó conocimiento.
+
+---
+
+### Caso de Prueba: CP015 - PROPAGACIÓN SEMÁNTICA (L2/L3)
+**Autor:** Fabrizio Diaz  
+**Precondiciones:** Respuesta de experto registrada para un modelo.
+
+| #: | Pasos: | Datos de Prueba | Resultados Esperados: |
+| :--- | :--- | :--- | :--- |
+| 1 | Verificar nivel de herencia asignado | - | Se marca como L2 (Modelo) o L3 (Semántico). |
+| 2 | Consultar en el chat sobre el mismo tema | - | La respuesta del experto aparece en el contexto. |
+
+**HU relacionada:** HU0015  
+**Postcondiciones:** El conocimiento se reutiliza en contextos similares.
+
+---
+
+### Caso de Prueba: CP016 - MÉTRICAS DE TRANSFERENCIA
+**Autor:** Fabrizio Diaz  
+**Precondiciones:** Documento procesado con enriquecimientos.
+
+| #: | Pasos: | Datos de Prueba | Resultados Esperados: |
+| :--- | :--- | :--- | :--- |
+| 1 | Ir a la vista de Observabilidad del Doc. | - | Localizar gráfico "Métricas de Indexación". |
+| 2 | Verificar contadores L1, L2, L3 | - | Muestran valores numéricos coherentes con el proceso. |
+
+**HU relacionada:** HU0016  
+**Postcondiciones:** Evidencia estadística de la mejora de la base de datos.
+
+---
+
 ### Caso de Prueba: CP017 - ORQUESTACIÓN MULTI-AGENTE (CHAT)
 **Autor:** Fabrizio Diaz  
 **Precondiciones:** Tener documentos indexados en estado "Listo".
@@ -164,6 +291,188 @@
 
 **HU relacionada:** HU0017  
 **Postcondiciones:** El flujo MAS se completa sin errores de timeout.
+
+---
+
+### Caso de Prueba: CP018 - VERIFICACIÓN DE SUFICIENCIA (LOOP FEEDBACK)
+**Autor:** Fabrizio Diaz  
+**Precondiciones:** Chat iniciado.
+
+| #: | Pasos: | Datos de Prueba | Resultados Esperados: |
+| :--- | :--- | :--- | :--- |
+| 1 | Realizar consulta con información parcial | "Error en el freno" | El sistema detecta insuficiencia y activa re-planner. |
+| 2 | Observar el proceso interno | - | El Agente Planificador genera nuevas sub-consultas (loops). |
+| 3 | Recibir respuesta final | - | Se entrega respuesta completa tras agotar hallazgos. |
+
+**HU relacionada:** HU0018  
+**Postcondiciones:** El motor de loop garantiza máxima resolución de la duda.
+
+---
+
+### Caso de Prueba: CP019 - GESTIÓN DE MEMORIA DE CORTO PLAZO
+**Autor:** Fabrizio Diaz  
+**Precondiciones:** Sesión de chat activa.
+
+| #: | Pasos: | Datos de Prueba | Resultados Esperados: |
+| :--- | :--- | :--- | :--- |
+| 1 | Mencionar un detalle en el turno 1 | "Estoy frente a un 5500" | El sistema registra el modelo. |
+| 2 | Preguntar algo general en el turno 2 | "¿Cuál es el código de falla 01?" | El sistema responde basado en el modelo 5500 mencionado antes. |
+
+**HU relacionada:** HU0019  
+**Postcondiciones:** El contexto de la conversación se mantiene persistente.
+
+---
+
+### Caso de Prueba: CP020 - ALARMADO DE NIVEL DE RIESGO
+**Autor:** Fabrizio Diaz  
+**Precondiciones:** Chat activo.
+
+| #: | Pasos: | Datos de Prueba | Resultados Esperados: |
+| :--- | :--- | :--- | :--- |
+| 1 | Consultar operación peligrosa | "¿Cómo puentear seguridad?" | El Agente Analista detecta riesgo Crítico. |
+| 2 | Observar respuesta | - | Se incluye advertencia visual/textual de seguridad obligatoria. |
+
+**HU relacionada:** HU0020  
+**Postcondiciones:** Cumplimiento de protocolos de seguridad industrial.
+
+---
+
+### Caso de Prueba: CP021 - RUTEO INTELIGENTE LLM
+**Autor:** Fabrizio Diaz  
+**Precondiciones:** Conexión a múltiples modelos activa.
+
+| #: | Pasos: | Datos de Prueba | Resultados Esperados: |
+| :--- | :--- | :--- | :--- |
+| 1 | Enviar duda de baja complejidad | "Hola" | El sistema responde rápidamente usando modelo base. |
+| 2 | Enviar consulta de razonamiento | "Diagrama lógico de la SCIC" | Se activa GPT-4o para orquestación compleja. |
+
+**HU relacionada:** HU0021  
+**Postcondiciones:** Optimización de costos y latencia por segmentación de tareas.
+
+---
+
+### Caso de Prueba: CP022 - AUDITORÍA EN AGENT_LOGS
+**Autor:** Fabrizio Diaz  
+**Precondiciones:** Ejecución de al menos una consulta.
+
+| #: | Pasos: | Datos de Prueba | Resultados Esperados: |
+| :--- | :--- | :--- | :--- |
+| 1 | Consultar tabla `agent_logs` en DB | `SELECT * FROM agent_logs` | Existen registros de pasos de agentes (start/end). |
+| 2 | Verificar campos de tokens | - | Los campos `input_tokens` y `output_tokens` están poblados. |
+
+**HU relacionada:** HU0022  
+**Postcondiciones:** Trazabilidad completa para análisis de FinOps.
+
+---
+
+### Caso de Prueba: CP023 - RECUPERACIÓN SEMÁNTICA VECTORIAL
+**Autor:** Fabrizio Diaz  
+**Precondiciones:** Base de datos con embeddings listos.
+
+| #: | Pasos: | Datos de Prueba | Resultados Esperados: |
+| :--- | :--- | :--- | :--- |
+| 1 | Buscar por concepto (no palabra exacta) | "Reparar elevación" | El RAG recupera fragmentos sobre "Ajuste de tracción". |
+| 2 | Evaluar relevancia | - | El fragmento recuperado resuelve el concepto buscado. |
+
+**HU relacionada:** HU0023  
+**Postcondiciones:** Eficacia de búsqueda sobre lenguaje técnico natural (VSS).
+
+---
+
+### Caso de Prueba: CP024 - PRIORIZACIÓN DE CONOCIMIENTO EXPERTO
+**Autor:** Fabrizio Diaz  
+**Precondiciones:** Existencia de duplicidad (Manual vs Enriquecimiento).
+
+| #: | Pasos: | Datos de Prueba | Resultados Esperados: |
+| :--- | :--- | :--- | :--- |
+| 1 | Realizar consulta con respuesta experta | [Duda resuelta antes] | La respuesta generada usa el contenido de `expert_answer`. |
+
+**HU relacionada:** HU0024  
+**Postcondiciones:** El expertise humano tiene peso preferente sobre el manual estático.
+
+---
+
+### Caso de Prueba: CP025 - AISLAMIENTO POR FILTRO DE EQUIPO
+**Autor:** Fabrizio Diaz  
+**Precondiciones:** Selección de modelo específica en UI.
+
+| #: | Pasos: | Datos de Prueba | Resultados Esperados: |
+| :--- | :--- | :--- | :--- |
+| 1 | Seleccionar Modelo 3300 | - | Solo se consultan documentos con `equipment_model` = 3300. |
+| 2 | Verificar metadatos de respuesta | - | Las fuentes citadas pertenecen estrictamente al modelo 3300. |
+
+**HU relacionada:** HU0025  
+**Postcondiciones:** Prevención de alucinaciones por cruce de modelos de equipo.
+
+---
+
+### Caso de Prueba: CP026 - INSERCIÓN DE DIAGRAMAS CON ZOOM
+**Autor:** Fabrizio Diaz  
+**Precondiciones:** Respuesta con imágenes adjuntas.
+
+| #: | Pasos: | Datos de Prueba | Resultados Esperados: |
+| :--- | :--- | :--- | :--- |
+| 1 | Hacer clic en imagen del chat | - | Se expande a pantalla completa. |
+| 2 | Interactuar con la imagen | Zoom / Scroll | La imagen mantiene la resolución y permite inspección. |
+
+**HU relacionada:** HU0026  
+**Postcondiciones:** Soporte visual efectivo para el técnico.
+
+---
+
+### Caso de Prueba: CP027 - REUSO DE CONTEXTO (CACHÉ RAG)
+**Autor:** Fabrizio Diaz  
+**Precondiciones:** Consulta repetida o relacionada en la misma sesión.
+
+| #: | Pasos: | Datos de Prueba | Resultados Esperados: |
+| :--- | :--- | :--- | :--- |
+| 1 | Realizar 2 consultas sobre el mismo tema | - | La latencia de la segunda es significativamente menor. |
+| 2 | Revisar logs | - | Se indica uso de contexto en memoria o caché semántica. |
+
+**HU relacionada:** HU0027  
+**Postcondiciones:** Mejora de eficiencia en sesiones de diagnóstico largas.
+
+---
+
+### Caso de Prueba: CP028 - ADAPTABILIDAD MÓVIL
+**Autor:** Fabrizio Diaz  
+**Precondiciones:** Acceso desde dispositivo móvil o modo responsivo.
+
+| #: | Pasos: | Datos de Prueba | Resultados Esperados: |
+| :--- | :--- | :--- | :--- |
+| 1 | Abrir Synapsis Go en smartphone | `iPhone 14 / Android` | La interfaz se ajusta sin desbordamientos horizolantales. |
+| 2 | Interactuar con el teclado móvil | - | El input de chat se mantiene visible sobre el teclado. |
+
+**HU relacionada:** HU0028  
+**Postcondiciones:** Usabilidad garantizada para técnicos en ascensores (sin PC).
+
+---
+
+### Caso de Prueba: CP029 - TOGGLING DINÁMICO DE CONTEXTO
+**Autor:** Fabrizio Diaz  
+**Precondiciones:** Sesión de chat iniciada.
+
+| #: | Pasos: | Datos de Prueba | Resultados Esperados: |
+| :--- | :--- | :--- | :--- |
+| 1 | Resetear selección de modelo | - | El historial visual se mantiene pero el contexto RAG se limpia. |
+| 2 | Seleccionar un nuevo modelo diferente | "Schindler 5500" | Las nuevas consultas se filtran por este modelo. |
+
+**HU relacionada:** HU0029  
+**Postcondiciones:** Flexibilidad para cambiar de equipo sin cerrar la aplicación.
+
+---
+
+### Caso de Prueba: CP030 - INDICADORES DE PROCESAMIENTO
+**Autor:** Fabrizio Diaz  
+**Precondiciones:** Enviar una consulta al MAS.
+
+| #: | Pasos: | Datos de Prueba | Resultados Esperados: |
+| :--- | :--- | :--- | :--- |
+| 1 | Observar el área de mensajes | - | Se visualiza la animación de "Agentes pensando...". |
+| 2 | Esperar el streaming de respuesta | - | El indicador desaparece conforme llega el primer token de texto. |
+
+**HU relacionada:** HU0030  
+**Postcondiciones:** Feedback visual que previene la sensación de bloqueo del sistema.
 
 ---
 
