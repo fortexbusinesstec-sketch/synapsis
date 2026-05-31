@@ -1363,7 +1363,7 @@ function RunDetail({ run, onClose }: { run: RunRow; onClose: () => void }) {
           {/* Judge reasoning */}
           {run.judge_reasoning && (
             <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Razonamiento del juez</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Razonamiento del juicio de expertos</p>
               <p className="text-sm text-slate-700 bg-amber-50/60 rounded-2xl p-4 border border-amber-100 leading-relaxed italic">
                 &ldquo;{run.judge_reasoning}&rdquo;
               </p>
@@ -1619,7 +1619,7 @@ function ClipboardExportPanel({
           lines.push(`**ERROR TÉCNICO:** ${r.error_message ?? 'Error desconocido'}`);
         } else {
           lines.push(`**SCORE:** ${r.score_total?.toFixed(2)}/2.0`);
-          lines.push(`**RAZÓN JUEZ:** ${r.judge_reasoning ?? 'Sin explicación'}`);
+          lines.push(`**RAZÓN JUICIO DE EXPERTOS:** ${r.judge_reasoning ?? 'Sin explicación'}`);
           if (r.factual_errors) {
             try {
               const errs = JSON.parse(r.factual_errors);
@@ -1637,7 +1637,7 @@ function ClipboardExportPanel({
           lines.push(`**ERROR TÉCNICO:** ${r.error_message ?? 'Error desconocido'}`);
         } else {
           lines.push(`**SCORE:** ${r.score_total?.toFixed(2)}/2.0`);
-          lines.push(`**NARRATIVA JUEZ:** ${r.judge_narrative ?? 'Sin explicación'}`);
+          lines.push(`**NARRATIVA JUICIO DE EXPERTOS:** ${r.judge_narrative ?? 'Sin explicación'}`);
           if (r.critical_error_made) lines.push('**ALERTA: Se cometió un error crítico.**');
           if (r.contradicted_itself) lines.push('**ALERTA: El sistema se contradijo entre turnos.**');
         }
@@ -1646,7 +1646,7 @@ function ClipboardExportPanel({
     }
     lines.push('');
 
-    // ── 6. Veredicto del juez por pregunta (Completo) ─────────────────────────
+    // ── 6. Veredicto del juicio de expertos por pregunta (Completo) ─────────────────────────
     lines.push('## 6. VEREDICTO COMPLETO POR PREGUNTA');
 
     const questionIds = [...new Set(runs.map(r => r.question_id))].sort();
@@ -1661,7 +1661,7 @@ function ClipboardExportPanel({
       lines.push(`**Categoría:** ${CAT_LABELS[first.category] ?? first.category} | **Ground Truth:** ${first.ground_truth}`);
       lines.push('');
 
-      const Hq = ['Cfg', 'Nombre', 'ScoreTotal', 'Factual', 'Diag', 'Errores Factuales', 'Valor Diagnóstico', 'Razonamiento Juez'];
+      const Hq = ['Cfg', 'Nombre', 'ScoreTotal', 'Factual', 'Diag', 'Errores Factuales', 'Valor Diagnóstico', 'Razonamiento Juicio de Expertos'];
       lines.push(Hq.join(' | '));
       lines.push(Hq.map(h => '-'.repeat(h.length)).join(' | '));
 
@@ -1731,7 +1731,7 @@ function ClipboardExportPanel({
 
       <div className="px-5 py-4 flex flex-wrap gap-6 text-sm text-slate-500">
         <span><span className="font-bold text-slate-800">{totalRuns}</span> ejecuciones totales</span>
-        <span><span className="font-bold text-slate-800">{scoredRuns}</span> evaluadas por el juez</span>
+        <span><span className="font-bold text-slate-800">{scoredRuns}</span> evaluadas por el juicio de expertos</span>
         <span><span className="font-bold text-slate-800">{[...new Set([...runs.map(r => r.question_id), ...scenRows.map(r => r.scenario_id)])].length}</span> unidades únicas</span>
         <span><span className="font-bold text-slate-800">{configIds.length}</span> configuraciones</span>
         <span><span className="font-bold text-slate-800">{loopRows.length > 0 ? 'Loop Health ✓' : (batch.startsWith('scen') ? 'N/A' : 'Loop Health cargando…')}</span></span>
@@ -1943,7 +1943,7 @@ function ScenarioResultsPanel({ rows, loading }: { rows: ScenRunRow[]; loading: 
                               </div>
                             </>
                           ) : (
-                            <span className="text-[11px] text-slate-400">Sin juez</span>
+                            <span className="text-[11px] text-slate-400">Sin juicio de expertos</span>
                           )}
                         </button>
                       </td>

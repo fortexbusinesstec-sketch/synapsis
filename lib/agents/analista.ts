@@ -22,6 +22,7 @@ export interface AnalistaInput {
   loopIndex:      number;
   entities?:      string[];   // del Clarificador — para failsafe de gap
   isAmbiguous?:   boolean;    // del Clarificador — cortocircuita el análisis
+  modo:           'teorico' | 'procedimental' | 'diagnostico'; // NUEVO
 }
 
 /* ── Failsafe ─────────────────────────────────────────────────────────────── */
@@ -148,6 +149,21 @@ REGLA DE INTERPRETACIÓN DIRECTA:
 - Si hay procedimientos: enumera los pasos concretos, no digas "siga el procedimiento".
 - Si hay múltiples hipótesis: ordénalas por probabilidad y justifica brevemente.
 
+REGLA DE COBERTURA FACTUAL:
+Antes de asignar confidence > 0.5, verifica internamente:
+- ¿El groundTruth recuperado explica explícitamente lo que el usuario preguntó?
+- ¿O solo menciona palabras relacionadas sin dar la respuesta?
+
+Ejemplo de NO cobertura:
+Pregunta: "¿Qué diferencia hay entre tracción 1:1 y 2:1?"
+GroundTruth: ["Lubricar poleas de tracción cada 6 meses", "Verificar desgaste de cables en sistema de tracción"]
+→ Esto NO explica 1:1 vs 2:1. Confidence debe ser < 0.4, needs_more_info: true.
+
+Ejemplo de SÍ cobertura:
+Pregunta: "¿Qué diferencia hay entre tracción 1:1 y 2:1?"
+GroundTruth: ["En suspensión 1:1 el cable se une directamente a la cabina...", "En 2:1 la carga se divide por dos poleas..."]
+→ Esto SÍ cubre. Confidence puede ser > 0.7.
+
 OUTPUT JSON ESTRICTO:
 {
   "root_cause_hypothesis": "string — interpretación directa del problema, con componente y valor anómalo",
@@ -207,26 +223,50 @@ RESTRICCIONES:
       ? parsed.response_mode as ResponseMode
       : deriveResponseMode(input.intent, confidence);
 
-    // BYPASS: education_info → LEARNING, nunca DEEP_ANALYSIS
-    if (input.intent === 'education_info') {
+    // BYPAS: el modo explícito de la UI determina el modo de respuesta
+    if (input.modo === 'teorico' || input.modo === 'procedimental') {
       mode = 'LEARNING';
-    } else if (confidence < 0.6 && mode !== 'EMERGENCY') {
-      mode = 'DEEP_ANALYSIS';
+    } else if (input.modo === 'diagnostico') {
+      // education_info → LEARNING (nunca DEEP_ANALYSIS)
+      if (input.intent === 'education_info') {
+        mode = 'LEARNING';
+      } else if (confidence < 0.6 && mode !== 'EMERGENCY') {
+        mode = 'DEEP_ANALYSIS';
+      }
     }
 
-    // ── BYPASS DE CONFIANZA: LEARNING no penaliza causa raíz ──
+    // ── BYPASS DE CONFIANZA: modo no-diagnóstico no penaliza confianza baja ──
     const isLearning = mode === 'LEARNING';
-    const hasContext            = input.groundTruth.trim().length > 100;  // hay chunks reales
+    const hasRelevantContext = input.entities && input.entities.length > 0
+      ? input.entities.some(e => input.groundTruth.toLowerCase().includes(e.toLowerCase()))
+      : input.groundTruth.trim().length > 800; // fallback: solo si hay texto sustancial
 
     let finalConfidence = confidence;
     let needsMoreInfo: boolean;
     let gap: GapDescriptor | null;
 
-    if (isLearning && hasContext) {
-      // Forzar confianza alta: el RAG tiene la info, no hay causa raíz que buscar
-      finalConfidence = Math.max(confidence, 0.85);
-      needsMoreInfo   = false;
-      gap             = null;
+    if (isLearning && hasRelevantContext) {
+      if (input.modo === 'teorico' || input.modo === 'procedimental') {
+        // No penalizar confianza baja en modo teórico/procedimental
+        // Si hay chunks relevantes, responder con lo que haya
+        finalConfidence = Math.max(confidence, 0.7);
+        needsMoreInfo   = !hasRelevantContext && confidence < 0.4;
+        gap             = null;
+      } else if (confidence >= 0.6) {
+        finalConfidence = Math.max(confidence, 0.85);
+        needsMoreInfo   = false;
+        gap             = null;
+      } else {
+        // Respetar la incertidumbre del modelo
+        finalConfidence = confidence;
+        needsMoreInfo   = true;
+        gap             = parseGap(parsed.gap) ?? {
+          type: 'component',
+          target: input.entities?.[0] ?? 'concepto técnico',
+          reason: 'El LLM reportó baja confianza a pesar de chunks recuperados',
+          search_hint: input.entities?.join(' ') ?? 'manual técnico específico',
+        };
+      }
     } else {
       // Modo TROUBLESHOOTING / DEEP_ANALYSIS — penalización normal
       needsMoreInfo = isLastIteration
@@ -253,6 +293,28 @@ RESTRICCIONES:
           target:      fallbackTarget,
           reason:      'Información insuficiente para confirmar hipótesis',
           search_hint: fallbackHint,
+        };
+      }
+    }
+
+    // [ELIMINADO] Heurística de términos exactos — demasiado rígida, genera falsos positivos masivos
+    // La cobertura factual se evalúa ahora SOLO por el LLM vía prompt de sistema (REGLA DE COBERTURA FACTUAL)
+
+    // ── SAFETY NET: solo para casos extremos de "no hay nada" ──
+    {
+      const groundTruthEmpty = input.groundTruth.trim().length < 150;
+      const llmVeryUnsure = confidence < 0.3;
+
+      if (groundTruthEmpty || llmVeryUnsure) {
+        finalConfidence = 0.2;
+        needsMoreInfo = true;
+        gap = {
+          type: 'procedure',
+          target: input.entities?.[0] ?? 'información técnica',
+          reason: groundTruthEmpty
+            ? 'No se recuperó documentación sustancial del RAG'
+            : 'El modelo reportó confianza extremadamente baja',
+          search_hint: input.entities?.join(' ') ?? 'manual técnico',
         };
       }
     }

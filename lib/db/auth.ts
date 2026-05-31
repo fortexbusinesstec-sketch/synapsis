@@ -16,6 +16,17 @@ export async function getCurrentUser() {
 
     if (!sessionId) return null;
 
+    // Hardcoded user for Juicio Experto
+    if (sessionId === "juicioexperto-id-hardcoded") {
+      return {
+        id: "juicioexperto-id-hardcoded",
+        email: "juicioexperto@synapsis.com",
+        fullName: "Experto Juicio", // A placeholder name
+        role: "JuicioExperto",
+        isDevMode,
+      };
+    }
+
     try {
         const result = await authClient.execute({
             sql: `

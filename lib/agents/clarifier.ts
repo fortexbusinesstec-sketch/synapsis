@@ -39,6 +39,12 @@ REGLAS:
 3. 'is_ambiguous' = true SOLO si el técnico reporta un síntoma vago ("no funciona", "hace ruido", "falla algo") SIN especificar código de error NI modelo de equipo.
 4. 'intent' = 'troubleshooting' | 'education_info' | 'emergency_protocol'.
 5. 'use_original_query' = true siempre. Nunca reescribas la query para el embedding.
+6. Cuando extraigas entidades, prioriza códigos de error exactos, placas de modelo, y números de parte. Si el técnico menciona 'código E-1047' o 'Schindler 3300', esas entidades DEBEN llegar al Bibliotecario para búsqueda exacta. No generalices a 'ascensor' o 'error'.
+7. Cuando extraigas entidades, clasifícalas por especificidad:
+   - ALTA: códigos de error exactos (E-1047), placas de modelo (Schindler 3300), números de parte (ESE 9), valores numéricos (30 cm, 220V).
+   - MEDIA: componentes físicos (limit switch, freno, encoder).
+   - BAJA: conceptos genéricos (ascensor, tracción, sistema, error, falla).
+   Para el Analista, SOLO las entidades ALTA y MEDIA cuentan como evidencia de relevancia. Las entidades BAJA no deben activar hasRelevantContext si no hay al menos una ALTA o MEDIA presente en el groundTruth.
 
 OUTPUT JSON:
 {
@@ -70,16 +76,33 @@ export function resolveQuery(
 
 /* ── Agente principal ─────────────────────────────────────────────────────── */
 
+export interface ClarifierInput {
+  userQuery: string;
+  equipmentModel: string | null;
+  historyContext: string;
+  modo: 'teorico' | 'procedimental' | 'diagnostico';
+}
+
 export async function runClarifier(
-  userQuery:      string,
-  equipmentModel: string | null = null,
-  historyContext: string        = '',
+  input: ClarifierInput,
 ): Promise<ClarifierOutput> {
+  // Los modos no-diagnóstico siempre son education_info (determinístico, sin LLM)
+  if (input.modo === 'teorico' || input.modo === 'procedimental') {
+    return {
+      is_ambiguous:       false,
+      intent:             'education_info',
+      entities:           [],
+      confidence:         1.0,
+      use_original_query: true,
+    };
+  }
+
+  // Solo modo diagnóstico usa el LLM para extraer entidades y detectar emergencia
   try {
     const userContent =
-      `Consulta del técnico: "${userQuery}"` +
-      (equipmentModel ? `\nModelo de equipo en contexto: ${equipmentModel}` : '') +
-      (historyContext  ? `\nHistorial reciente:\n${historyContext}`          : '');
+      `Consulta del técnico: "${input.userQuery}"` +
+      (input.equipmentModel ? `\nModelo de equipo en contexto: ${input.equipmentModel}` : '') +
+      (input.historyContext  ? `\nHistorial reciente:\n${input.historyContext}`          : '');
 
     const { text } = await generateText({
       model:     openai('gpt-4o-mini'),

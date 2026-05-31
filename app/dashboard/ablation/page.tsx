@@ -321,7 +321,7 @@ function NewQuestionModal({ onClose, onCreated }: { onClose: () => void; onCreat
             </div>
           </div>
           <p className="text-[10px] text-slate-400 italic">
-            El juez evaluará la respuesta basándose en estos dos ejes: precisión técnica y calidad del razonamiento.
+            El juicio de expertos evaluará la respuesta basándose en estos dos ejes: precisión técnica y calidad del razonamiento.
           </p>
         </div>
 

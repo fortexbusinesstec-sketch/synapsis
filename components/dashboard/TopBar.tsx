@@ -1,28 +1,28 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { logoutAction } from "@/app/login/actions";
+import { cn } from "@/lib/utils";
 import {
-  Zap,
-  LogOut,
-  ChevronDown,
-  Home,
-  FileText,
   Activity,
+  ChevronDown,
+  FileText,
   FlaskConical,
+  Home,
+  LogOut,
   Menu,
-  X
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useState } from 'react';
-import { logoutAction } from '@/app/login/actions';
+  X,
+  Zap,
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 
 const NAV_LINKS = [
-  { label: 'Home', href: '/dashboard/home', Icon: Home },
-  { label: 'Documentación', href: '/dashboard/documentacion', Icon: FileText },
-  { label: 'Synapsis Go', href: '/dashboard/go', Icon: Activity },
-  { label: 'Ablación', href: '/dashboard/ablation', Icon: FlaskConical },
-  { label: 'Experimento Juez', href: '/dashboard/judge', Icon: FlaskConical },
+  { label: "Home", href: "/dashboard/home", Icon: Home },
+  { label: "Documentación", href: "/dashboard/documentacion", Icon: FileText },
+  { label: "Synapsis Go", href: "/dashboard/go", Icon: Activity },
+  { label: "Ablación", href: "/dashboard/ablation", Icon: FlaskConical },
+  { label: "Juicio de Expertos", href: "/dashboard/juicio/perfil", Icon: FlaskConical },
 ];
 
 export default function TopBar({
@@ -30,7 +30,7 @@ export default function TopBar({
   userEmail = "admin@synapsis.go",
   userRole = "Administrator",
   isDevMode = false,
-  prodExperiment = false
+  prodExperiment = false,
 }: {
   userName?: string;
   userEmail?: string;
@@ -45,37 +45,39 @@ export default function TopBar({
 
   const handleLogout = async () => {
     await logoutAction();
-    router.push('/login');
+    router.push("/login");
   };
 
   const initials = (userName || "??")
-    .split(' ')
+    .split(" ")
     .filter(Boolean)
-    .map(n => n[0])
-    .join('')
+    .map((n) => n[0])
+    .join("")
     .toUpperCase()
     .slice(0, 2);
 
   // Helper para filtrar los links por rol
-  const filteredLinks = NAV_LINKS.filter(link => {
+  const filteredLinks = NAV_LINKS.filter((link) => {
     const role = userRole?.trim();
+
+    if (role === "JuicioExperto") {
+      return link.label === "Home" || link.label === "Juicio de Expertos";
+    }
+
     if (role === "Administrador de Sistema" && link.label === "Ablación") return false;
     if (role === "Auditor" && link.label === "Ablación" && !isDevMode) return false;
     if (role === "Especialista Técnico") {
       const links = [link.label === "Home", link.label === "Synapsis Go"];
-      if (prodExperiment && link.label === "Experimento Juez") return true;
+      if (prodExperiment && link.label === "Experimento Juicio de Expertos") return true;
       return links.some(Boolean);
     }
-    if (link.label === "Experimento Juez") return false; // Default off for others unless specified
-    return true;
+    return link.label !== "Experimento Juicio de Expertos"; // Default off for others unless specified, but filter out the old label
   });
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/60 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_4px_6px_-2px_rgba(0,0,0,0.05)]">
-
       {/* ── Main strip ─────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between h-[64px] px-4 sm:px-8">
-
         {/* Logo Section */}
         <Link href="/dashboard/home" className="flex items-center gap-3 group transition-all">
           <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-blue-500/20 group-hover:scale-105 transition-all duration-300">
@@ -94,16 +96,20 @@ export default function TopBar({
         {/* Navigation - Centered Desktop */}
         <nav className="hidden md:flex items-center gap-1 bg-slate-100/50 p-1 rounded-2xl border border-slate-200/50">
           {filteredLinks.map(({ label, href, Icon }) => {
-            const active = pathname === href || pathname.startsWith(href + '/');
+            const linkHref =
+              userRole === "JuicioExperto" && label === "Home"
+                ? "/dashboard/juicio-expertos"
+                : href;
+            const active = pathname === linkHref || pathname.startsWith(linkHref + "/");
             return (
               <Link
                 key={href}
-                href={href}
+                href={linkHref}
                 className={cn(
                   "flex items-center gap-2 px-4 py-2 text-[13px] font-bold rounded-xl transition-all duration-200",
                   active
                     ? "bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50"
-                    : "text-slate-500 hover:text-slate-900 hover:bg-white/40"
+                    : "text-slate-500 hover:text-slate-900 hover:bg-white/40",
                 )}
               >
                 <Icon className={cn("w-4 h-4", active ? "text-blue-500" : "text-slate-400")} />
@@ -115,7 +121,6 @@ export default function TopBar({
 
         {/* Right Section: User & Actions */}
         <div className="flex items-center gap-2 sm:gap-4">
-
           <div className="h-8 w-px bg-slate-200/60 hidden sm:block" />
 
           {/* User Profile Dropdown */}
@@ -124,7 +129,7 @@ export default function TopBar({
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
               className={cn(
                 "flex items-center gap-2 sm:gap-3 pl-1 pr-2 py-1 rounded-xl transition-all group",
-                isUserMenuOpen ? "bg-slate-100" : "hover:bg-slate-50"
+                isUserMenuOpen ? "bg-slate-100" : "hover:bg-slate-50",
               )}
             >
               <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-700 flex items-center justify-center text-white text-[12px] font-black shadow-md shadow-blue-500/10 shrink-0">
@@ -134,17 +139,21 @@ export default function TopBar({
                 <span className="text-slate-900 text-[13px] font-bold">{userName}</span>
                 <span className="text-slate-400 text-[10px] mt-0.5 font-medium">{userRole}</span>
               </div>
-              <ChevronDown className={cn(
-                "w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-all",
-                isUserMenuOpen && "rotate-180"
-              )} />
+              <ChevronDown
+                className={cn(
+                  "w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-all",
+                  isUserMenuOpen && "rotate-180",
+                )}
+              />
             </button>
 
             {/* Dropdown Menu */}
             {isUserMenuOpen && (
               <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 overflow-hidden animate-in fade-in zoom-in-95 duration-200 origin-top-right">
                 <div className="px-4 py-2 border-b border-slate-50 mb-1">
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Cuenta</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                    Cuenta
+                  </p>
                   <p className="text-xs font-semibold text-slate-700 truncate">{userEmail}</p>
                 </div>
 
@@ -176,7 +185,7 @@ export default function TopBar({
         <div className="md:hidden border-t border-slate-100 bg-white animate-in slide-in-from-top duration-300">
           <nav className="flex flex-col p-4 gap-2">
             {filteredLinks.map(({ label, href, Icon }) => {
-              const active = pathname === href || pathname.startsWith(href + '/');
+              const active = pathname === href || pathname.startsWith(href + "/");
               return (
                 <Link
                   key={href}
@@ -186,13 +195,15 @@ export default function TopBar({
                     "flex items-center gap-4 px-4 py-4 rounded-2xl text-[14px] font-bold transition-all",
                     active
                       ? "bg-blue-50 text-blue-600 border border-blue-100 shadow-sm"
-                      : "text-slate-600 hover:bg-slate-50 border border-transparent"
+                      : "text-slate-600 hover:bg-slate-50 border border-transparent",
                   )}
                 >
-                  <div className={cn(
-                    "w-8 h-8 rounded-xl flex items-center justify-center transition-all",
-                    active ? "bg-white text-blue-500 shadow-sm" : "bg-slate-100 text-slate-400"
-                  )}>
+                  <div
+                    className={cn(
+                      "w-8 h-8 rounded-xl flex items-center justify-center transition-all",
+                      active ? "bg-white text-blue-500 shadow-sm" : "bg-slate-100 text-slate-400",
+                    )}
+                  >
                     <Icon className="w-4 h-4" />
                   </div>
                   {label}

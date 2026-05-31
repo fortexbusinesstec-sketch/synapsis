@@ -87,7 +87,7 @@ export function JudgeSidebar({ onCaseSelect, selectedCaseId, refreshTrigger, onR
             if (active.sessionId) localStorage.setItem("judge_session_id", active.sessionId);
         }
       }
-      setProfile({ id: profileId, fullName: localStorage.getItem("judge_name") || "Juez" });
+      setProfile({ id: profileId, fullName: localStorage.getItem("judge_name") || "Juicio de Expertos" });
     } catch (e) {
       console.error(e);
     } finally {
@@ -262,14 +262,14 @@ export function JudgeSidebar({ onCaseSelect, selectedCaseId, refreshTrigger, onR
                     </div>
                     <button type="submit" disabled={loading} className="w-full py-4 rounded-2xl bg-zinc-900 text-white text-[11px] font-black uppercase tracking-widest shadow-xl shadow-zinc-900/20 transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2">
                         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <User className="w-4 h-4" />}
-                        Crear Perfil de Juez
+                        Crear Perfil de Juicio de Expertos
                     </button>
                 </form>
             </div>
         ) : (
             <div className="p-8 space-y-8 flex flex-col h-full">
                 <div className="space-y-2">
-                    <h2 className="text-2xl font-black text-slate-900 leading-tight">Experimento<br/><span className="text-blue-600">Juez Synapsis</span></h2>
+                    <h2 className="text-2xl font-black text-slate-900 leading-tight">Experimento<br/><span className="text-blue-600">Juicio de Expertos Synapsis</span></h2>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Selecciona un perfil para continuar</p>
                 </div>
 
@@ -290,14 +290,14 @@ export function JudgeSidebar({ onCaseSelect, selectedCaseId, refreshTrigger, onR
                     {existingProfiles.length === 0 && !loading && (
                         <div className="py-10 text-center space-y-3 opacity-50">
                             <Users className="w-10 h-10 text-slate-300 mx-auto" />
-                            <p className="text-xs font-bold text-slate-400">No hay jueces registrados aún</p>
+                            <p className="text-xs font-bold text-slate-400">No hay perfiles de juicio de expertos registrados aún</p>
                         </div>
                     )}
                 </div>
 
                 <button onClick={() => setShowProfileForm(true)} className="w-full py-5 rounded-[2rem] border-2 border-dashed border-slate-200 text-slate-400 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-all flex items-center justify-center gap-3 text-[11px] font-black uppercase tracking-widest mt-auto">
                     <Plus className="w-5 h-5" />
-                    Registrar Nuevo Juez
+                    Registrar Nuevo Juicio de Expertos
                 </button>
             </div>
         )}
@@ -318,7 +318,7 @@ export function JudgeSidebar({ onCaseSelect, selectedCaseId, refreshTrigger, onR
           </div>
           <div className="flex-1 min-w-0">
               <h3 className="text-sm font-black text-slate-900 truncate">{profile?.fullName}</h3>
-              <button onClick={() => { localStorage.removeItem("judge_profile_id"); setProfile(null); setShowProfileForm(false); fetchExistingProfiles(); }} className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-700">Cambiar Juez</button>
+              <button onClick={() => { localStorage.removeItem("judge_profile_id"); setProfile(null); setShowProfileForm(false); fetchExistingProfiles(); }} className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-700">Cambiar Juicio de Expertos</button>
           </div>
           <Settings className="w-5 h-5 text-slate-300" />
       </div>

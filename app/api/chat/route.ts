@@ -31,8 +31,10 @@ import type { Message } from 'ai';
 import { client } from '@/lib/db';
 
 import { runClarifier } from '@/lib/agents/clarifier';
+import type { ClarifierInput } from '@/lib/agents/clarifier';
 import { runAnalista, ANALISTA_FAILSAFE } from '@/lib/agents/analista';
 import { saveChatMessage } from '@/lib/agents/metrifier';
+import { PROMPT_TEORICO, PROMPT_PROCEDIMENTAL, PROMPT_DIAGNOSTICO, type ModoType } from '@/lib/agents/prompts';
 import type { AnalistaOutput } from '@/lib/types/agents';
 
 export const maxDuration = 60;
@@ -312,6 +314,7 @@ export async function POST(req: Request) {
   let sessionId: string | null;
   let sessionMode: 'test' | 'record';
   let clarificationAnswers: Record<string, string> | null;
+  let modo: ModoType = 'diagnostico'; // default
 
   let agentFlags = { planner: false, clarifier: true, analyst: true };
 
@@ -322,6 +325,7 @@ export async function POST(req: Request) {
     sessionId = body.sessionId || null;
     sessionMode = body.sessionMode === 'record' ? 'record' : 'test';
     clarificationAnswers = body.clarificationAnswers ?? null;
+    if (body.modo) modo = body.modo;
     if (body.agentFlags) agentFlags = body.agentFlags;
 
     console.log(`[${timestamp}][chat] Request received. Model: ${equipmentModel}, Planner: ${agentFlags.planner}`);
@@ -350,7 +354,12 @@ export async function POST(req: Request) {
 
   if (agentFlags.clarifier) {
     try {
-      const clarification = await runClarifier(userQuery, equipmentModel);
+      const clarification = await runClarifier({
+        userQuery,
+        equipmentModel,
+        historyContext: '',
+        modo,
+      });
       queryIntent = clarification.intent;
     } catch (e) {
       console.error(`[${timestamp}][chat:fase0] Clarificador falló:`, (e as Error).message);
@@ -433,6 +442,7 @@ export async function POST(req: Request) {
         intent: queryIntent,
         historyContext: '',
         loopIndex: 0,
+        modo,
       });
       analista = analyzeResult.output;
       phase2Tokens = analyzeResult.totalTokens;
@@ -461,26 +471,15 @@ export async function POST(req: Request) {
     const t3start = Date.now();
 
     const result = streamText({
-      model: openai('gpt-4o-mini'), // Switching to mini for testing and speed
+      model: openai('gpt-4o-mini'),
       messages: [
         {
           role: 'system',
-          content:
-            `Eres el Ingeniero Jefe de Synapsis Go. Mentor senior, brutalmente honesto, máxima autoridad técnica. Eres un VOCERO: transmites el análisis del Agente Analista, NO reinterpretes ni añadas hipótesis propias.
-
-REGLAS DE HIERRO:
-1. Usa EXACTAMENTE la información del Analista. Si el Analista dice 'missing_info', admítelo directamente.
-2. PROHIBIDO decir: "consulte el capítulo", "revise el menú", "busque en la sección", "identifique el código en el manual".
-3. PROHIBIDO inventar valores numéricos que no estén en el análisis.
-4. PROHIBIDO saludar, validar al técnico ("buen trabajo"), o ser amable. Ve directo al grano.
-5. Formato: Máximo 4 pasos numerados. Negritas SOLO en nombres técnicos (placas, códigos, componentes).
-6. Termina con UNA pregunta incisiva que verifique una sola cosa física o medible.
-
-SI hay 'missing_info' en el análisis:
-"No tengo información suficiente en la documentación indexada para interpretar [X]. Requiere validación de un experto senior. Mientras tanto, verifique [lo que sí sepa con certeza]."
-
-SI NO hay missing_info:
-Entrega los pasos directamente del 'root_cause_hypothesis' y 'next_step'.`,
+          content: modo === 'diagnostico'
+            ? `MODO: DIAGNÓSTICO\nEl técnico reporta un síntoma o falla. Activa el Comité de Diagnóstico.\n\n${PROMPT_DIAGNOSTICO}`
+            : modo === 'teorico'
+              ? PROMPT_TEORICO
+              : PROMPT_PROCEDIMENTAL,
         },
         {
           role: 'user',
