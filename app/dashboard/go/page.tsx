@@ -51,24 +51,24 @@ export default async function SynapsisGoPage() {
   return (
     <div className="flex flex-col h-full min-h-0 space-y-0 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6">
       {/* ── Header de página ─────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-4 sm:px-6 pt-5 pb-4 border-b border-slate-100 bg-white flex-shrink-0">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 border border-blue-100">
-          <Zap className="h-5 w-5 text-blue-600 fill-blue-100" />
+      <div className="flex items-center gap-3 px-4 sm:px-6 pt-4 pb-3 bg-white flex-shrink-0 border-b border-slate-100">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800">
+          <Zap className="h-4 w-4 text-white" />
         </div>
         <div>
-          <h1 className="text-lg font-bold text-slate-900 tracking-tight leading-none">
+          <h1 className="text-base font-black text-slate-900 tracking-tight leading-none">
             Synapsis Go
           </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Comité de Diagnóstico · Bibliotecario + Analista + Ingeniero Jefe
+          <p className="text-[10px] text-slate-400 font-bold mt-0.5">
+            Comité Multi-Agente · 3 modos de consulta
           </p>
         </div>
 
         {readyDocsCount > 0 && (
           <div className="ml-auto hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs font-semibold text-emerald-700">
-              {filteredModels.length} modelos / {readyDocsCount} manuales activos
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span className="text-[10px] font-bold text-emerald-700 whitespace-nowrap">
+              {filteredModels.length} modelos · {readyDocsCount} manuales
             </span>
           </div>
         )}

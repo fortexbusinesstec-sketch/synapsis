@@ -12,11 +12,105 @@ import {
   Layout, Sparkles, FlaskConical, BookMarked,
   Copy, Check, Plus, SlidersHorizontal, X,
   Maximize2, ZoomIn, ZoomOut, RotateCcw,
-  History as HistoryIcon, MessageSquare, Clock
+  History as HistoryIcon, MessageSquare, Clock,
+  Wrench, Stethoscope, ListChecks
 } from "lucide-react";
 import TextareaAutosize from 'react-textarea-autosize';
 import { cn } from "@/lib/utils";
 import type { EquipmentModel } from "./page";
+import type { ModoType } from "@/lib/agents/prompts";
+
+/* ── Modo Selector Config ─────────────────────────────────────────────────── */
+
+const GO_MODOS: {
+  value: ModoType;
+  label: string;
+  Icon: React.ComponentType<{ className?: string }>;
+  tooltip: string;
+  placeholders: string[];
+  description: string;
+}[] = [
+  {
+    value: 'teorico',
+    label: 'Técnico',
+    Icon: Wrench,
+    tooltip: 'Pregunta sobre conceptos, definiciones o funcionamiento del equipo',
+    placeholders: [
+      "Explica el funcionamiento del variador de frecuencia...",
+      "Qué es el sistema de tracción...",
+      "Cómo funciona el freno de seguridad...",
+    ],
+    description: "Modo Técnico — conceptos, definiciones y teoría del equipo"
+  },
+  {
+    value: 'diagnostico',
+    label: 'Diagnóstico',
+    Icon: Stethoscope,
+    tooltip: 'Reporta un síntoma o falla para diagnosticar',
+    placeholders: [
+      "El ascensor no se mueve, código E-07...",
+      "Falla en el panel de control, error F12...",
+      "Ruido extraño en la sala de máquinas...",
+    ],
+    description: "Modo Diagnóstico — fallas, síntomas y resolución de problemas"
+  },
+  {
+    value: 'procedimental',
+    label: 'Procedimiento',
+    Icon: ListChecks,
+    tooltip: 'Pregunta sobre cómo hacer algo, pasos o procedimientos técnicos',
+    placeholders: [
+      "Procedimiento para resetear el variador...",
+      "Pasos para calibrar el freno...",
+      "Cómo acceder al menú de servicio...",
+    ],
+    description: "Modo Procedimiento — pasos, calibraciones y secuencias técnicas"
+  },
+];
+
+const BG_CLASSES: Record<ModoType, string> = {
+  teorico: 'bg-blue-600 text-white shadow-sm',
+  procedimental: 'bg-amber-600 text-white shadow-sm',
+  diagnostico: 'bg-red-600 text-white shadow-sm',
+};
+
+function GoModoSelector({
+  value, onChange, disabled
+}: {
+  value: ModoType;
+  onChange: (v: ModoType) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="flex rounded-xl overflow-hidden border border-slate-200 bg-slate-100/50 p-0.5">
+      {GO_MODOS.map(({ value: v, label, Icon, tooltip }) => {
+        const isActive = value === v;
+        return (
+          <div key={v} className="relative flex-1 group">
+            <button
+              type="button"
+              onClick={() => onChange(v)}
+              disabled={disabled}
+              className={`
+                w-full flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-semibold transition-all duration-200 rounded-[0.625rem]
+                ${isActive ? BG_CLASSES[v] : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'}
+                ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1
+              `}
+            >
+              <Icon className="h-4 w-4" />
+              <span className="hidden sm:inline">{label}</span>
+            </button>
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 text-xs text-white bg-slate-800 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+              {tooltip}
+              <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-800" />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 /* ── Urgency config ──────────────────────────────────────────────────────── */
 
@@ -222,8 +316,15 @@ const UserMessageItem = memo(({ content }: { content: string }) => {
 });
 UserMessageItem.displayName = "UserMessageItem";
 
-const AiMessageItem = memo(({ m, rated, onRate, sessionMode, servMsgId, sessionId, isStreaming }: any) => {
+const MODO_META: Record<ModoType, { label: string; bg: string; text: string; border: string }> = {
+  teorico: { label: "Técnico", bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
+  diagnostico: { label: "Diagnóstico", bg: "bg-red-50", text: "text-red-700", border: "border-red-200" },
+  procedimental: { label: "Procedimiento", bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200" },
+};
+
+const AiMessageItem = memo(({ m, modo, rated, onRate, sessionMode, servMsgId, sessionId, isStreaming }: any) => {
   const [copied, setCopied] = useState(false);
+  const modoMeta = MODO_META[modo as ModoType] ?? MODO_META.diagnostico;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(m.content);
@@ -234,16 +335,27 @@ const AiMessageItem = memo(({ m, rated, onRate, sessionMode, servMsgId, sessionI
   return (
     <div className={cn(
       "w-full py-8 transition-colors duration-500 rounded-[2.5rem]",
-      isStreaming ? "bg-white" : "bg-zinc-50/20"
+      isStreaming ? "bg-white" : modoMeta.bg + "/10"
     )}>
       <div className="flex items-start gap-5 max-w-4xl mx-auto px-4 md:px-6">
         {/* Logo */}
-        <div className="w-9 h-9 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20 flex-shrink-0 mt-0.5 border border-blue-400">
-          <Activity className="w-5 h-5 text-white" />
+        <div className={cn(
+          "w-9 h-9 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0 mt-0.5 border",
+          modo === 'teorico' ? "bg-blue-600 border-blue-400 shadow-blue-500/20" : modo === 'procedimental' ? "bg-amber-600 border-amber-400 shadow-amber-500/20" : "bg-red-600 border-red-400 shadow-red-500/20"
+        )}>
+          {modo === 'teorico' ? <Wrench className="w-5 h-5 text-white" /> : modo === 'procedimental' ? <ListChecks className="w-5 h-5 text-white" /> : <Stethoscope className="w-5 h-5 text-white" />}
         </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
+          {/* Modo badge */}
+          <div className={cn(
+            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border mb-3",
+            modoMeta.bg, modoMeta.text, modoMeta.border
+          )}>
+            {modo === 'teorico' ? <Wrench className="w-3 h-3" /> : modo === 'procedimental' ? <ListChecks className="w-3 h-3" /> : <Stethoscope className="w-3 h-3" />}
+            {modoMeta.label}
+          </div>
           <div className="text-sm text-zinc-800 w-full font-sans">
             <div className="prose prose-neutral max-w-none text-gray-900 leading-[1.8] prose-p:my-5 prose-ul:my-5 prose-ol:my-5 prose-li:my-1 prose-li:marker:text-blue-600 prose-li:marker:font-black">
               <ReactMarkdown
@@ -344,6 +456,7 @@ export function SynapsisGoChat({
 }) {
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [sessionMode, setSessionMode] = useState<"test" | "record">("test");
+  const [modo, setModo] = useState<ModoType>("diagnostico");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [urgency, setUrgency] = useState<string | null>(null);
   const [ratings, setRatings] = useState<Record<string, number>>({});
@@ -358,6 +471,7 @@ export function SynapsisGoChat({
 
   const sessionIdRef = useRef<string | null>(null);
   const sessionModeRef = useRef<"test" | "record">("test");
+  const modoRef = useRef<ModoType>("diagnostico");
   const selectedModelRef = useRef<string>("");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -365,6 +479,7 @@ export function SynapsisGoChat({
 
   useEffect(() => { sessionIdRef.current = sessionId; }, [sessionId]);
   useEffect(() => { sessionModeRef.current = sessionMode; }, [sessionMode]);
+  useEffect(() => { modoRef.current = modo; }, [modo]);
   useEffect(() => { selectedModelRef.current = selectedModel; }, [selectedModel]);
   useEffect(() => { agentFlagsRef.current = agentFlags; }, [agentFlags]);
 
@@ -374,6 +489,7 @@ export function SynapsisGoChat({
       equipmentModel: selectedModel,
       sessionId,
       sessionMode,
+      modo,
     },
     fetch: useCallback(async (url: RequestInfo | URL, init?: RequestInit) => {
       let modifiedInit = init;
@@ -492,70 +608,107 @@ export function SynapsisGoChat({
 
       <div className="flex flex-col flex-1 min-w-0 relative">
         {/* Header */}
-        <div className="sticky top-0 z-20 flex-shrink-0 flex flex-col md:flex-row md:items-center justify-between px-8 py-5 bg-white/90 backdrop-blur-xl border-b border-slate-100 gap-4 shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-[1.25rem] bg-zinc-900 flex items-center justify-center shadow-xl shadow-zinc-900/10">
-              <Activity className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-[15px] font-black text-slate-950 tracking-tight leading-none">Comité Synapsis Go</h1>
-              <div className="flex items-center gap-2 mt-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">Pipeline Multi-Agente Activo</span>
-                {urgency && URGENCY[urgency as keyof typeof URGENCY] && (
-                  <div className={cn(
-                    "px-2.5 py-1 rounded-full text-[9px] font-black flex items-center gap-1.5 uppercase tracking-widest bg-white shadow-sm border",
-                    URGENCY[urgency as keyof typeof URGENCY]?.text,
-                    URGENCY[urgency as keyof typeof URGENCY]?.border,
-                  )}>
-                    <div className={cn("w-1.5 h-1.5 rounded-full", URGENCY[urgency as keyof typeof URGENCY]?.dot)} />
-                    {URGENCY[urgency as keyof typeof URGENCY]?.label}
-                  </div>
-                )}
+        <div className="sticky top-0 z-20 flex-shrink-0 flex flex-col bg-white/90 backdrop-blur-xl border-b border-slate-100 shadow-sm">
+          {/* Top row */}
+          <div className="flex items-center justify-between px-4 sm:px-8 py-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-11 h-11 rounded-[1.25rem] bg-zinc-900 flex items-center justify-center shadow-xl shadow-zinc-900/10 flex-shrink-0">
+                <Zap className="w-5 h-5 text-white" />
               </div>
+              <div className="min-w-0">
+                <h1 className="text-[15px] font-black text-slate-950 tracking-tight leading-none truncate">Synapsis Go</h1>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.1em]">Multi-Agente</span>
+                  {urgency && URGENCY[urgency as keyof typeof URGENCY] && (
+                    <div className={cn(
+                      "px-2 py-0.5 rounded-full text-[8px] font-black flex items-center gap-1 uppercase tracking-widest bg-white shadow-sm border",
+                      URGENCY[urgency as keyof typeof URGENCY]?.text,
+                      URGENCY[urgency as keyof typeof URGENCY]?.border,
+                    )}>
+                      <div className={cn("w-1.5 h-1.5 rounded-full", URGENCY[urgency as keyof typeof URGENCY]?.dot)} />
+                      {URGENCY[urgency as keyof typeof URGENCY]?.label}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Session Mode Toggle */}
+              <div className="hidden sm:flex items-center gap-1 bg-zinc-100 p-0.5 rounded-xl border border-zinc-200/50">
+                <button
+                  onClick={() => { setSessionMode("test"); sessionModeRef.current = "test"; }}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-[0.625rem] text-[10px] font-black tracking-widest uppercase transition-all",
+                    sessionMode === "test" ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600",
+                  )}
+                >
+                  <FlaskConical className="w-3 h-3" /> Prueba
+                </button>
+                <button
+                  onClick={() => { setSessionMode("record"); sessionModeRef.current = "record"; }}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-[0.625rem] text-[10px] font-black tracking-widest uppercase transition-all",
+                    sessionMode === "record" ? "bg-blue-600 text-white shadow-lg" : "text-slate-400 hover:text-slate-600",
+                  )}
+                >
+                  <BookMarked className="w-3 h-3" /> Registro
+                </button>
+              </div>
+
+              <button
+                onClick={fetchHistory}
+                className="w-10 h-10 rounded-2xl bg-white border border-slate-200 text-slate-500 hover:border-blue-400 hover:text-blue-600 flex items-center justify-center transition-all shadow-sm"
+                title="Historial de diagnóstico"
+              >
+                <HistoryIcon className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={() => setAgentPanelOpen(v => !v)}
+                className={cn(
+                  "w-10 h-10 rounded-2xl flex items-center justify-center transition-all border shadow-sm",
+                  agentPanelOpen ? "bg-zinc-900 border-zinc-900 text-white" : "bg-white border-slate-200 text-slate-500 hover:border-blue-400 hover:text-blue-600"
+                )}
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Mode Switcher */}
-            <div className="flex items-center gap-1 bg-zinc-100 p-1 rounded-2xl border border-zinc-200/50">
-              <button
-                onClick={() => { setSessionMode("test"); sessionModeRef.current = "test"; }}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-black tracking-widest uppercase transition-all",
-                  sessionMode === "test" ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600",
-                )}
+          {/* Bottom row: Model + Modo selector */}
+          <div className="flex items-center gap-3 px-4 sm:px-8 pb-4 overflow-x-auto">
+            {/* Model selector */}
+            <div className="relative flex-shrink-0">
+              <select
+                value={selectedModel}
+                onChange={(e) => {
+                  setSelectedModel(e.target.value);
+                  if (e.target.value) ensureSession();
+                }}
+                className="appearance-none bg-white border border-slate-200 rounded-xl px-4 py-2 pr-10 text-[11px] font-bold text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all cursor-pointer hover:border-blue-400"
               >
-                <FlaskConical className="w-3.5 h-3.5" /> Prueba
-              </button>
-              <button
-                onClick={() => { setSessionMode("record"); sessionModeRef.current = "record"; }}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-black tracking-widest uppercase transition-all",
-                  sessionMode === "record" ? "bg-blue-600 text-white shadow-lg" : "text-slate-400 hover:text-slate-600",
-                )}
-              >
-                <BookMarked className="w-3.5 h-3.5" /> Registro
-              </button>
+                <option value="">Modelo...</option>
+                {models.map(m => (
+                  <option key={m.equipmentModel} value={m.equipmentModel ?? ''}>
+                    Schindler {m.equipmentModel}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
             </div>
 
-            <button
-              onClick={fetchHistory}
-              className="w-11 h-11 rounded-2xl bg-white border border-slate-200 text-slate-500 hover:border-blue-400 hover:text-blue-600 flex items-center justify-center transition-all shadow-sm"
-              title="Historial de diagnóstico"
-            >
-              <HistoryIcon className="w-5 h-5" />
-            </button>
+            <GoModoSelector value={modo} onChange={setModo} disabled={false} />
 
-            <button
-              onClick={() => setAgentPanelOpen(v => !v)}
-              className={cn(
-                "w-11 h-11 rounded-2xl flex items-center justify-center transition-all border shadow-sm",
-                agentPanelOpen ? "bg-zinc-900 border-zinc-900 text-white" : "bg-white border-slate-200 text-slate-500 hover:border-blue-400 hover:text-blue-600"
-              )}
-            >
-              <SlidersHorizontal className="w-5 h-5" />
-            </button>
+            {selectedModel && (
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 flex-shrink-0 ml-auto">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span className="text-[9px] font-semibold text-emerald-700 whitespace-nowrap">
+                  Schindler {selectedModel}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -652,39 +805,55 @@ export function SynapsisGoChat({
         <div className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col px-0 py-8 scroll-smooth scrollbar-hidden">
           <div className="max-w-4xl mx-auto px-4 md:px-6 w-full space-y-4">
             {visibleMessages.length === 0 && (
-              <div className="flex flex-col items-center justify-center min-h-[60vh] gap-8 text-center animate-in zoom-in duration-700">
+              <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center animate-in zoom-in duration-700 px-4">
                 <div className="relative">
                   <div className="absolute inset-0 rounded-[3rem] bg-blue-500/20 blur-3xl animate-pulse" />
-                  <div className="relative w-28 h-28 rounded-[3rem] bg-zinc-900 text-white flex items-center justify-center shadow-2xl border border-white/5 group transition-transform hover:scale-110 duration-500">
-                    <Activity className="w-14 h-14" />
+                  <div className={cn(
+                    "relative w-24 h-24 rounded-[3rem] flex items-center justify-center shadow-2xl border border-white/5 group transition-transform hover:scale-110 duration-500",
+                    modo === 'teorico' ? 'bg-blue-600' : modo === 'procedimental' ? 'bg-amber-600' : 'bg-red-600'
+                  )}>
+                    {modo === 'teorico' ? <Wrench className="w-12 h-12 text-white" /> : modo === 'procedimental' ? <ListChecks className="w-12 h-12 text-white" /> : <Stethoscope className="w-12 h-12 text-white" />}
                   </div>
                 </div>
-                <div className="space-y-4">
-                  <h3 className="text-3xl font-black text-slate-950 tracking-tight">IA Multimodal de Diagnóstico</h3>
-                  <p className="text-[13px] text-slate-500 mt-3 max-w-[360px] leading-relaxed mx-auto font-bold uppercase tracking-tight">
-                    Elige un modelo operativo para activar el comité de agentes expertos.
+                <div className="space-y-3 max-w-md">
+                  <h3 className="text-2xl font-black text-slate-950 tracking-tight">
+                    {modo === 'teorico' ? 'Consulta Técnica' : modo === 'procedimental' ? 'Procedimientos' : 'Diagnóstico Inteligente'}
+                  </h3>
+                  <p className="text-xs text-slate-500 leading-relaxed font-semibold">
+                    {GO_MODOS.find(m => m.value === modo)?.description}
                   </p>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8 w-full max-w-md">
-                    {models.filter(m => m.equipmentModel === "3300" || m.equipmentModel === "5500").map(m => (
-                      <button
-                        key={m.equipmentModel}
-                        onClick={() => { setSelectedModel(m.equipmentModel || ""); ensureSession(); }}
-                        className={cn(
-                          "p-6 rounded-[2.5rem] border-2 transition-all text-left flex items-center gap-5 shadow-sm group active:scale-95",
-                          selectedModel === m.equipmentModel ? "bg-blue-600 border-blue-600 shadow-blue-200" : "bg-white border-slate-100 hover:border-blue-400 hover:shadow-xl"
-                        )}
-                      >
-                        <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-all", selectedModel === m.equipmentModel ? "bg-white/20 text-white" : "bg-blue-50 text-blue-500")}>
-                          <Cpu className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <p className={cn("text-lg font-black tracking-tight", selectedModel === m.equipmentModel ? "text-white" : "text-slate-900")}>Schindler {m.equipmentModel}</p>
-                          <p className={cn("text-[9px] font-black uppercase tracking-widest mt-0.5", selectedModel === m.equipmentModel ? "text-blue-100" : "text-slate-400")}>Base Lista</p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
+                  {!selectedModel && (
+                    <div className="flex flex-wrap justify-center gap-2 mt-4">
+                      {models.filter(m => m.equipmentModel === "3300" || m.equipmentModel === "5500").map(m => (
+                        <button
+                          key={m.equipmentModel}
+                          onClick={() => { setSelectedModel(m.equipmentModel || ""); ensureSession(); }}
+                          className="px-5 py-3 rounded-2xl border-2 border-slate-200 bg-white text-slate-800 hover:border-blue-400 hover:shadow-lg transition-all flex items-center gap-3 active:scale-95 font-bold text-sm"
+                        >
+                          <Cpu className="w-5 h-5 text-blue-500" />
+                          Schindler {m.equipmentModel}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {selectedModel && (
+                    <div className="flex flex-wrap justify-center gap-2 mt-6">
+                      {GO_MODOS.find(m => m.value === modo)?.placeholders.slice(0, 3).map((placeholder, i) => (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            handleInputChange({ target: { value: placeholder } } as any);
+                            textareaRef.current?.focus();
+                          }}
+                          className="px-4 py-2 rounded-2xl bg-white border border-slate-200 text-[10px] font-bold tracking-wide text-slate-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-all shadow-sm active:scale-95"
+                        >
+                          {placeholder.length > 40 ? placeholder.slice(0, 40) + '...' : placeholder}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -695,7 +864,7 @@ export function SynapsisGoChat({
                 const sIdx = visibleMessages.filter((msg, i) => msg.role === 'assistant' && i <= idx).length - 1;
                 const servMsgId = messageServerIdsRef.current[sIdx] ?? null;
                 return (
-                  <AiMessageItem key={m.id} m={m} rated={ratings[servMsgId!] ?? null} onRate={(r: number) => setRatings(p => ({ ...p, [servMsgId!]: r }))} sessionMode={sessionMode} servMsgId={servMsgId} sessionId={sessionId} isStreaming={isLatest && isLoading} />
+                  <AiMessageItem key={m.id} m={m} modo={modo} rated={ratings[servMsgId!] ?? null} onRate={(r: number) => setRatings(p => ({ ...p, [servMsgId!]: r }))} sessionMode={sessionMode} servMsgId={servMsgId} sessionId={sessionId} isStreaming={isLatest && isLoading} />
                 );
               }
               return <UserMessageItem key={m.id} content={m.content} />;
@@ -712,12 +881,24 @@ export function SynapsisGoChat({
             {/* Quick Actions (HU0031) */}
             {selectedModel && visibleMessages.length === 0 && (
               <div className="flex flex-wrap gap-2 mb-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
-                {[
-                  { label: "Tengo un problema...", text: "Tengo un problema con " },
-                  { label: "Quiero consultar...", text: "Quiero consultar sobre " },
-                  { label: "Existe algún error...", text: "Existe algún error relacionado a " },
-                  { label: "Cómo reseteo...", text: "Solicito procedimiento para resetear " }
-                ].map(action => (
+                {(modo === 'teorico'
+                  ? ([
+                      { label: "Qué es...", text: "Qué es el sistema de " },
+                      { label: "Explica...", text: "Explica cómo funciona " },
+                      { label: "Diferencia entre...", text: "Cuál es la diferencia entre " },
+                    ] as const)
+                  : modo === 'procedimental'
+                    ? ([
+                        { label: "Cómo resetear...", text: "Procedimiento para resetear " },
+                        { label: "Pasos para...", text: "Pasos para calibrar " },
+                        { label: "Cómo acceder...", text: "Cómo acceder al menú de " },
+                      ] as const)
+                    : ([
+                        { label: "Tengo un problema...", text: "Tengo un problema con " },
+                        { label: "Existe algún error...", text: "Existe algún error relacionado a " },
+                        { label: "Falla...", text: "El ascensor presenta falla en " },
+                      ] as const)
+                ).map(action => (
                   <button
                     key={action.label}
                     onClick={() => {
@@ -732,14 +913,32 @@ export function SynapsisGoChat({
               </div>
             )}
 
-            <form onSubmit={onSubmitWithSession} className={cn("group flex items-end gap-3 border-2 rounded-[2.5rem] px-8 py-5 transition-all duration-500 shadow-sm", !selectedModel ? "bg-slate-50 border-slate-100 opacity-60" : "bg-zinc-100 border-zinc-200 focus-within:bg-white focus-within:border-blue-500 focus-within:ring-[12px] focus-within:ring-blue-500/5 focus-within:shadow-2xl")}>
+            <form onSubmit={onSubmitWithSession} className={cn(
+              "group flex items-end gap-3 border-2 rounded-[2.5rem] px-8 py-5 transition-all duration-500 shadow-sm",
+              !selectedModel
+                ? "bg-slate-50 border-slate-100 opacity-60"
+                : cn(
+                    "bg-zinc-100 border-zinc-200 focus-within:bg-white focus-within:ring-[12px] focus-within:shadow-2xl",
+                    modo === 'teorico' && "focus-within:border-blue-500 focus-within:ring-blue-500/5",
+                    modo === 'procedimental' && "focus-within:border-amber-500 focus-within:ring-amber-500/5",
+                    modo === 'diagnostico' && "focus-within:border-red-500 focus-within:ring-red-500/5",
+                  )
+            )}>
               <TextareaAutosize
                 ref={textareaRef as any}
                 value={input}
                 onChange={handleInputChange}
                 minRows={1} maxRows={8}
                 disabled={!selectedModel}
-                placeholder={!selectedModel ? "Seleccione un modelo operativo..." : "Indica la falla, código de error o comportamiento..."}
+                placeholder={
+                  !selectedModel
+                    ? "Seleccione un modelo operativo..."
+                    : modo === 'teorico'
+                      ? "Ej: Explica el funcionamiento del variador de frecuencia..."
+                      : modo === 'procedimental'
+                        ? "Ej: Procedimiento para calibrar el freno de seguridad..."
+                        : "Ej: El ascensor no se mueve, código E-07..."
+                }
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (input.trim() && selectedModel) onSubmitWithSession(e as any); } }}
                 className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-[15px] py-1 text-slate-900 placeholder:text-slate-400 resize-none font-bold disabled:cursor-not-allowed leading-relaxed"
               />
