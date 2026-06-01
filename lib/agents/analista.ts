@@ -1,6 +1,6 @@
 /**
  * Agente 2 — Analista v3 (Evaluador Estratégico con Gap Engine)
- * Modelo: gpt-4o | temperature: 0.1
+ * Modelo: gpt-4o-mini | temperature: 0.1
  *
  * Output tipado con GapDescriptor estructurado en lugar de missing_info libre.
  * shouldLoop verifica progreso real del gap entre iteraciones.
@@ -198,7 +198,7 @@ RESTRICCIONES:
 
   try {
     const { text, usage } = await generateText({
-      model:       openai('gpt-4o'),
+      model:       openai('gpt-4o-mini'),
       temperature: 0.1,
       maxTokens:   1000,
       messages: [
@@ -306,16 +306,37 @@ RESTRICCIONES:
       const llmVeryUnsure = confidence < 0.3;
 
       if (groundTruthEmpty || llmVeryUnsure) {
-        finalConfidence = 0.2;
-        needsMoreInfo = true;
-        gap = {
-          type: 'procedure',
-          target: input.entities?.[0] ?? 'información técnica',
-          reason: groundTruthEmpty
-            ? 'No se recuperó documentación sustancial del RAG'
-            : 'El modelo reportó confianza extremadamente baja',
-          search_hint: input.entities?.join(' ') ?? 'manual técnico',
-        };
+        // CAMBIO: No forzar needs_more_info si hay contexto de entidades o modelo
+        const hasSomeContext = input.entities && input.entities.length > 0;
+        const isGenericSymptom = /detenido|intermitente|falla|no\s+funciona/i.test(input.userQuery);
+        
+        if (groundTruthEmpty && !hasSomeContext) {
+          // Solo si NO hay nada y NO hay entidades, pedir más info
+          finalConfidence = 0.2;
+          needsMoreInfo = true;
+          gap = {
+            type: 'procedure',
+            target: input.entities?.[0] ?? 'información técnica',
+            reason: 'No se recuperó documentación sustancial del RAG',
+            search_hint: input.entities?.join(' ') ?? 'manual técnico',
+          };
+        } else if (groundTruthEmpty && hasSomeContext) {
+          // Hay entidades pero no chunks: responder con principios generales, NO pedir más info
+          finalConfidence = 0.4;
+          needsMoreInfo = false;  // ← CAMBIO CLAVE
+          gap = null;
+          // El Ingeniero Jefe usará root_cause_hypothesis + next_step con tono de "información limitada"
+        } else {
+          // llmVeryUnsure pero hay groundTruth: respetar la incertidumbre del modelo
+          finalConfidence = confidence;
+          needsMoreInfo = true;
+          gap = parseGap(parsed.gap) ?? {
+            type: 'component',
+            target: input.entities?.[0] ?? 'componente desconocido',
+            reason: 'El modelo reportó confianza extremadamente baja',
+            search_hint: input.entities?.join(' ') ?? 'manual técnico',
+          };
+        }
       }
     }
 

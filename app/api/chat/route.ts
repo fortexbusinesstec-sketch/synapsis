@@ -487,14 +487,10 @@ export async function POST(req: Request) {
             `SÍNTOMA: ${enrichedQuery}\n\n` +
             `${contextBlock}\n\n` +
             `IMÁGENES DISPONIBLES:\n${validatedImages.map(img => `URL: ${img.image_url} | Descripción: ${img.description}`).join('\n') || 'No hay imágenes disponibles para este caso.'}\n\n` +
-            `ANÁLISIS DEL AGENTE ANALISTA:\n` +
-            `Hipótesis de causa raíz: ${analista.root_cause_hypothesis}\n` +
-            `Confianza: ${analista.confidence}\n` +
-            `Requiere verificación: ${analista.requires_verification}\n` +
-            `Siguiente paso: ${analista.next_step}\n` +
-            `Modo de respuesta: ${analista.response_mode}\n` +
-            `Necesita más información: ${analista.needs_more_info}\n` +
-            `${analista.gap ? `Gap detectado: ${analista.gap.type} | ${analista.gap.target} | ${analista.gap.reason}` : ''}`,
+            `ANÁLISIS TÉCNICO:\n` +
+            (analista.needs_more_info || analista.confidence < 0.5
+              ? `ESTADO DEL ANÁLISIS: Información insuficiente para diagnóstico preciso. Síntoma: ${enrichedQuery}.`
+              : `HIPÓTESIS: ${analista.root_cause_hypothesis}. SIGUIENTE PASO: ${analista.next_step}.`),
         },
       ],
 
