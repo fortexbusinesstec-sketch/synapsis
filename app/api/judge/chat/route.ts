@@ -1,67 +1,51 @@
-import { embed, streamText } from 'ai';
+import { streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
-import { client } from '@/lib/db';
-import { judgeMessages } from '@/lib/db/schema';
 import { db } from '@/lib/db';
+import { judgeMessages } from '@/lib/db/schema';
+import { runBuscadorDocumental } from '@/lib/agents/sub-buscador-documental';
+import { runBuscadorVisual } from '@/lib/agents/sub-buscador-visual';
+import { runCurador } from '@/lib/agents/sub-curador';
+import { PROMPT_DIAGNOSTICO } from '@/lib/agents/prompts';
 
 export const maxDuration = 60;
-
-// Replicamos la lógica de retrieval del Bibliotecario (Fase 1)
-async function runBibliotecario(
-  queryVector: number[],
-  equipmentModel: string | null
-) {
-  const embeddingVec = new Uint8Array(new Float32Array(queryVector).buffer);
-  const modelFilter = equipmentModel ? 'AND d.equipment_model = ?' : '';
-
-  const queryA = `
-    SELECT
-      dc.content,
-      d.title AS doc_title,
-      d.equipment_model,
-      vector_distance_cos(dc.embedding, vector32(?)) AS distance
-    FROM document_chunks dc
-    JOIN documents d ON dc.document_id = d.id
-    WHERE d.status = 'ready'
-      AND dc.embedding IS NOT NULL
-      ${modelFilter}
-    ORDER BY distance ASC
-    LIMIT 5
-  `;
-
-  const resultA = await client.execute({ 
-    sql: queryA, 
-    args: equipmentModel ? [embeddingVec, equipmentModel] : [embeddingVec] 
-  });
-  
-  const rows = resultA.rows as any[];
-  
-  return rows.map(r => 
-    `[${r.doc_title}] Modelo: ${r.equipment_model}\nCONTENIDO: ${r.content}`
-  ).join('\n\n---\n\n');
-}
 
 export async function POST(req: Request) {
   try {
     const { messages, equipmentModel, judgeSessionId } = await req.json();
     const userQuery = messages.at(-1)?.content || '';
 
-    // 1. Retrieval
-    const { embedding } = await embed({
-      model: openai.embedding('text-embedding-3-small'),
-      value: userQuery,
-    });
+    // Fase 1 — Retrieval con sub-agentes
+    const docResult = await runBuscadorDocumental(userQuery, equipmentModel, 'troubleshooting', []);
 
-    const groundTruth = await runBibliotecario(embedding, equipmentModel);
+    const docIds = [...new Set(docResult.chunks.map(c => c.document_id))];
+    const imgResult = await runBuscadorVisual(userQuery, docIds, equipmentModel);
 
-    // 2. Stream Response
+    const curadorResult = await runCurador(
+      docResult.chunks,
+      imgResult.images,
+      userQuery,
+      equipmentModel,
+    );
+
+    const groundTruth = curadorResult.groundTruth;
+    const bestDistance = curadorResult.bestDistance;
+    const componentMismatch = curadorResult.componentMismatch;
+    const rescueUsed = curadorResult.rescueUsed;
+    const docsConsultados = curadorResult.docsConsultados;
+
+    // Fase 2 — Stream Response
     const result = streamText({
       model: openai('gpt-4o-mini'),
-      system: `Eres el Ingeniero Jefe de Synapsis Go. Modo Jurado Activo.
-               Tu objetivo es ayudar al técnico a diagnosticar basándote estrictamente en el manual.
-               Reglas: Directo al grano, máximo 4 pasos, termina con pregunta técnica.`,
+      system: PROMPT_DIAGNOSTICO,
       messages: [
-        { role: 'user', content: `CONTEXTO DEL MANUAL:\n${groundTruth}\n\nPREGUNTA DEL TÉCNICO: ${userQuery}` }
+        {
+          role: 'user',
+          content:
+            `SÍNTOMA: ${userQuery}\n\n` +
+            `DOCUMENTACIÓN TÉCNICA:\n${groundTruth}\n\n` +
+            `IMÁGENES DISPONIBLES:\n${curadorResult.validatedImages.map(img => `URL: ${img.url} | Descripción: ${img.description}`).join('\n') || 'No hay imágenes disponibles para este caso.'}\n\n` +
+            `ANÁLISIS TÉCNICO:\nHIPÓTESIS: El componente está siendo evaluado según documentación. PASO SIGUIENTE: Verificar alimentación y circuito de seguridad.`,
+        },
       ],
       onFinish: async ({ text }) => {
         if (judgeSessionId) {
@@ -78,7 +62,15 @@ export async function POST(req: Request) {
       },
     });
 
-    return result.toDataStreamResponse();
+    return result.toDataStreamResponse({
+      headers: {
+        'x-best-distance': String(bestDistance),
+        'x-component-mismatch': String(componentMismatch ? 1 : 0),
+        'x-rescue-used': String(rescueUsed ? 1 : 0),
+        'x-doc-base-used': String(docsConsultados.docBaseUsed ? 1 : 0),
+        'x-doc-titulos': encodeURIComponent(JSON.stringify(docsConsultados.titulos)),
+      },
+    });
   } catch (error: any) {
     console.error('[API_JUDGE_CHAT]', error);
     return new Response(JSON.stringify({ error: 'Internal Error' }), { status: 500 });

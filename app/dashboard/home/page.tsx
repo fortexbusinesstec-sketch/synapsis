@@ -21,7 +21,52 @@ import { TecnicoHome } from '@/components/dashboard/TecnicoHome';
 import { AuditorHome } from '@/components/dashboard/AuditorHome';
 import { cn } from '@/lib/utils';
 
-/* ────────────────────────────────────────────────────────────────────────── */
+async function fetchCommonStats() {
+  try {
+    const results = await Promise.allSettled([
+      db.select({ count: countDistinct(documents.equipmentModel) }).from(documents),
+      db.select({ count: countDistinct(documents.equipmentModel) }).from(documents).where(eq(documents.status, 'ready')),
+      db.select({ count: count() }).from(documents),
+      db.select({ count: count() }).from(extractedImages),
+      db.select({ count: count() }).from(documentChunks),
+      db.select({ count: count() }).from(enrichments).where(eq(enrichments.isVerified, 1)),
+    ]);
+
+    const getCount = (res: PromiseSettledResult<{ count: number }[]>, index: number) =>
+      res.status === 'fulfilled' ? res.value[0]?.count ?? 0 : 0;
+
+    return {
+      totalModels: getCount(results[0], 0),
+      readyModels: getCount(results[1], 1),
+      totalDocuments: getCount(results[2], 2),
+      totalImages: getCount(results[3], 3),
+      totalChunks: getCount(results[4], 4),
+      totalEnrich: getCount(results[5], 5),
+    };
+  } catch {
+    return { totalModels: 0, readyModels: 0, totalDocuments: 0, totalImages: 0, totalChunks: 0, totalEnrich: 0 };
+  }
+}
+
+async function fetchAdminStats() {
+  try {
+    const [resolvedRes, topModelsRes] = await Promise.all([
+      db.select({ count: count() }).from(documents).where(sql`created_at >= date('now')`),
+      db.select({ model: documents.equipmentModel, docCount: count() })
+        .from(documents)
+        .groupBy(documents.equipmentModel)
+        .orderBy(desc(count()))
+        .limit(3),
+    ]);
+    return {
+      resolvedToday: resolvedRes[0]?.count ?? 0,
+      precisionRate: 98,
+      topModels: topModelsRes.map(r => ({ model: r.model ?? 'General', count: r.docCount })),
+    };
+  } catch {
+    return { resolvedToday: 0, precisionRate: 98, topModels: [] as { model: string; count: number }[] };
+  }
+}
 
 export default async function HomePage() {
   const user = await getCurrentUser();
@@ -29,39 +74,10 @@ export default async function HomePage() {
   const isTecnico = user?.role === "Especialista Técnico";
   const isAuditor = user?.role === "Auditor";
 
-  // ── Fetch dynamic stats (Legacy/Common) ───────────────────────────────────
-  const [totalModelsRes, readyModelsRes, totalDocsRes, totalImagesRes, totalChunksRes, totalEnrichRes] = await Promise.all([
-    db.select({ count: countDistinct(documents.equipmentModel) }).from(documents),
-    db.select({ count: countDistinct(documents.equipmentModel) }).from(documents).where(eq(documents.status, 'ready')),
-    db.select({ count: count() }).from(documents),
-    db.select({ count: count() }).from(extractedImages),
-    db.select({ count: count() }).from(documentChunks),
-    db.select({ count: count() }).from(enrichments).where(eq(enrichments.isVerified, 1)),
-  ]);
-
-  const totalModels = totalModelsRes[0]?.count ?? 0;
-  // readyModels not used directly in new views but kept for legacy
-  // const readyModels = readyModelsRes[0]?.count ?? 0;
-  const totalImages = totalImagesRes[0]?.count ?? 0;
-  const totalChunks = totalChunksRes[0]?.count ?? 0;
-  const totalEnrich = totalEnrichRes[0]?.count ?? 0;
+  const commonStats = await fetchCommonStats();
 
   if (isAdmin) {
-    const [resolvedRes, topModelsRes] = await Promise.all([
-      db.select({ count: count() }).from(documents).where(sql`created_at >= date('now')`),
-      db.select({ model: documents.equipmentModel, docCount: count() })
-        .from(documents)
-        .groupBy(documents.equipmentModel)
-        .orderBy(desc(count()))
-        .limit(3)
-    ]);
-
-    const adminStats = {
-      resolvedToday: resolvedRes[0]?.count ?? 0,
-      precisionRate: 98,
-      topModels: topModelsRes.map(r => ({ model: r.model ?? 'General', count: r.docCount })),
-    };
-
+    const adminStats = await fetchAdminStats();
     return <AdminHome stats={adminStats} />;
   }
 
@@ -70,14 +86,20 @@ export default async function HomePage() {
   }
 
   if (isAuditor) {
-    return <AuditorHome isDevMode={user?.isDevMode || false} />;
+    const auditorStats = {
+      totalDocuments: commonStats.totalDocuments,
+      totalChunks: commonStats.totalChunks,
+      totalImages: commonStats.totalImages,
+      totalEnrich: commonStats.totalEnrich,
+    };
+    return <AuditorHome isDevMode={user?.isDevMode || false} stats={auditorStats} />;
   }
 
-  // Legacy/Default View
+  const { totalModels, totalImages, totalChunks, totalEnrich } = commonStats;
+
   return (
     <div className="space-y-8">
 
-      {/* ── Hero section ─────────────────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-3xl p-8 shadow-sm border border-sky-100"
         style={{ background: 'linear-gradient(135deg, #ffffff 0%, #e0f3ff 50%, #bae6fd 100%)' }}>
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-sky-200/40 to-transparent pointer-events-none" />
@@ -114,7 +136,6 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* ── Main Modules ─────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Link
           href="/dashboard/documentacion"
@@ -182,7 +203,6 @@ export default async function HomePage() {
 
       </div>
 
-      {/* ── Quick Stats ──────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { icon: Cpu, label: "IA Orquestada", value: "GPT-4o, Pixtral, Mistral, Embed-3", color: "text-blue-600" },
@@ -204,5 +224,3 @@ export default async function HomePage() {
     </div>
   );
 }
-
-// Fin de archivo - cn se importa ahora de @/lib/utils

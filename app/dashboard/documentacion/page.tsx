@@ -103,7 +103,7 @@ export default function DocumentacionPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [uploadBrand, setUploadBrand] = useState('Schindler');
-  const [uploadModel, setUploadModel] = useState('3300');
+  const [uploadModel, setUploadModel] = useState('');
 
   const [editingDoc, setEditingDoc] = useState<DocEntry | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -344,12 +344,12 @@ export default function DocumentacionPage() {
                   <div className="relative">
                     <select
                       className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold appearance-none cursor-pointer"
-                      value={editingDoc.model || '3300'}
+                      value={editingDoc.model || 'general'}
                       onChange={e => setEditingDoc({ ...editingDoc, model: e.target.value })}
                     >
-                      <option value="3300">Schindler 3300</option>
-                      <option value="5500">Schindler 5500</option>
-                      <option value="MRL">MRL</option>
+                      <option value="3300">3300</option>
+                      <option value="5500">5500</option>
+                      <option value="general">General</option>
                     </select>
                     <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
@@ -407,9 +407,9 @@ export default function DocumentacionPage() {
                     value={uploadModel}
                     onChange={e => setUploadModel(e.target.value)}
                   >
-                    <option value="3300">Schindler 3300</option>
-                    <option value="5500">Schindler 5500</option>
-                    <option value="MRL">Schindler MRL</option>
+                    <option value="3300">3300</option>
+                    <option value="5500">5500</option>
+                    <option value="general">General</option>
                   </select>
                 </div>
               </div>

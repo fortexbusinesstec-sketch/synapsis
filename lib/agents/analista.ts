@@ -22,7 +22,9 @@ export interface AnalistaInput {
   loopIndex:      number;
   entities?:      string[];   // del Clarificador — para failsafe de gap
   isAmbiguous?:   boolean;    // del Clarificador — cortocircuita el análisis
-  modo:           'teorico' | 'procedimental' | 'diagnostico'; // NUEVO
+  modo:           'teorico' | 'procedimental' | 'diagnostico';
+  componentMismatch?: boolean;
+  rescueUsed?:       boolean;
 }
 
 /* ── Failsafe ─────────────────────────────────────────────────────────────── */
@@ -149,6 +151,14 @@ REGLA DE INTERPRETACIÓN DIRECTA:
 - Si hay procedimientos: enumera los pasos concretos, no digas "siga el procedimiento".
 - Si hay múltiples hipótesis: ordénalas por probabilidad y justifica brevemente.
 
+REGLA DE DOCUMENTOS BASE:
+Si el Ground Truth contiene [DOCUMENTO BASE: ...]:
+- La documentación específica del componente NO está disponible. Solo hay documentos genéricos.
+- NO generes hipótesis específicas del componente que mencionó el usuario.
+- NO menciones componentes que no estén en los documentos base.
+- SÍ genera una hipótesis genérica de "alimentación" o "circuito de seguridad" basada en los documentos base.
+- SÍ indica que se está aplicando protocolo de verificación base.
+
 REGLA DE COBERTURA FACTUAL:
 Antes de asignar confidence > 0.5, verifica internamente:
 - ¿El groundTruth recuperado explica explícitamente lo que el usuario preguntó?
@@ -185,11 +195,16 @@ RESTRICCIONES:
 - Si 'needs_more_info' es true, 'gap' NO puede ser null.
 - Si 'gap' es null, 'needs_more_info' debe ser false.`;
 
+  const fallbackNote = (input.componentMismatch || input.rescueUsed)
+    ? '⚠️ NOTA: La documentación recuperada NO corresponde al componente exacto del técnico. Se usan documentos base genéricos. NO generes hipótesis de componentes específicos (placas, códigos) que no aparezcan en los [DOCUMENTO BASE: ...].\n\n'
+    : '';
+
   const userContent =
     `INTENT: ${input.intent}\n` +
     `SÍNTOMA: ${input.userQuery}\n` +
     `HISTORIAL: ${input.historyContext}\n` +
     `ITERACIÓN: ${input.loopIndex + 1}/3\n\n` +
+    `${fallbackNote}` +
     `DOCUMENTACIÓN RECUPERADA:\n${input.groundTruth.slice(0, 8000)}\n\n` +
     (input.imageContext
       ? `EVIDENCIA VISUAL:\n${input.imageContext.slice(0, 1500)}\n\n`

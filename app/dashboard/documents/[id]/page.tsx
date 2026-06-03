@@ -13,6 +13,7 @@ import {
   Images,
   Cpu,
   Sparkles,
+  ScanSearch,
 } from "lucide-react";
 
 import { db } from "@/lib/db";
@@ -326,6 +327,12 @@ export default async function DocumentObservabilityPage({ params }: PageProps) {
           </div>
 
           <div className="flex items-center gap-3">
+            {doc.auditorRecommendation === "AUDITOR" && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-600/20">
+                <ScanSearch className="h-3.5 w-3.5" />
+                Auditor
+              </span>
+            )}
             <StatusBadge status={doc.status ?? "pending"} />
             {(isAdmin || (isAuditor && isDevMode)) && doc.status === "ready" && (
               <Link
@@ -486,6 +493,7 @@ export default async function DocumentObservabilityPage({ params }: PageProps) {
         isAdmin={isAdmin}
         userRole={user?.role || null}
         isDevMode={user?.isDevMode || false}
+        isAuditorDoc={doc.auditorRecommendation === "AUDITOR"}
       />
     </div>
   );

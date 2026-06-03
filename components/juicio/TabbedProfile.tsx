@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Expert } from "@/lib/db/schema";
 import ExpertProfileForm from "@/components/juicio/ExpertProfileForm";
 import EnterJudgment from "@/components/juicio/EnterJudgment";
+import PreguntasPorFase from "@/components/juicio/PreguntasPorFase";
 
 export default function TabbedProfile({
   suggestedCodigo,
@@ -12,9 +13,9 @@ export default function TabbedProfile({
   suggestedCodigo: string;
   allExperts: Expert[];
 }) {
-  const [activeTab, setActiveTab] = useState<"create" | "enter">("create");
+  const [activeTab, setActiveTab] = useState<"create" | "enter" | "preguntas">("create");
 
-  const tabClass = (tab: "create" | "enter") =>
+  const tabClass = (tab: "create" | "enter" | "preguntas") =>
     `px-6 py-3 text-sm font-bold rounded-t-lg transition-colors ${
       activeTab === tab
         ? "bg-white text-blue-600 border-t-2 border-blue-600"
@@ -38,10 +39,19 @@ export default function TabbedProfile({
         >
           Entrar a Juicio
         </button>
+        <button
+          type="button"
+          className={tabClass("preguntas")}
+          onClick={() => setActiveTab("preguntas")}
+        >
+          Preguntas por Fase
+        </button>
       </div>
 
       {activeTab === "create" ? (
         <ExpertProfileForm suggestedCodigo={suggestedCodigo} allExperts={allExperts} />
+      ) : activeTab === "preguntas" ? (
+        <PreguntasPorFase />
       ) : (
         <EnterJudgment experts={allExperts} />
       )}

@@ -7,6 +7,7 @@ import {
   Hash,
   Eye,
   ZoomIn,
+  ZoomOut,
   Cpu,
   MessageSquare,
   BarChart2,
@@ -21,6 +22,8 @@ import {
   ScanSearch,
   BookOpen,
   Info,
+  X,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AgentLogSummary } from "@/lib/db/schema";
@@ -62,6 +65,7 @@ interface Props {
   isAdmin?: boolean;
   userRole?: string | null;
   isDevMode?: boolean;
+  isAuditorDoc?: boolean;
 }
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
@@ -309,6 +313,115 @@ function ImagesTab({ images, documentId, isAdmin, isDevMode, userRole }: { image
             })}
           </div>
         )}
+
+        {/* ── Lightbox ─────────────────────────────────────────────────── */}
+        {expanded && (() => {
+          const img = images.find(i => i.id === expanded);
+          if (!img) return null;
+          return (
+            <ImageLightbox
+              imageUrl={img.imageUrl}
+              alt={img.description ?? `Imagen pág. ${img.pageNumber}`}
+              imageType={img.imageType}
+              pageNumber={img.pageNumber}
+              description={img.description}
+              onClose={() => setExpanded(null)}
+            />
+          );
+        })()}
+      </div>
+    </div>
+  );
+}
+
+/* ── ImageLightbox ──────────────────────────────────────────────────────────── */
+
+function ImageLightbox({
+  imageUrl, alt, imageType, pageNumber, description, onClose
+}: {
+  imageUrl: string;
+  alt: string;
+  imageType: string | null;
+  pageNumber: number | null;
+  description: string | null;
+  onClose: () => void;
+}) {
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    setScale(s => Math.max(0.5, Math.min(5, s - e.deltaY * 0.005)));
+  }, []);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (scale > 1) {
+      setIsDragging(true);
+      dragStart.current = { x: e.clientX - position.x, y: e.clientY - position.y };
+    }
+  }, [scale, position]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (isDragging) {
+      setPosition({ x: e.clientX - dragStart.current.x, y: e.clientY - dragStart.current.y });
+    }
+  }, [isDragging]);
+
+  const handleMouseUp = useCallback(() => setIsDragging(false), []);
+
+  const resetZoom = useCallback(() => {
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+  }, []);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+      onClick={onClose}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+    >
+      <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+        <button onClick={resetZoom} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition" title="Restablecer zoom">
+          <ZoomOut className="h-4 w-4" />
+        </button>
+        <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition" title="Cerrar">
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 bg-black/50 rounded-full px-4 py-2 text-white text-xs font-medium select-none">
+        {imageType && <span>{imageType}</span>}
+        {pageNumber != null && <span>Página {pageNumber}</span>}
+        {description && <span className="max-w-[200px] truncate text-white/70">{description}</span>}
+        <span className="text-white/60">{Math.round(scale * 100)}%</span>
+      </div>
+
+      <div
+        className="max-w-[90vw] max-h-[90vh] overflow-hidden cursor-grab active:cursor-grabbing select-none"
+        onClick={(e) => e.stopPropagation()}
+        onWheel={handleWheel}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+      >
+        <img
+          src={imageUrl}
+          alt={alt}
+          draggable={false}
+          style={{
+            transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+            transition: isDragging ? 'none' : 'transform 0.1s ease-out',
+          }}
+          className="max-w-full max-h-[90vh] object-contain"
+        />
       </div>
     </div>
   );
@@ -584,6 +697,215 @@ function RecommendationsTab({ document }: { document: any }) {
   );
 }
 
+/* ── QuestionsTab ──────────────────────────────────────────────────────────── */
+
+interface EnrichmentRow {
+  id: string;
+  referenceId: string;
+  referenceType: string;
+  originalExcerpt: string;
+  generatedQuestion: string;
+  questionContext: string | null;
+  expertAnswer: string | null;
+  answerSource: string;
+  confidence: number | null;
+  isVerified: number;
+  pageNumber: number | null;
+  timesRetrieved: number;
+  answerLengthTokens: number | null;
+  createdAt: string | null;
+  reviewedAt: string | null;
+}
+
+function QuestionsTab({ documentId, editable }: { documentId: string; editable?: boolean }) {
+  const [data, setData] = useState<{ pending: EnrichmentRow[]; inherited: EnrichmentRow[]; answered: EnrichmentRow[] } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState<Record<string, boolean>>({});
+
+  const load = useCallback(() => {
+    setLoading(true);
+    fetch(`/api/documents/${documentId}/enrich`)
+      .then(r => r.json())
+      .then(json => setData(json))
+      .catch(() => setData(null))
+      .finally(() => setLoading(false));
+  }, [documentId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const saveAnswer = useCallback(async (id: string) => {
+    const answer = answers[id]?.trim();
+    if (!answer) return;
+    setSaving(s => ({ ...s, [id]: true }));
+    try {
+      const res = await fetch(`/api/documents/${documentId}/enrich`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enrichmentIds: [id], expertAnswer: answer }),
+      });
+      if (!res.ok) throw new Error();
+      setAnswers(a => { const n = { ...a }; delete n[id]; return n; });
+      load();
+    } catch {
+      alert('Error al guardar la respuesta. Intenta de nuevo.');
+    } finally {
+      setSaving(s => ({ ...s, [id]: false }));
+    }
+  }, [answers, documentId, load]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20 text-slate-400 gap-3">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        <p className="text-sm font-bold">Cargando dudas...</p>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="flex items-center justify-center py-20 text-slate-400 gap-2">
+        <XCircle className="h-6 w-6" />
+        <p className="text-sm font-bold">Error al cargar las dudas</p>
+      </div>
+    );
+  }
+
+  const all = [...data.pending, ...data.inherited, ...data.answered];
+  if (all.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-4">
+        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center border border-slate-100">
+          <CheckCircle2 className="h-8 w-8 opacity-30" />
+        </div>
+        <p className="text-sm font-bold text-slate-500">Sin dudas registradas</p>
+        <p className="text-xs text-slate-400">El Agente Curioso no encontró lagunas de conocimiento en este documento.</p>
+      </div>
+    );
+  }
+
+  function refLabel(type: string) {
+    return type === 'image' ? 'Imagen' : 'Texto';
+  }
+
+  function refColor(type: string) {
+    return type === 'image'
+      ? 'bg-violet-100 text-violet-700'
+      : 'bg-blue-100 text-blue-700';
+  }
+
+  function SectionBlock({ title, color, icon: Icon, items, editable }: { title: string; color: string; icon: any; items: EnrichmentRow[]; editable?: boolean }) {
+    if (items.length === 0) return null;
+    return (
+      <div>
+        <div className="flex items-center gap-3 mb-4">
+          <Icon className={cn("h-4 w-4", color)} />
+          <h4 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">{title} <span className="text-slate-300">({items.length})</span></h4>
+        </div>
+        <div className="space-y-3">
+          {items.map((item) => (
+            <div key={item.id} className="border border-slate-200 rounded-2xl p-5 space-y-3 bg-white shadow-sm">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider", refColor(item.referenceType))}>
+                  {refLabel(item.referenceType)}
+                </span>
+                {item.pageNumber != null && (
+                  <span className="text-[10px] font-mono font-bold text-slate-400">PÁG. {item.pageNumber}</span>
+                )}
+                {item.answerSource === 'inherited' && (
+                  <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">HEREDADA</span>
+                )}
+              </div>
+
+              {item.originalExcerpt && (
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Extracto original</p>
+                  <p className="text-xs text-slate-600 bg-slate-50 rounded-xl p-3 leading-relaxed">{item.originalExcerpt}</p>
+                </div>
+              )}
+
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Pregunta</p>
+                <p className="text-sm font-bold text-slate-800 leading-snug">{item.generatedQuestion}</p>
+              </div>
+
+              {item.expertAnswer ? (
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                    {item.answerSource === 'inherited' ? 'Respuesta automática (herencia)' : 'Respuesta'}
+                  </p>
+                  <p className="text-xs text-emerald-800 bg-emerald-50 rounded-xl p-3 leading-relaxed">{item.expertAnswer}</p>
+                </div>
+              ) : editable ? (
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Tu respuesta</p>
+                  <textarea
+                    value={answers[item.id] ?? ''}
+                    onChange={e => setAnswers(a => ({ ...a, [item.id]: e.target.value }))}
+                    placeholder="Escribe tu respuesta a esta duda..."
+                    rows={3}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-700 placeholder:text-slate-300 focus:ring-4 focus:ring-blue-500/5 focus:border-blue-400 transition-all resize-none"
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => saveAnswer(item.id)}
+                      disabled={saving[item.id] || !answers[item.id]?.trim()}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white text-xs font-black uppercase tracking-wider transition-all active:scale-95"
+                    >
+                      {saving[item.id] ? (
+                        <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Guardando...</>
+                      ) : (
+                        <><Send className="h-3.5 w-3.5" /> Guardar respuesta</>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="flex items-center gap-3 text-[10px] text-slate-400 font-bold pt-1">
+                {item.confidence != null && (
+                  <span>Confianza: {Math.round(item.confidence * 100)}%</span>
+                )}
+                {item.timesRetrieved > 0 && (
+                  <span>Recuperado {item.timesRetrieved} veces</span>
+                )}
+                {item.reviewedAt && (
+                  <span>Revisado: {new Date(item.reviewedAt).toLocaleDateString()}</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-8 space-y-8">
+      <SectionBlock
+        title="Pendientes"
+        icon={HelpCircle}
+        color="text-amber-500"
+        items={data.pending}
+        editable={editable}
+      />
+      <SectionBlock
+        title="Heredadas"
+        icon={BookOpen}
+        color="text-blue-500"
+        items={data.inherited}
+      />
+      <SectionBlock
+        title="Respondidas"
+        icon={CheckCircle2}
+        color="text-emerald-500"
+        items={data.answered}
+      />
+    </div>
+  );
+}
+
 /* ── PipelineTab ─────────────────────────────────────────────────────────── */
 
 function PipelineTab({ agentLogs, document, userRole }: { agentLogs: AgentLogSummary[]; document: any; userRole: string | null }) {
@@ -632,8 +954,9 @@ export function AuditTabs({
   isAdmin = false,
   userRole = null,
   isDevMode = false,
+  isAuditorDoc = false,
 }: Props) {
-  const [activeTab, setActiveTab] = useState<"pipeline" | "chunks" | "images">(isAdmin ? "images" : "pipeline");
+  const [activeTab, setActiveTab] = useState<"pipeline" | "chunks" | "images" | "questions">(isAdmin ? "images" : "pipeline");
   const [agentLogs, setAgentLogs] = useState<AgentLogSummary[]>(initialAgentLogs);
   const [docStatus, setDocStatus] = useState(initialDocStatus);
   const [docData, setDocData] = useState(initialDoc);
@@ -678,6 +1001,7 @@ export function AuditTabs({
     ...(isAdmin ? [] : [{ key: "pipeline" as const, label: "Pipeline", Icon: Cpu, count: agentLogs.length, live: !TERMINAL_STATUSES.has(docStatus) }]),
     { key: "chunks" as const, label: isAdmin ? "Contenido Extraído" : "Texto (Chunks)", Icon: FileType2, count: chunks.length, live: false },
     { key: "images" as const, label: isAdmin ? "Curaduría Visual" : "Imágenes", Icon: Eye, count: images.length, live: false, badge: pendingReview > 0 ? pendingReview : undefined },
+    { key: "questions" as const, label: "Dudas del Sistema", Icon: HelpCircle, count: 0, live: false },
   ];
 
   return (
@@ -726,6 +1050,7 @@ export function AuditTabs({
         {activeTab === "pipeline" && <PipelineTab agentLogs={agentLogs} document={docData} userRole={userRole} />}
         {activeTab === "chunks" && <ChunksTab chunks={chunks} />}
         {activeTab === "images" && <ImagesTab images={images} documentId={documentId} isAdmin={isAdmin} isDevMode={isDevMode} userRole={userRole} />}
+        {activeTab === "questions" && <QuestionsTab documentId={documentId} editable={isAuditorDoc} />}
       </div>
     </div>
   );

@@ -312,6 +312,7 @@ export const chatSessions = sqliteTable("chat_sessions", {
   userId: text("user_id"), // ID del usuario que inició la sesión
   mode: text("mode").notNull().default("test"), // 'test' | 'record'
   equipmentModel: text("equipment_model"),
+  version: text("version"), // '1.0' — control de versiones del chat
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
   endedAt: text("ended_at"),
   messageCount: integer("message_count").default(0),

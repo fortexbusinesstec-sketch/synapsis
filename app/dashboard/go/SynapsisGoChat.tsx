@@ -14,7 +14,8 @@ import {
   History as HistoryIcon, Clock,
   GraduationCap, Search, Lightbulb,
   ArrowRight, HelpCircle,
-  CheckCircle, Mic, Info
+  CheckCircle, Mic, Info,
+  BrainCircuit, BookOpen, Microscope, Cog, FileText
 } from "lucide-react";
 import TextareaAutosize from 'react-textarea-autosize';
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,6 +32,34 @@ interface UIMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+}
+
+interface AgentTrace {
+  serverMessageId: string;
+  enrichedQuery: string;
+  detectedIntent: string;
+  chunksRetrieved: number;
+  imagesRetrieved: number;
+  imagesShown: number;
+  retrievedImages: Array<{ url: string; description: string; image_type: string; is_critical: boolean }> | null;
+  analystReasoning: string;
+  urgencyLevel: string;
+  phase0Used: boolean;
+  phase2Used: boolean;
+  plannerUsed: boolean;
+  phase1Ms: number;
+  phase2Ms: number;
+  phase3Ms: number;
+  phase2Tokens: number;
+  phase3InputTokens: number;
+  phase3OutputTokens: number;
+  enrichmentsUsed: boolean;
+  confidence: string;
+  bestDistance: number;
+  componentMismatch: boolean;
+  rescueUsed: boolean;
+  docBaseUsed: boolean;
+  docTitulos: string[];
 }
 
 /* ── Constants ─────────────────────────────────────────────────────────────── */
@@ -754,6 +783,314 @@ const AGENT_LABELS: Record<keyof AgentFlags, { label: string; desc: string }> = 
   metrifier: { label: "Metrificador", desc: "Persiste métricas y mensajes (N5)" },
 };
 
+/* ── AgentTraceModal ──────────────────────────────────────────────────────── */
+
+function CopyBlock({ content, label }: { content: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="group relative bg-slate-50 rounded-xl border border-slate-200 p-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="text-xs font-medium text-slate-700 leading-relaxed flex-1 min-w-0">
+          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">{label}</span>
+          <p className="whitespace-pre-wrap break-words">{content}</p>
+        </div>
+        <button
+          onClick={() => { navigator.clipboard.writeText(content); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+          className="shrink-0 p-1.5 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-blue-600 hover:border-blue-300 opacity-0 group-hover:opacity-100 transition-all"
+        >
+          {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function AgentTraceModal({
+  trace, onClose
+}: {
+  trace: AgentTrace | null;
+  onClose: () => void;
+}) {
+  if (!trace) return null;
+
+  const agents = [
+    {
+      name: "Clarificador",
+      model: "gpt-4o-mini",
+      Icon: BrainCircuit,
+      color: "amber",
+      active: trace.phase0Used,
+      latency: null,
+      tokens: null,
+      detail: trace.phase0Used ? (
+        <div className="space-y-2">
+          <CopyBlock content={trace.detectedIntent || "N/A"} label="Intención Detectada" />
+          {trace.enrichedQuery && trace.enrichedQuery !== trace.detectedIntent && (
+            <CopyBlock content={trace.enrichedQuery} label="Query Expandida" />
+          )}
+        </div>
+      ) : (
+        <p className="text-xs text-slate-400 italic">No participó en esta consulta</p>
+      ),
+      used: trace.phase0Used ? `Intención: ${trace.detectedIntent}${trace.enrichedQuery ? `\nQuery: ${trace.enrichedQuery}` : ""}` : "",
+    },
+    {
+      name: "Bibliotecario",
+      model: "text-embedding-3-small + Turso Vector",
+      Icon: BookOpen,
+      color: "blue",
+      active: true,
+      latency: trace.phase1Ms,
+      tokens: null,
+      detail: (
+        <div className="space-y-2">
+          <div className="grid grid-cols-4 gap-2">
+            <div className="bg-blue-50 rounded-xl p-3 text-center border border-blue-100">
+              <span className="text-lg font-black text-blue-700">{trace.chunksRetrieved}</span>
+              <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest mt-0.5">Chunks</p>
+            </div>
+            <div className="bg-blue-50 rounded-xl p-3 text-center border border-blue-100">
+              <span className="text-lg font-black text-blue-700">{trace.imagesRetrieved}</span>
+              <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest mt-0.5">Imágenes</p>
+            </div>
+            <div className="bg-blue-50 rounded-xl p-3 text-center border border-blue-100">
+              <span className="text-lg font-black text-blue-700">{trace.imagesShown}</span>
+              <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest mt-0.5">Mostradas</p>
+            </div>
+            <div className="bg-blue-50 rounded-xl p-3 text-center border border-blue-100">
+              <span className="text-lg font-black text-blue-700">{trace.bestDistance.toFixed(2)}</span>
+              <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest mt-0.5">Distancia</p>
+            </div>
+          </div>
+          {trace.enrichmentsUsed && (
+            <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-100">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              Notas de experto incluidas (enriquecimiento)
+            </div>
+          )}
+          {trace.retrievedImages && trace.retrievedImages.length > 0 && (
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Imágenes Recuperadas</span>
+              <div className="space-y-1">
+                {trace.retrievedImages.slice(0, 3).map((img, i) => (
+                  <CopyBlock key={i} content={img.description} label={`Imagen ${i + 1}`} />
+                ))}
+              </div>
+            </div>
+          )}
+          {/* Curador: Documento base usado */}
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Documento Base</span>
+            <div className="flex flex-wrap gap-1.5">
+              <span className={cn(
+                "text-[10px] font-bold px-2.5 py-1 rounded-full border",
+                trace.docBaseUsed ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-slate-50 border-slate-200 text-slate-400"
+              )}>Proc. Mantenimiento</span>
+            </div>
+          </div>
+          {(trace.componentMismatch || trace.rescueUsed) && (
+            <div className="space-y-1">
+              {trace.componentMismatch && (
+                <div className="flex items-center gap-2 text-[10px] font-bold text-orange-700 bg-orange-50 px-3 py-2 rounded-xl border border-orange-100">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                  Mismatch de componente — documentos no coinciden con el componente indicado
+                </div>
+              )}
+              {trace.rescueUsed && (
+                <div className="flex items-center gap-2 text-[10px] font-bold text-amber-700 bg-amber-50 px-3 py-2 rounded-xl border border-amber-100">
+                  <Search className="w-3.5 h-3.5 shrink-0" />
+                  Rescate activado — baja similitud, se usó búsqueda de rescate
+                </div>
+              )}
+            </div>
+          )}
+          {trace.docTitulos.length > 0 && (
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Documentos Fuente</span>
+              <div className="space-y-1">
+                {trace.docTitulos.map((t, i) => (
+                  <div key={i} className="flex items-center gap-2 text-[11px] font-medium text-slate-600 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                    <FileText className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    {t}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ),
+      used: `${trace.chunksRetrieved} chunks, ${trace.imagesShown} imágenes de ${trace.imagesRetrieved}${trace.enrichmentsUsed ? " + enriquecimiento" : ""}${trace.rescueUsed ? " + rescate" : ""}${trace.componentMismatch ? " ⚠ mismatch" : ""}`,
+    },
+    {
+      name: "Analista",
+      model: "gpt-4o-mini",
+      Icon: Microscope,
+      color: "violet",
+      active: trace.phase2Used,
+      latency: trace.phase2Ms,
+      tokens: trace.phase2Tokens,
+      detail: trace.phase2Used ? (
+        <div className="space-y-2">
+          {trace.analystReasoning && (
+            <CopyBlock content={trace.analystReasoning} label="Razonamiento" />
+          )}
+          <div className="flex gap-2">
+            {trace.confidence && (
+              <div className="flex-1 bg-violet-50 rounded-xl p-3 text-center border border-violet-100">
+                <span className="text-lg font-black text-violet-700">{trace.confidence}</span>
+                <p className="text-[9px] font-bold text-violet-500 uppercase tracking-widest mt-0.5">Confianza</p>
+              </div>
+            )}
+            {trace.urgencyLevel && (
+              <div className="flex-1 rounded-xl p-3 text-center border" style={{
+                backgroundColor: trace.urgencyLevel === "critica" ? "#fef2f2" : trace.urgencyLevel === "alta" ? "#fff7ed" : "#eff6ff",
+                borderColor: trace.urgencyLevel === "critica" ? "#fecaca" : trace.urgencyLevel === "alta" ? "#fed7aa" : "#bfdbfe",
+              }}>
+                <span className={cn(
+                  "text-lg font-black",
+                  trace.urgencyLevel === "critica" ? "text-red-700" :
+                  trace.urgencyLevel === "alta" ? "text-orange-700" : "text-blue-700"
+                )}>
+                  {trace.urgencyLevel.charAt(0).toUpperCase() + trace.urgencyLevel.slice(1)}
+                </span>
+                <p className="text-[9px] font-bold uppercase tracking-widest mt-0.5" style={{
+                  color: trace.urgencyLevel === "critica" ? "#dc2626" : trace.urgencyLevel === "alta" ? "#ea580c" : "#2563eb",
+                }}>Urgencia</p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <p className="text-xs text-slate-400 italic">No participó en esta consulta</p>
+      ),
+      used: trace.phase2Used ? (trace.analystReasoning || "Sin razonamiento") : "",
+    },
+    {
+      name: "Ingeniero Jefe",
+      model: "gpt-4o-mini",
+      Icon: Cog,
+      color: "zinc",
+      active: true,
+      latency: trace.phase3Ms,
+      tokens: trace.phase3InputTokens + trace.phase3OutputTokens,
+      detail: (
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-zinc-50 rounded-xl p-3 text-center border border-zinc-100">
+              <span className="text-lg font-black text-zinc-700">{trace.phase3InputTokens}</span>
+              <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mt-0.5">Tokens In</p>
+            </div>
+            <div className="bg-zinc-50 rounded-xl p-3 text-center border border-zinc-100">
+              <span className="text-lg font-black text-zinc-700">{trace.phase3OutputTokens}</span>
+              <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mt-0.5">Tokens Out</p>
+            </div>
+          </div>
+          <p className="text-xs font-medium text-slate-500">
+            Recibió contexto del Bibliotecario + análisis del Analista para generar la respuesta final.
+          </p>
+        </div>
+      ),
+      used: `${trace.phase3InputTokens} tokens in, ${trace.phase3OutputTokens} tokens out`,
+    },
+  ];
+
+  const totalMs = trace.phase1Ms + trace.phase2Ms + trace.phase3Ms;
+
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto border border-slate-200 animate-in zoom-in-95 duration-200">
+        {/* Header */}
+        <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-6 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-zinc-900 flex items-center justify-center shadow-lg">
+              <Cpu className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-base font-black text-slate-900">Trazabilidad de Agentes</h2>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                Pipeline del Comité Multi-Agente · {totalMs > 0 ? `${totalMs}ms` : ""}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-red-50 hover:text-red-500 transition-all"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Pipeline Flow */}
+          <div className="flex items-center justify-between gap-1 px-2">
+            {["Clarificador", "Bibliotecario", "Analista", "Ingeniero Jefe"].map((name, i) => {
+              const agent = agents.find(a => a.name === name)!;
+              const AgentIcon = agent.Icon;
+              return (
+                <div key={name} className="flex items-center gap-1 flex-1">
+                  <div className={cn(
+                    "flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border",
+                    agent.active
+                      ? "bg-blue-50 border-blue-200 text-blue-700"
+                      : "bg-slate-50 border-slate-200 text-slate-400"
+                  )}>
+                    <AgentIcon className="w-3 h-3" />
+                    {name}
+                  </div>
+                  {i < 3 && (
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Agent Cards */}
+          {agents.filter(a => a.active).map((agent) => {
+            const AgentIcon = agent.Icon;
+            const colorMap: Record<string, string> = {
+              amber: "bg-amber-500",
+              blue: "bg-blue-500",
+              violet: "bg-violet-500",
+              zinc: "bg-zinc-500",
+            };
+            return (
+              <div key={agent.name} className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                <div className="flex items-center justify-between px-5 py-4 bg-slate-50 border-b border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center", colorMap[agent.color] || "bg-zinc-500")}>
+                      <AgentIcon className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <span className="text-sm font-black text-slate-900">{agent.name}</span>
+                      <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{agent.model}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {agent.latency !== null && (
+                      <span className="text-[10px] font-bold text-slate-500 bg-white px-2 py-1 rounded-lg border border-slate-200">
+                        {agent.latency}ms
+                      </span>
+                    )}
+                    {agent.tokens !== null && (
+                      <span className="text-[10px] font-bold text-slate-500 bg-white px-2 py-1 rounded-lg border border-slate-200">
+                        {agent.tokens} tokens
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="px-5 py-4">
+                  {agent.detail}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── SynapsisGoChat ────────────────────────────────────────────────────────── */
 
 export function SynapsisGoChat({
@@ -775,6 +1112,8 @@ export function SynapsisGoChat({
   const [sessionHistory, setSessionHistory] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [currentBackendModo, setCurrentBackendModo] = useState<BackendModo>('diagnostico');
+  const [traces, setTraces] = useState<Record<string, AgentTrace>>({});
+  const [traceModalMessageId, setTraceModalMessageId] = useState<string | null>(null);
 
   const agentFlagsRef = useRef<AgentFlags>(DEFAULT_AGENT_FLAGS);
   const messageServerIdsRef = useRef<string[]>([]);
@@ -784,6 +1123,7 @@ export function SynapsisGoChat({
   const modoRef = useRef<BackendModo>('diagnostico');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const pendingTraceRef = useRef<AgentTrace | null>(null);
 
   useEffect(() => { sessionIdRef.current = sessionId; }, [sessionId]);
   useEffect(() => { sessionModeRef.current = sessionMode; }, [sessionMode]);
@@ -791,6 +1131,7 @@ export function SynapsisGoChat({
   useEffect(() => { agentFlagsRef.current = agentFlags; }, [agentFlags]);
 
   const { messages, input, handleInputChange, handleSubmit, isLoading, setMessages, append, error } = useChat({
+
     api: "/api/chat",
     body: {
       equipmentModel: selectedModel,
@@ -809,15 +1150,62 @@ export function SynapsisGoChat({
       }
       const res = await fetch(url, modifiedInit);
       try {
-        const urgencyLevel = res.headers.get("x-urgency-level");
-        const servMsgId = res.headers.get("x-message-id");
-        const confidence = res.headers.get("x-confidence");
+        const getHeader = (name: string) => {
+          try { return res.headers.get(name) ?? ""; } catch { return ""; }
+        };
+        const urgencyLevel = getHeader("x-urgency-level");
+        const servMsgId = getHeader("x-message-id");
+        const confidence = getHeader("x-confidence");
         if (urgencyLevel) setUrgency(urgencyLevel);
         if (servMsgId) messageServerIdsRef.current.push(servMsgId);
+
+        const rawImages = getHeader("x-retrieved-images");
+        let retrievedImagesParsed = null;
+        try {
+          if (rawImages) retrievedImagesParsed = JSON.parse(decodeURIComponent(rawImages));
+        } catch { /* ignore */ }
+
+        const traceData = {
+          serverMessageId: servMsgId || "",
+          enrichedQuery: decodeURIComponent(getHeader("x-enriched-query") || ""),
+          detectedIntent: getHeader("x-detected-intent"),
+          chunksRetrieved: parseInt(getHeader("x-chunks-retrieved")) || 0,
+          imagesRetrieved: parseInt(getHeader("x-images-retrieved")) || 0,
+          imagesShown: parseInt(getHeader("x-images-shown")) || 0,
+          retrievedImages: retrievedImagesParsed,
+          analystReasoning: decodeURIComponent(getHeader("x-analyst-reasoning") || ""),
+          urgencyLevel: getHeader("x-urgency-level"),
+          phase0Used: getHeader("x-phase0-used") === "1",
+          phase2Used: getHeader("x-phase2-used") === "1",
+          plannerUsed: getHeader("x-planner-used") === "1",
+          phase1Ms: parseInt(getHeader("x-phase1-ms")) || 0,
+          phase2Ms: parseInt(getHeader("x-phase2-ms")) || 0,
+          phase3Ms: parseInt(getHeader("x-phase3-ms")) || 0,
+          phase2Tokens: parseInt(getHeader("x-phase2-tokens")) || 0,
+          phase3InputTokens: parseInt(getHeader("x-phase3-input-tokens")) || 0,
+          phase3OutputTokens: parseInt(getHeader("x-phase3-output-tokens")) || 0,
+          enrichmentsUsed: getHeader("x-enrichments-used") === "1",
+          confidence: confidence || "",
+          bestDistance: parseFloat(getHeader("x-best-distance")) || 0,
+          componentMismatch: getHeader("x-component-mismatch") === "1",
+          rescueUsed: getHeader("x-rescue-used") === "1",
+          docBaseUsed: getHeader("x-doc-base-used") === "1",
+          docTitulos: (() => { try { return JSON.parse(decodeURIComponent(getHeader("x-doc-titulos") || "[]")); } catch { return []; } })(),
+        };
+        pendingTraceRef.current = traceData;
       } catch { /* ignore */ }
       return res;
     }, []),
     onFinish: () => {
+      const trace = pendingTraceRef.current;
+      if (trace) {
+        pendingTraceRef.current = null;
+        const msgs = messagesRef.current;
+        const lastAssistant = [...msgs].reverse().find(m => m.role === 'assistant');
+        if (lastAssistant) {
+          setTraces(prev => ({ ...prev, [lastAssistant.id]: trace }));
+        }
+      }
       if (uiMode === 'analisis') {
         setPhase('awaiting_feedback');
       } else {
@@ -825,6 +1213,9 @@ export function SynapsisGoChat({
       }
     },
   });
+
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -1297,20 +1688,20 @@ export function SynapsisGoChat({
                   {visibleMessages.map((m, idx) => {
                     const isLatest = idx === visibleMessages.length - 1;
                     if (m.role === "assistant") {
-                      if (uiMode === 'analisis') {
-                        return (
-                          <AiMessageAnalisis
-                            key={m.id}
-                            content={m.content}
-                            isStreaming={isLatest && isLoading}
-                            onCopy={() => handleCopy(m.id, m.content)}
-                            copied={copiedId === m.id}
-                            onVerify={handleVerify}
-                            onQuickReply={phase === 'awaiting_feedback' ? (reply) => handleQuickReply(reply) : undefined}
-                          />
-                        );
-                      }
-                      return (
+                      const hasTrace = !!traces[m.id];
+                      const showDetails = userRole === "Auditor" && hasTrace && !isLoading;
+
+                      const msgComponent = uiMode === 'analisis' ? (
+                        <AiMessageAnalisis
+                          key={m.id}
+                          content={m.content}
+                          isStreaming={isLatest && isLoading}
+                          onCopy={() => handleCopy(m.id, m.content)}
+                          copied={copiedId === m.id}
+                          onVerify={handleVerify}
+                          onQuickReply={phase === 'awaiting_feedback' ? (reply) => handleQuickReply(reply) : undefined}
+                        />
+                      ) : (
                         <AiMessageMentor
                           key={m.id}
                           content={m.content}
@@ -1318,6 +1709,22 @@ export function SynapsisGoChat({
                           onCopy={() => handleCopy(m.id, m.content)}
                           copied={copiedId === m.id}
                         />
+                      );
+                      return (
+                        <div key={m.id} className="relative group">
+                          {msgComponent}
+                          {showDetails && (
+                            <div className="flex justify-start max-w-4xl mx-auto px-4 md:px-6 -mt-2">
+                              <button
+                                onClick={() => setTraceModalMessageId(m.id)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-100 border border-zinc-200 text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition-all shadow-sm"
+                              >
+                                <Activity className="w-3 h-3" />
+                                Ver Detalles
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       );
                     }
                     return <UserMessageItem key={m.id} content={m.content} />;
@@ -1399,6 +1806,12 @@ export function SynapsisGoChat({
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Agent Trace Modal */}
+        <AgentTraceModal
+          trace={traceModalMessageId ? traces[traceModalMessageId] ?? null : null}
+          onClose={() => setTraceModalMessageId(null)}
+        />
       </div>
     </div>
   );

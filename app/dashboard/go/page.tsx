@@ -1,11 +1,10 @@
 import { count, eq } from 'drizzle-orm';
-import { Cpu, Zap } from 'lucide-react';
+import { Zap } from 'lucide-react';
 
 import { db } from '@/lib/db';
 import { documents } from '@/lib/db/schema';
+import { getCurrentUser } from '@/lib/db/auth';
 import { SynapsisGoChat } from './SynapsisGoChat';
-
-import { cookies } from 'next/headers';
 
 /* ── Tipos ──────────────────────────────────────────────────────────────── */
 
@@ -16,6 +15,8 @@ export interface EquipmentModel {
 /* ── Server Component ───────────────────────────────────────────────────── */
 
 export default async function SynapsisGoPage() {
+  const user = await getCurrentUser();
+
   // Modelos con documentación lista, ordenados por marca y modelo
   const [models, totalDocs] = await Promise.all([
     db.selectDistinct({
@@ -33,20 +34,8 @@ export default async function SynapsisGoPage() {
   const filteredModels = models.length > 0 ? models : [];
   const readyDocsCount = totalDocs[0]?.count ?? 0;
 
-  const cookieStore = await cookies();
-  const token = cookieStore.get('schindler_token')?.value;
-  const isDevMode = cookieStore.get('schindler_dev_mode')?.value === 'true';
-
-  let role = null;
-  if (token) {
-    try {
-      const parts = token.split('.');
-      if (parts.length === 3) {
-        const payload = JSON.parse(atob(parts[1]));
-        role = payload.role_id === 1 ? 'Admin' : payload.role_id === 2 ? 'Auditor' : 'Tecnico';
-      }
-    } catch { }
-  }
+  const role = user?.role ?? null;
+  const isDevMode = user?.isDevMode ?? false;
 
   return (
     <div className="flex flex-col h-full min-h-0 space-y-0 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6">
@@ -63,15 +52,6 @@ export default async function SynapsisGoPage() {
             Comité Multi-Agente · 3 modos de consulta
           </p>
         </div>
-
-        {readyDocsCount > 0 && (
-          <div className="ml-auto hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            <span className="text-[10px] font-bold text-emerald-700 whitespace-nowrap">
-              {filteredModels.length} modelos · {readyDocsCount} manuales
-            </span>
-          </div>
-        )}
       </div>
 
       {/* ── Chat ─────────────────────────────────────────────────────── */}

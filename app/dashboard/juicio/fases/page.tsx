@@ -13,13 +13,14 @@ interface PhaseCardProps {
   description: string;
   icon: React.ReactNode;
   link: string;
+  sessionId: number | null;
   hasSession: boolean;
   hasSurvey: boolean;
   disabled: boolean;
   disabledReason?: string;
 }
 
-function PhaseCard({ title, description, icon, link, hasSession, hasSurvey, disabled, disabledReason }: PhaseCardProps) {
+function PhaseCard({ title, description, icon, link, sessionId, hasSession, hasSurvey, disabled, disabledReason }: PhaseCardProps) {
   return (
     <Card className={`flex flex-col ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -46,8 +47,8 @@ function PhaseCard({ title, description, icon, link, hasSession, hasSurvey, disa
         {disabled && disabledReason && (
           <p className="text-red-500 text-sm mt-2">{disabledReason}</p>
         )}
-        {hasSurvey && (
-          <Link href={`${link}/resumen`} className="mt-4 block">
+        {hasSurvey && sessionId && (
+          <Link href={`/dashboard/juicio/resumen/${sessionId}`} className="mt-4 block">
             <Button variant="secondary">Ver Resumen</Button>
           </Link>
         )}
@@ -84,6 +85,7 @@ export default async function JuicioFasesPage({ searchParams }: { searchParams: 
   }).from(sesiones).where(eq(sesiones.expertoId, expert.id));
 
   const hasSession = (phase: string) => completedSessions.some(s => s.fase === phase);
+  const sessionIdFor = (phase: string) => completedSessions.find(s => s.fase === phase)?.id ?? null;
 
   const f1SessionIds = completedSessions.filter(s => s.fase === 'fase1_categoria').map(s => s.id);
   const f1Surveys = f1SessionIds.length > 0
@@ -133,6 +135,7 @@ export default async function JuicioFasesPage({ searchParams }: { searchParams: 
             description="Evaluación por Categorías"
             icon={<FlaskConical className="h-5 w-5 text-gray-500" />}
             link={`/dashboard/juicio/fase1?expertoId=${expert.codigo}`}
+            sessionId={sessionIdFor('fase1_categoria')}
             hasSession={hasSession('fase1_categoria')}
             hasSurvey={hasF1Survey}
             disabled={isFase1Disabled}
@@ -146,6 +149,7 @@ export default async function JuicioFasesPage({ searchParams }: { searchParams: 
             description="Escenario Libre"
             icon={<CircleDotDashed className="h-5 w-5 text-gray-500" />}
             link={`/dashboard/juicio/fase2?expertoId=${expert.codigo}`}
+            sessionId={sessionIdFor('fase2_libre')}
             hasSession={hasSession('fase2_libre')}
             hasSurvey={hasF2Survey}
             disabled={isFase2Disabled}
@@ -159,6 +163,7 @@ export default async function JuicioFasesPage({ searchParams }: { searchParams: 
             description="Evaluación Comercial"
             icon={<ShoppingCart className="h-5 w-5 text-gray-500" />}
             link={`/dashboard/juicio/fase3?expertoId=${expert.codigo}`}
+            sessionId={sessionIdFor('fase3_comercial')}
             hasSession={hasSession('fase3_comercial')}
             hasSurvey={hasF3Survey}
             disabled={isFase3Disabled}

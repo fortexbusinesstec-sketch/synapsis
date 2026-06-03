@@ -65,7 +65,7 @@ export default function TopBar({
     }
 
     if (role === "Administrador de Sistema" && link.label === "Ablación") return false;
-    if (role === "Auditor" && link.label === "Ablación" && !isDevMode) return false;
+    if (role === "Auditor" && (link.label === "Ablación" || link.label === "Juicio de Expertos") && !isDevMode) return false;
     if (role === "Especialista Técnico") {
       const links = [link.label === "Home", link.label === "Synapsis Go"];
       if (prodExperiment && link.label === "Experimento Juicio de Expertos") return true;

@@ -13,9 +13,9 @@ export async function GET() {
   try {
     const result = await client.execute({
       sql: `
-        SELECT id, mode, equipment_model, created_at, message_count 
+        SELECT id, mode, equipment_model, version, created_at, message_count 
         FROM chat_sessions 
-        WHERE user_id = ? 
+        WHERE user_id = ? AND version = '1.0'
         ORDER BY created_at DESC 
         LIMIT 20
       `,
@@ -48,8 +48,8 @@ export async function POST(req: Request) {
   const sessionId = createId();
 
   await client.execute({
-    sql: `INSERT INTO chat_sessions (id, user_id, mode, equipment_model) VALUES (?, ?, ?, ?)`,
-    args: [sessionId, user.id, mode, equipmentModel],
+    sql: `INSERT INTO chat_sessions (id, user_id, mode, equipment_model, version) VALUES (?, ?, ?, ?, ?)`,
+    args: [sessionId, user.id, mode, equipmentModel, '1.0'],
   });
 
   return NextResponse.json({ sessionId });

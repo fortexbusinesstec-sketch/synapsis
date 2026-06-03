@@ -152,23 +152,44 @@ export default function SurveyForm({ expertoCodigo, onSuccess }: SurveyFormProps
         </div>
       </div>
 
-      {/* ─── Sección 1: Comprensión ─────────────────────────────── */}
+      {/* ─── Sección 1: Evaluación del Producto ──────────────────── */}
       <div>
         <h3 className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1">Comprensión del Producto</h3>
 
         {/* P1 */}
         <div className="space-y-3">
           <Label className="text-sm font-bold text-slate-700 leading-relaxed">
-            1. En una frase, ¿qué cree que hace Synapsis? <span className="text-red-500">*</span>
+            1. ¿En qué fase consideras que está Synapsis? <span className="text-red-500">*</span>
           </Label>
-          <Textarea
-            name="p1_comprende_producto"
-            placeholder="Tu respuesta en una o dos líneas..."
-            value={p1}
-            onChange={(e) => setP1(e.target.value)}
-            className={inputBase}
-            rows={2}
-          />
+          <div className="flex flex-col gap-2">
+            {['Básica', 'Intermedia', 'Avanzada'].map((opt) => (
+              <label
+                key={opt}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all text-sm font-semibold ${
+                  p1 === opt
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="p1_comprende_producto"
+                  value={opt}
+                  checked={p1 === opt}
+                  onChange={() => setP1(opt)}
+                  className="sr-only"
+                />
+                <div
+                  className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                    p1 === opt ? 'border-blue-500' : 'border-slate-300'
+                  }`}
+                >
+                  {p1 === opt && <div className="w-2 h-2 rounded-full bg-blue-500" />}
+                </div>
+                {opt}
+              </label>
+            ))}
+          </div>
         </div>
       </div>
 

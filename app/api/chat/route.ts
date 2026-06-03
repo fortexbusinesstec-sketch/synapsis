@@ -24,284 +24,55 @@
  *   x-enrichments-used   → '1' si se incluyeron notas de experto
  */
 
-import { embed, streamText } from 'ai';
+import { streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { createId } from '@paralleldrive/cuid2';
 import type { Message } from 'ai';
-import { client } from '@/lib/db';
 
 import { runClarifier } from '@/lib/agents/clarifier';
 import type { ClarifierInput } from '@/lib/agents/clarifier';
 import { runAnalista, ANALISTA_FAILSAFE } from '@/lib/agents/analista';
 import { saveChatMessage } from '@/lib/agents/metrifier';
-import { PROMPT_TEORICO, PROMPT_PROCEDIMENTAL, PROMPT_DIAGNOSTICO, type ModoType } from '@/lib/agents/prompts';
+import { PROMPT_MENTOR_V2, PROMPT_DIAGNOSTICO, type ModoType } from '@/lib/agents/prompts';
 import type { AnalistaOutput } from '@/lib/types/agents';
+import { runBuscadorDocumental } from '@/lib/agents/sub-buscador-documental';
+import { runBuscadorVisual } from '@/lib/agents/sub-buscador-visual';
+import { runCurador } from '@/lib/agents/sub-curador';
+import type { CuradorResult } from '@/lib/agents/sub-curador';
 
 export const maxDuration = 60;
 
-/* ── Tipos ──────────────────────────────────────────────────────────────── */
+/* ── Detección programática de atrapamiento ──────────────────────────────── */
 
-interface ChunkWithEnrichmentRow {
-  chunk_id: string;
-  content: string;
-  section_title: string | null;
-  chunk_type: string | null;
-  has_warning: number | null;
-  page_number: number | null;
-  doc_title: string | null;
-  equipment_model: string | null;
-  distance: number;
-  enrichment_id: string | null;
-  generated_question: string | null;
-  expert_answer: string | null;
-}
+function detectarAtrapamiento(messages: Message[]): { atrapamiento: boolean; turno: number; razon: string } {
+  if (messages.length < 3) return { atrapamiento: false, turno: 0, razon: '' };
 
-interface EnrichmentWithChunkRow {
-  enrichment_id: string;
-  generated_question: string | null;
-  expert_answer: string | null;
-  distance: number;
-  chunk_id: string;
-  chunk_content: string | null;
-  section_title: string | null;
-  chunk_type: string | null;
-  has_warning: number | null;
-  page_number: number | null;
-  doc_title: string | null;
-  equipment_model: string | null;
-}
+  const ultimosMensajes = messages.slice(-4);
+  const mensajesUsuario = ultimosMensajes.filter(m => m.role === 'user');
 
-interface ConsolidatedEntry {
-  content: string;
-  section_title: string | null;
-  chunk_type: string | null;
-  has_warning: number | null;
-  page_number: number | null;
-  doc_title: string | null;
-  equipment_model: string | null;
-  enrichment_id: string | null;
-  generated_question: string | null;
-  expert_answer: string | null;
-  distance: number;
-}
+  const patronRepeticion = /ya\s+(?:revis[eé]|verifiqu[eé]|med[ií]|cheque[eé])\s+.+\s+(?:bien|ok|correcto|intacto)/i;
+  const repeticiones = mensajesUsuario.filter(m =>
+    typeof m.content === 'string' && patronRepeticion.test(m.content)
+  ).length;
 
-interface RetrievedImage {
-  description: string | null;
-  image_url: string | null;
-  image_type: string | null;
-  is_critical: number | null;
-  doc_title: string | null;
-  distance: number;
-}
-
-
-
-interface BibliotecarioResult {
-  groundTruth: string;
-  retrievedImages: RetrievedImage[];
-  chunksRetrieved: number;
-  hasEnrichments: boolean;
-  bestDistance: number;
-}
-
-/* ── Fallback del Analista ──────────────────────────────────────────────── */
-
-
-
-/* ── FASE 1: Retrieval vectorial ─────────────────────────────────────────── */
-
-async function runBibliotecario(
-  queryVector: number[],
-  equipmentModel: string | null,
-  intent: string = 'troubleshooting'
-): Promise<BibliotecarioResult> {
-  const embeddingVec = new Uint8Array(new Float32Array(queryVector).buffer);
-  const modelFilter = equipmentModel ? 'AND d.equipment_model = ?' : '';
-  const orderClause = intent === 'education_info'
-    ? "ORDER BY CASE WHEN dc.chunk_type IN ('theory', 'description', 'overview') THEN 0 ELSE 1 END, distance ASC"
-    : "ORDER BY distance ASC";
-
-  const queryA = `
-    SELECT
-      dc.id            AS chunk_id,
-      dc.content,
-      dc.section_title,
-      dc.chunk_type,
-      dc.has_warning,
-      dc.page_number,
-      d.title          AS doc_title,
-      d.equipment_model,
-      vector_distance_cos(dc.embedding, vector32(?)) AS distance,
-      e.id             AS enrichment_id,
-      e.generated_question,
-      e.expert_answer
-    FROM document_chunks dc
-    JOIN documents d ON dc.document_id = d.id
-    LEFT JOIN enrichments e
-      ON  e.reference_id   = dc.id
-      AND e.reference_type = 'chunk'
-      AND e.is_verified    = 1
-    WHERE d.status = 'ready'
-      AND dc.embedding IS NOT NULL
-      ${modelFilter}
-    ${orderClause}
-    LIMIT 5
-  `;
-
-  const queryB = `
-    SELECT
-      ei.description,
-      ei.image_url,
-      ei.image_type,
-      ei.is_critical,
-      d.title AS doc_title,
-      vector_distance_cos(ei.embedding, vector32(?)) AS distance
-    FROM extracted_images ei
-    JOIN documents d ON ei.document_id = d.id
-    WHERE d.status = 'ready'
-      AND ei.embedding IS NOT NULL
-      AND ei.image_type NOT IN ('decorative', 'cover', 'logo')
-      ${modelFilter}
-    ORDER BY distance ASC
-    LIMIT 3
-  `;
-
-  const queryC = `
-    SELECT
-      e.id              AS enrichment_id,
-      e.generated_question,
-      e.expert_answer,
-      vector_distance_cos(e.embedding, vector32(?)) AS distance,
-      dc.id             AS chunk_id,
-      dc.content        AS chunk_content,
-      dc.section_title,
-      dc.chunk_type,
-      dc.has_warning,
-      dc.page_number,
-      d.title           AS doc_title,
-      d.equipment_model
-    FROM enrichments e
-    JOIN documents d  ON d.id  = e.document_id
-    INNER JOIN document_chunks dc ON dc.id = e.reference_id
-    WHERE e.is_verified    = 1
-      AND e.embedding      IS NOT NULL
-      AND e.reference_type = 'chunk'
-      AND d.status         = 'ready'
-      ${modelFilter}
-    ORDER BY distance ASC
-    LIMIT 3
-  `;
-
-  const baseArgs = (vec: Uint8Array) =>
-    equipmentModel ? [vec, equipmentModel] : [vec];
-
-  const [resultA, resultB, resultC] = await Promise.all([
-    client.execute({ sql: queryA, args: baseArgs(embeddingVec) }),
-    client.execute({ sql: queryB, args: baseArgs(embeddingVec) }),
-    client.execute({ sql: queryC, args: baseArgs(embeddingVec) })
-      .catch(() => ({ rows: [] })),
-  ]);
-
-  const rowsA = resultA.rows as unknown as ChunkWithEnrichmentRow[];
-  const images = resultB.rows as unknown as RetrievedImage[];
-  const rowsC = resultC.rows as unknown as EnrichmentWithChunkRow[];
-
-  const consolidatedMap = new Map<string, ConsolidatedEntry>();
-
-  for (const row of rowsA) {
-    consolidatedMap.set(row.chunk_id, {
-      content: row.content,
-      section_title: row.section_title,
-      chunk_type: row.chunk_type,
-      has_warning: row.has_warning,
-      page_number: row.page_number,
-      doc_title: row.doc_title,
-      equipment_model: row.equipment_model,
-      enrichment_id: row.enrichment_id ?? null,
-      generated_question: row.generated_question ?? null,
-      expert_answer: row.expert_answer ?? null,
-      distance: row.distance,
-    });
+  if (repeticiones >= 2) {
+    return { atrapamiento: true, turno: messages.length, razon: 'Usuario reporta que ya revisó lo mismo múltiples veces' };
   }
 
-  for (const row of rowsC) {
-    const existing = consolidatedMap.get(row.chunk_id);
-    if (existing) {
-      if (!existing.enrichment_id && row.enrichment_id) {
-        existing.enrichment_id = row.enrichment_id;
-        existing.generated_question = row.generated_question;
-        existing.expert_answer = row.expert_answer;
-      }
-      existing.distance = Math.min(existing.distance, row.distance);
-    } else {
-      consolidatedMap.set(row.chunk_id, {
-        content: row.chunk_content ?? '',
-        section_title: row.section_title,
-        chunk_type: row.chunk_type,
-        has_warning: row.has_warning,
-        page_number: row.page_number,
-        doc_title: row.doc_title,
-        equipment_model: row.equipment_model,
-        enrichment_id: row.enrichment_id,
-        generated_question: row.generated_question,
-        expert_answer: row.expert_answer,
-        distance: row.distance,
-      });
-    }
+  const patronBloqueo = /no\s+s[eé]\s+qu[eé]\s+m[aá]s\s+hacer|no\s+s[eé]\s+qu[eé]\s+revisar|estoy\s+atascado/i;
+  const bloqueos = mensajesUsuario.filter(m =>
+    typeof m.content === 'string' && patronBloqueo.test(m.content)
+  ).length;
+
+  if (bloqueos >= 1) {
+    return { atrapamiento: true, turno: messages.length, razon: 'Usuario expresa bloqueo o desconocimiento de siguiente paso' };
   }
 
-  const consolidated = [...consolidatedMap.values()].sort((a, b) => a.distance - b.distance);
-
-  const chunkBlocks = consolidated.map(entry => {
-    const source = [
-      entry.doc_title ? `[${entry.doc_title}]` : '',
-      entry.equipment_model ? `Modelo: ${entry.equipment_model}` : '',
-      entry.page_number ? `Pág. ${entry.page_number}` : '',
-      entry.section_title ? `§ ${entry.section_title}` : '',
-    ].filter(Boolean).join(' · ');
-
-    const warningPrefix = entry.has_warning ? '⚠️ ADVERTENCIA: ' : '';
-    let block = `${source}\nMANUAL OFICIAL:\n${warningPrefix}${entry.content}`;
-    if (entry.expert_answer) {
-      block += `\n→ NOTA DEL EXPERTO: ${entry.expert_answer}`;
-    }
-    return block;
-  });
-
-  const imageBlock = images.length > 0
-    ? '\n--- IMÁGENES TÉCNICAS RELACIONADAS ---\n' +
-    images
-      .filter(i => i.description)
-      .map(i => `• [${i.image_type ?? 'imagen'}] ${i.doc_title ?? ''}: ${i.description}`)
-      .join('\n')
-    : '';
-
-  const groundTruth = [...chunkBlocks, imageBlock]
-    .filter(Boolean)
-    .join('\n\n---\n\n');
-
-  // Incrementar times_retrieved
-  const usedEnrichmentIds = consolidated
-    .map(e => e.enrichment_id)
-    .filter((id): id is string => Boolean(id));
-
-  if (usedEnrichmentIds.length > 0) {
-    const placeholders = usedEnrichmentIds.map(() => '?').join(', ');
-    client.execute({
-      sql: `UPDATE enrichments SET times_retrieved = times_retrieved + 1 WHERE id IN (${placeholders})`,
-      args: usedEnrichmentIds,
-    }).catch(err => console.error('[chat] Error incrementando times_retrieved:', err.message));
+  if (mensajesUsuario.length >= 3) {
+    return { atrapamiento: true, turno: messages.length, razon: '3+ interacciones sin resolución' };
   }
 
-  const bestDistance = consolidated.length > 0 ? consolidated[0].distance : 1.0;
-
-  return {
-    groundTruth,
-    retrievedImages: images,
-    chunksRetrieved: consolidated.length,
-    hasEnrichments: usedEnrichmentIds.length > 0,
-    bestDistance,
-  };
+  return { atrapamiento: false, turno: 0, razon: '' };
 }
 
 /* ── HANDLER ─────────────────────────────────────────────────────────────── */
@@ -345,6 +116,12 @@ export async function POST(req: Request) {
     return new Response(JSON.stringify({ error: 'Sin consulta.' }), { status: 400 });
   }
 
+  // Persistir el mensaje del usuario si estamos en modo 'record'
+  if (sessionId && sessionMode === 'record') {
+    saveChatMessage(sessionId, 'user', userQuery, 'record')
+      .catch((err: Error) => console.error('[chat] Error guardando mensaje de usuario:', err.message));
+  }
+
   /* ────────────────────────────────────────────────────────────────────────
      FASE 0 — CLARIFICADOR (Expander/Router)
      Actúa de forma silenciosa para expandir la query de búsqueda.
@@ -366,41 +143,50 @@ export async function POST(req: Request) {
     }
   }
 
+  /* ── Historial de usuario para refinar búsqueda ─────────────────────── */
+  const historyTurnos = messages
+    .filter(m => m.role === 'user')
+    .slice(-3, -1)
+    .map(m => typeof m.content === 'string' ? m.content : '')
+    .filter(Boolean);
+
+  const searchQuery = historyTurnos.length > 0
+    ? `${historyTurnos.join(' ')} ${enrichedQuery}`
+    : enrichedQuery;
+
   /* ────────────────────────────────────────────────────────────────────────
-     FASE 1 — BIBLIOTECARIO: Retrieval vectorial
-  ──────────────────────────────────────────────────────────────────────── */
+     FASE 1 — BIBLIOTECARIO: 3 sub-agentes
+     (Buscador Documental → Buscador Visual → Curador)
+   ──────────────────────────────────────────────────────────────────────── */
   let groundTruth = '';
-  let retrievedImages: RetrievedImage[] = [];
+  let validatedImages: { url: string | null; description: string | null; image_type: string | null; is_critical: boolean }[] = [];
   let chunksRetrieved = 0;
   let hasEnrichments = false;
+  let imagesRetrievedCount = 0;
+  let bestDistance = 1.0;
+  let componentMismatch = false;
+  let rescueUsed = false;
+  let docsConsultados: CuradorResult['docsConsultados'] = { docBaseUsed: false, titulos: [] };
 
   const t1start = Date.now();
 
   try {
-    const { embedding } = await embed({
-      model: openai.embedding('text-embedding-3-small'),
-      value: enrichedQuery,
-    });
+    const docResult = await runBuscadorDocumental(searchQuery, equipmentModel, queryIntent as 'troubleshooting' | 'education_info', []);
 
-    let bib = await runBibliotecario(embedding, equipmentModel, queryIntent);
+    const docIds = [...new Set(docResult.chunks.map(c => c.document_id))];
+    const imgResult = await runBuscadorVisual(searchQuery, docIds, equipmentModel);
+    imagesRetrievedCount = imgResult.images.length;
 
-    if (bib.chunksRetrieved === 0 || bib.bestDistance > 0.55) {
-      console.log(`[chat:fase1] Fallback de rescate activado (Distancia: ${bib.bestDistance}). Buscando fundamentos...`);
-      const fallbackQuery = `Diagnóstico general, teoría y principios básicos para: ${enrichedQuery}`;
-      const { embedding: fallbackEmbedding } = await embed({
-        model: openai.embedding('text-embedding-3-small'),
-        value: fallbackQuery,
-      });
-      const bibFallback = await runBibliotecario(fallbackEmbedding, equipmentModel, 'education_info');
+    const curadorResult = await runCurador(docResult.chunks, imgResult.images, userQuery, equipmentModel);
 
-      bib = bibFallback;
-      bib.groundTruth = "NOTA DEL SISTEMA: No se encontró el código exacto o alta similitud para este síntoma. Se presenta información general y principios básicos para aplicar protocolo estándar:\\n\\n" + bib.groundTruth;
-    }
-
-    groundTruth = bib.groundTruth;
-    retrievedImages = bib.retrievedImages;
-    chunksRetrieved = bib.chunksRetrieved;
-    hasEnrichments = bib.hasEnrichments;
+    groundTruth = curadorResult.groundTruth;
+    validatedImages = curadorResult.validatedImages;
+    chunksRetrieved = curadorResult.chunksRetrieved;
+    hasEnrichments = curadorResult.hasEnrichments;
+    bestDistance = curadorResult.bestDistance;
+    componentMismatch = curadorResult.componentMismatch;
+    rescueUsed = curadorResult.rescueUsed;
+    docsConsultados = curadorResult.docsConsultados;
   } catch (e) {
     console.error(`[${timestamp}][chat:fase1] Retrieval falló:`, (e as Error).message);
 
@@ -417,14 +203,6 @@ export async function POST(req: Request) {
   const t1end = Date.now();
 
   /* ────────────────────────────────────────────────────────────────────────
-     AGENTE 4 — VALIDADOR DE IMÁGENES (filtro inline)
-     Conserva solo imágenes con descripción real; descarta decorativas/logo.
-  ──────────────────────────────────────────────────────────────────────── */
-  const validatedImages = retrievedImages.filter(
-    (img) => img.description && img.description.trim().length > 10,
-  );
-
-  /* ────────────────────────────────────────────────────────────────────────
      FASE 2 — ANALISTA: Internal monologue (nunca detiene la Fase 3)
   ──────────────────────────────────────────────────────────────────────── */
   let analista: AnalistaOutput = ANALISTA_FAILSAFE;
@@ -434,18 +212,38 @@ export async function POST(req: Request) {
   let t2end = Date.now();
   if (agentFlags.analyst) {
     t2start = Date.now();
+
     try {
-      const analyzeResult = await runAnalista({
-        userQuery: enrichedQuery,
-        groundTruth,
-        imageContext: '',
-        intent: queryIntent,
-        historyContext: '',
-        loopIndex: 0,
-        modo,
-      });
-      analista = analyzeResult.output;
-      phase2Tokens = analyzeResult.totalTokens;
+      if (componentMismatch || rescueUsed) {
+        console.log(`[chat:fase2] BYPASS Analista: mismatch=${componentMismatch}, rescue=${rescueUsed}`);
+
+        analista = {
+          root_cause_hypothesis: 'Alimentación no detectada en el componente indicado. Aplicando protocolo de verificación base del modelo.',
+          confidence: 0.6,
+          requires_verification: true,
+          next_step: 'Verificar alimentación general y estado del circuito de seguridad según protocolo base.',
+          response_mode: 'TROUBLESHOOTING',
+          needs_more_info: false,
+          gap: null,
+        };
+        phase2Tokens = 0;
+
+      } else {
+        const analyzeResult = await runAnalista({
+          userQuery: enrichedQuery,
+          groundTruth,
+          imageContext: '',
+          intent: queryIntent,
+          historyContext: '',
+          loopIndex: 0,
+          modo,
+          componentMismatch,
+          rescueUsed,
+        });
+        analista = analyzeResult.output;
+        phase2Tokens = analyzeResult.totalTokens;
+      }
+
     } catch (e) {
       console.error(`[${timestamp}][chat:fase2] Analista falló:`, (e as Error).message);
     }
@@ -461,14 +259,18 @@ export async function POST(req: Request) {
   let phase3OutputToksCapture = 0;
 
   try {
-    // Ya no usamos hipótesis individuales
-    const contextBlock = groundTruth.trim()
-      ? `MANUAL TÉCNICO (Ground Truth):\n${groundTruth}`
-      : 'MANUAL TÉCNICO: No se encontró documentación relacionada con este síntoma.';
+    let contextBlock = groundTruth.trim()
+      ? `DOCUMENTACIÓN TÉCNICA:\n${groundTruth}`
+      : 'DOCUMENTACIÓN TÉCNICA: No se encontró documentación relacionada con este síntoma.';
 
-    // Generar messageId antes del stream para incluirlo en los headers
+    const atrapamientoInfo = detectarAtrapamiento(messages);
+
     const messageId = createId();
     const t3start = Date.now();
+
+    const atrapamientoBlock = atrapamientoInfo.atrapamiento
+      ? `⚠️ ATENCIÓN: El técnico está atascado. ${atrapamientoInfo.razon}. NO pidas que revise lo mismo. Cambia de hipótesis o indica que necesita un especialista.\n\n`
+      : '';
 
     const result = streamText({
       model: openai('gpt-4o-mini'),
@@ -476,45 +278,50 @@ export async function POST(req: Request) {
         {
           role: 'system',
           content: modo === 'diagnostico'
-            ? `MODO: DIAGNÓSTICO\nEl técnico reporta un síntoma o falla. Activa el Comité de Diagnóstico.\n\n${PROMPT_DIAGNOSTICO}`
-            : modo === 'teorico'
-              ? PROMPT_TEORICO
-              : PROMPT_PROCEDIMENTAL,
+            ? `${PROMPT_DIAGNOSTICO}`
+            : `${PROMPT_MENTOR_V2}`,
         },
         {
           role: 'user',
           content:
             `SÍNTOMA: ${enrichedQuery}\n\n` +
             `${contextBlock}\n\n` +
-            `IMÁGENES DISPONIBLES:\n${validatedImages.map(img => `URL: ${img.image_url} | Descripción: ${img.description}`).join('\n') || 'No hay imágenes disponibles para este caso.'}\n\n` +
+            `${atrapamientoBlock}` +
+            `IMÁGENES DISPONIBLES:\n${validatedImages.map(img => `URL: ${img.url} | Descripción: ${img.description}`).join('\n') || 'No hay imágenes disponibles para este caso.'}\n\n` +
             `ANÁLISIS TÉCNICO:\n` +
-            (analista.needs_more_info || analista.confidence < 0.5
-              ? `ESTADO DEL ANÁLISIS: Información insuficiente para diagnóstico preciso. Síntoma: ${enrichedQuery}.`
-              : `HIPÓTESIS: ${analista.root_cause_hypothesis}. SIGUIENTE PASO: ${analista.next_step}.`),
+            (componentMismatch || rescueUsed
+              ? `ESTADO: Aplicando protocolo de verificación base. Documentos base disponibles: Procedimientos, Decisiones, Seguridad. NO usar hipótesis de componentes específicos (rectificador, condensadores, SGRW, SH).`
+              : analista.needs_more_info || analista.confidence < 0.5
+                ? `ESTADO: Información insuficiente para diagnóstico preciso.`
+                : `HIPÓTESIS: ${analista.root_cause_hypothesis}. PASO SIGUIENTE: ${analista.next_step}.`),
         },
       ],
 
       // AGENTE 5 — METRIFICADOR: Persistir métricas al finalizar el stream
-      onFinish: async ({ usage }) => {
+      onFinish: async ({ usage, response }) => {
         // Capturar telemetría de Fase 3 en variables de closure para los headers
         phase3MsCapture = Date.now() - t3start;
         phase3InputToksCapture = usage.promptTokens ?? 0;
         phase3OutputToksCapture = usage.completionTokens ?? 0;
 
-        // En modo 'record': persistir el mensaje del asistente en chat_messages
+        // En modo 'record': persistir el mensaje del asistente con su contenido real
         if (sessionId && sessionMode === 'record') {
-          saveChatMessage(sessionId, 'assistant', '[stream completado]', 'record')
-            .catch((err: Error) => console.error('[chat:metrifier] Error guardando mensaje:', err.message));
+          const rawContent = response?.messages?.[0]?.content;
+          const assistantContent = typeof rawContent === 'string' ? rawContent : '';
+          if (assistantContent) {
+            saveChatMessage(sessionId, 'assistant', assistantContent, 'record')
+              .catch((err: Error) => console.error('[chat:metrifier] Error guardando mensaje:', err.message));
+          }
         }
       },
     });
 
     // Serializar imágenes validadas para el header
     const imagesForHeader = validatedImages.map((img) => ({
-      url: img.image_url,
+      url: img.url,
       description: img.description,
       image_type: img.image_type,
-      is_critical: Boolean(img.is_critical),
+      is_critical: img.is_critical,
     }));
 
     return result.toDataStreamResponse({
@@ -537,12 +344,18 @@ export async function POST(req: Request) {
         'x-phase3-output-tokens': String(phase3OutputToksCapture),
         // Trazabilidad RAG
         'x-chunks-retrieved': String(chunksRetrieved),
-        'x-images-retrieved': String(retrievedImages.length),
+        'x-images-retrieved': String(imagesRetrievedCount),
         'x-images-shown': String(validatedImages.length),
         'x-enrichments-used': String(hasEnrichments ? 1 : 0),
         // Telemetría de agentes
         'x-enriched-query': encodeURIComponent(enrichedQuery),
         'x-detected-intent': queryIntent,
+        // Seguimiento de Curador
+        'x-best-distance': String(bestDistance),
+        'x-component-mismatch': String(componentMismatch ? 1 : 0),
+        'x-rescue-used': String(rescueUsed ? 1 : 0),
+        'x-doc-base-used': String(docsConsultados.docBaseUsed ? 1 : 0),
+        'x-doc-titulos': encodeURIComponent(JSON.stringify(docsConsultados.titulos)),
       },
     });
 
