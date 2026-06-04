@@ -10,7 +10,7 @@ import {
     MessageSquare,
     UploadCloud,
     Clock,
-    ShieldCheck,
+
     Activity,
     BarChart3,
     Layers,
@@ -63,7 +63,7 @@ export function AuditorHome({ isDevMode = false, stats }: { isDevMode?: boolean;
                                         <FileText className="w-4 h-4 sm:w-5 sm:h-5" />
                                     </div>
                                     <div className="min-w-0">
-                                        <h4 className="text-[10px] sm:text-xs font-black text-slate-800 uppercase tracking-tight">PASO 1: Ingesta</h4>
+                                        <h4 className="text-[10px] sm:text-xs font-black text-slate-800 uppercase tracking-tight">PASO 1: Implementar</h4>
                                         <p className="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 leading-relaxed">Suba el manual (uno a la vez) en el módulo de Biblioteca Digital.</p>
                                     </div>
                                 </div>
@@ -80,28 +80,7 @@ export function AuditorHome({ isDevMode = false, stats }: { isDevMode?: boolean;
                             </div>
                         </div>
 
-                        <div className="w-full lg:w-72 xl:w-80 bg-blue-600 rounded-2xl sm:rounded-3xl lg:rounded-[2rem] p-6 sm:p-8 text-white shadow-xl shadow-blue-600/30 flex-shrink-0">
-                            <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-                                <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-blue-200" />
-                                <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest">Estado del Auditor</span>
-                            </div>
-                            <div className="space-y-3 sm:space-y-4">
-                                <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-white/10 border border-white/5 backdrop-blur-sm">
-                                    <p className="text-[9px] sm:text-[10px] font-black text-blue-200 uppercase tracking-widest mb-0.5">Capacidad de Carga</p>
-                                    <p className="text-base sm:text-lg lg:text-xl font-bold">1 Documento Activo</p>
-                                </div>
-                                <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-white/10 border border-white/5 backdrop-blur-sm">
-                                    <p className="text-[9px] sm:text-[10px] font-black text-blue-200 uppercase tracking-widest mb-0.5">Nivel de Acceso</p>
-                                    <p className="text-base sm:text-lg lg:text-xl font-bold">Verificación Expert</p>
-                                </div>
-                            </div>
-                            <Link
-                                href="/dashboard/documentacion"
-                                className="mt-5 sm:mt-8 w-full py-3 sm:py-4 bg-white text-blue-600 rounded-xl sm:rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:scale-[1.02] sm:hover:scale-105 transition-transform active:scale-95 shadow-lg"
-                            >
-                                Ir a Biblioteca <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                            </Link>
-                        </div>
+
                     </div>
                 </div>
             </section>
@@ -219,7 +198,7 @@ export function AuditorHome({ isDevMode = false, stats }: { isDevMode?: boolean;
                             <UploadCloud className="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
                         <h4 className="font-black text-slate-800 text-[10px] sm:text-xs uppercase tracking-tight mb-1">Subir Manual</h4>
-                        <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium leading-relaxed">Ingesta el corpus base para el modelo RAG.</p>
+                        <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium leading-relaxed">Implementa el corpus base para el modelo RAG.</p>
                     </Link>
 
                     <Link

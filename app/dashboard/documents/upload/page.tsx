@@ -157,7 +157,7 @@ export default function UploadDocumentPage() {
         <div className="space-y-2">
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Acceso Bloqueado</h1>
           <p className="text-slate-500 max-w-sm mx-auto leading-relaxed font-medium">
-            La Ingesta de Documentos es exclusiva para perfiles <span className="text-slate-900 font-bold">Administrativos</span>.
+            La Implementación de Documentos es exclusiva para perfiles <span className="text-slate-900 font-bold">Administrativos</span>.
           </p>
         </div>
         <div className="pt-4">
@@ -304,7 +304,7 @@ export default function UploadDocumentPage() {
         </div>
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-            Ingestar Documento Técnico
+            Implementar Documento Técnico
           </h1>
           <p className="text-sm text-slate-500">
             Sube manuales, planos o certificados Schindler para el pipeline RAG.
@@ -433,7 +433,7 @@ export default function UploadDocumentPage() {
             disabled={!file}
             className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            Iniciar Pipeline de Ingesta
+            Iniciar Pipeline de Implementación
           </button>
         )}
       </form>

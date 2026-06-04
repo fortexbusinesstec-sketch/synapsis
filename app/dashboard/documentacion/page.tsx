@@ -377,7 +377,7 @@ export default function DocumentacionPage() {
             <div className="p-8 space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-black text-slate-900">Ingestar Nuevo Manual</h2>
+                  <h2 className="text-2xl font-black text-slate-900">Implementar Nuevo Manual</h2>
                   <p className="text-slate-500 text-sm">Carga documentos técnicos al corpus del RAG</p>
                 </div>
                 <button
@@ -465,7 +465,7 @@ export default function DocumentacionPage() {
             onClick={() => setIsUploadModalOpen(true)}
             className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white text-sm font-black rounded-2xl shadow-xl shadow-blue-600/10 hover:scale-105 active:scale-95 transition-all"
           >
-            <Plus className="w-4 h-4" /> Ingestar Nuevo Manual
+            <Plus className="w-4 h-4" /> Implementar Nuevo Manual
           </button>
         )}
       </div>
