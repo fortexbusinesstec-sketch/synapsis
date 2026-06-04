@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';   // Placeholder (Shadcn)
 import { Paperclip, Send, Image as ImageIcon, Zap, Cpu, History as HistoryIcon, Search, Eye } from 'lucide-react';
 
 /**
- * COMPONENTE DE CHAT MULTIMODAL (Schindler MAS)
+ * COMPONENTE DE CHAT MULTIMODAL (Synapsis)
  * Interfaz premium para técnicos e ingenieros de mantenimiento.
  * Visualiza el estado de la orquestación de agentes.
  */

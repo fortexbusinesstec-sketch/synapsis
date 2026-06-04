@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
 
 export const metadata: Metadata = {
-  title: "Schindler MAS | Sistema Multi-Agente",
+  title: "Synapsis - Sistema MultiAgente de Ascensores",
   description: "Plataforma de mantenimiento predictivo y diagnóstico de ascensores.",
 };
 

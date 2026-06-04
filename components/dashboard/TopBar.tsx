@@ -10,6 +10,7 @@ import {
   Home,
   LogOut,
   Menu,
+  Palette,
   X,
   Zap,
 } from "lucide-react";
@@ -23,6 +24,7 @@ const NAV_LINKS = [
   { label: "Synapsis Go", href: "/dashboard/go", Icon: Activity },
   { label: "Ablación", href: "/dashboard/ablation", Icon: FlaskConical },
   { label: "Juicio de Expertos", href: "/dashboard/juicio/perfil", Icon: FlaskConical },
+  { label: "Graphics", href: "/dashboard/graphics", Icon: Palette },
 ];
 
 export default function TopBar({
@@ -61,15 +63,15 @@ export default function TopBar({
     const role = userRole?.trim();
 
     if (role === "JuicioExperto") {
-      return link.label === "Home" || link.label === "Juicio de Expertos";
+      return ["Home", "Juicio de Expertos", "Graphics"].includes(link.label);
     }
 
     if (role === "Administrador de Sistema" && link.label === "Ablación") return false;
     if (role === "Auditor" && (link.label === "Ablación" || link.label === "Juicio de Expertos") && !isDevMode) return false;
     if (role === "Especialista Técnico") {
-      const links = [link.label === "Home", link.label === "Synapsis Go"];
+      const links = ["Home", "Synapsis Go", "Graphics"];
       if (prodExperiment && link.label === "Experimento Juicio de Expertos") return true;
-      return links.some(Boolean);
+      return links.includes(link.label);
     }
     return link.label !== "Experimento Juicio de Expertos"; // Default off for others unless specified, but filter out the old label
   });
