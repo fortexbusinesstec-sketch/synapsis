@@ -9,9 +9,7 @@ import {
 type QData = {
   id: number;
   texto: string;
-  categoria: string | null;
-  referencia: string | null;
-  respuestas: { config: string; texto: string }[];
+  resumenes: { config: string; label: string; texto: string }[];
 };
 
 type Ratings = Record<string, number>;
@@ -27,16 +25,10 @@ interface SavedState {
 
 const STORAGE_KEY_PREFIX = 'synapsis_encuesta_';
 
-const CONFIG_COLORS: Record<string, string> = {
-  B5: 'border-l-blue-500 bg-blue-50/30',
-  E: 'border-l-emerald-500 bg-emerald-50/30',
-  D: 'border-l-amber-500 bg-amber-50/30',
-};
-
-const CONFIG_LABELS: Record<string, string> = {
-  B5: 'Versión Completa (B5)',
-  E: 'Versión Simplificada (E)',
-  D: 'Solo RAG (D)',
+const CONFIG_COLORS: Record<string, { left: string; bg: string; label: string }> = {
+  B5: { left: 'border-l-blue-500', bg: 'bg-blue-50/30', label: 'bg-blue-100 text-blue-800' },
+  E: { left: 'border-l-emerald-500', bg: 'bg-emerald-50/30', label: 'bg-emerald-100 text-emerald-800' },
+  D: { left: 'border-l-amber-500', bg: 'bg-amber-50/30', label: 'bg-amber-100 text-amber-800' },
 };
 
 function storageKey(codigo: string) {
@@ -58,6 +50,10 @@ function saveState(codigo: string, state: SavedState) {
     localStorage.setItem(storageKey(codigo), JSON.stringify(state));
   } catch {
   }
+}
+
+function formatBold(text: string) {
+  return text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
 }
 
 function clearState(codigo: string) {
@@ -89,14 +85,13 @@ export default function SurveyForm({
 
   const [hasSavedProgress, setHasSavedProgress] = useState(false);
 
-  const totalSteps = totalPreguntas + 2; // 11 preguntas + C1 + C2
+  const totalSteps = totalPreguntas + 2;
   const isC1Step = currentIdx === totalPreguntas;
   const isC2Step = currentIdx === totalPreguntas + 1;
   const isExtraStep = isC1Step || isC2Step;
   const isFirst = currentIdx === 0;
   const isLast = currentIdx === totalSteps - 1;
 
-  // Restore saved state on mount
   useEffect(() => {
     const saved = loadState(codigo);
     if (saved) {
@@ -108,20 +103,15 @@ export default function SurveyForm({
       setHasSavedProgress(true);
     }
     setInitialized(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Persist state on every change (only after initial restore)
   useEffect(() => {
     if (!initialized) return;
     saveState(codigo, { currentIdx, ratings, selections, c1, c2 });
   }, [currentIdx, ratings, selections, c1, c2, codigo, initialized]);
 
-  // Clear saved state on successful submit
   useEffect(() => {
-    if (submitDone) {
-      clearState(codigo);
-    }
+    if (submitDone) clearState(codigo);
   }, [submitDone, codigo]);
 
   const setCurrentIdx = useCallback((fn: number | ((prev: number) => number)) => {
@@ -131,10 +121,12 @@ export default function SurveyForm({
   const q = preguntas[currentIdx];
 
   const allRated = preguntas.every((p) =>
-    p.respuestas.every((r) => ratings[`${p.id}-${r.config}`] !== undefined),
+    p.resumenes.every((r) => ratings[`${p.id}-${r.config}`] !== undefined),
   );
   const allSelected = preguntas.every((p) => selections[p.id] !== undefined);
   const allExtraAnswered = c1 !== null && c2 !== null;
+  const currentRated = q && !isExtraStep && q.resumenes.every((r) => ratings[`${q.id}-${r.config}`] !== undefined);
+  const currentSelected = q && !isExtraStep && selections[q.id] !== undefined;
 
   const setRating = useCallback(
     (pregId: number, config: string, val: number) => {
@@ -158,7 +150,7 @@ export default function SurveyForm({
     setError(null);
 
     const respuestas = preguntas.flatMap((p) =>
-      p.respuestas.map((r) => ({
+      p.resumenes.map((r) => ({
         codigo_tecnico: codigo,
         id_pregunta: p.id,
         configuracion: r.config,
@@ -210,7 +202,6 @@ export default function SurveyForm({
   return (
     <div className="space-y-6">
 
-      {/* Restored progress banner */}
       {hasSavedProgress && (
         <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">
           <RefreshCw className="w-4 h-4 shrink-0" />
@@ -225,7 +216,6 @@ export default function SurveyForm({
         </div>
       )}
 
-      {/* Header */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 md:p-6">
         <div className="flex items-center justify-between mb-3">
           <div>
@@ -238,8 +228,6 @@ export default function SurveyForm({
           </div>
           <span className="text-xs text-slate-400 font-mono">{codigo}</span>
         </div>
-
-        {/* Progress bar */}
         <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
           <div
             className="h-full bg-blue-500 rounded-full transition-all duration-300"
@@ -248,7 +236,6 @@ export default function SurveyForm({
         </div>
       </div>
 
-      {/* C1 question */}
       {isC1Step && (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 md:p-6 space-y-4">
           <p className="text-base text-slate-900 leading-relaxed">
@@ -284,7 +271,6 @@ export default function SurveyForm({
         </div>
       )}
 
-      {/* C2 question */}
       {isC2Step && (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 md:p-6 space-y-4">
           <p className="text-base text-slate-900 leading-relaxed">
@@ -320,58 +306,41 @@ export default function SurveyForm({
         </div>
       )}
 
-      {/* Technical question */}
       {!isExtraStep && (
         <>
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 md:p-6">
             <p className="text-base md:text-lg text-slate-900 font-semibold leading-relaxed">
               {q.texto}
             </p>
-            {q.categoria && (
-              <span className="inline-block mt-2 text-[11px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
-                {q.categoria}
-              </span>
-            )}
           </div>
 
-          {/* 3 Responses */}
-          <div className="grid gap-4 md:grid-cols-3">
-            {q.respuestas.map((r) => {
+          <div className="grid gap-4 sm:grid-cols-3">
+            {q.resumenes.map((r) => {
               const key = `${q.id}-${r.config}`;
               const rated = ratings[key];
               const isSelected = selections[q.id] === r.config;
+              const color = CONFIG_COLORS[r.config] ?? { left: 'border-l-slate-300', bg: 'bg-slate-50/30', label: 'bg-slate-100 text-slate-700' };
 
               return (
                 <div
                   key={r.config}
-                  className={`bg-white rounded-2xl shadow-sm border border-slate-200 border-l-4 overflow-hidden transition-all ${CONFIG_COLORS[r.config] ?? ''} ${isSelected ? 'ring-2 ring-blue-400' : ''}`}
+                  className={`flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 border-l-4 overflow-hidden transition-all ${color.left} ${color.bg} ${isSelected ? 'ring-2 ring-blue-400' : ''}`}
                 >
-                  <div className="px-4 pt-3 pb-2 flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700">
-                      {CONFIG_LABELS[r.config] ?? r.config}
+                  <div className="px-4 pt-3 pb-2 flex items-center justify-between gap-2">
+                    <span className="text-xs font-bold text-slate-700 truncate">
+                      {r.label}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => toggleSelection(q.id, r.config)}
-                      className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-blue-600 transition-colors"
-                    >
-                      {isSelected ? (
-                        <CheckCircle2 className="w-4 h-4 text-blue-600" />
-                      ) : (
-                        <Circle className="w-4 h-4" />
-                      )}
-                      {isSelected ? 'Seleccionada' : 'Marcar como mejor'}
-                    </button>
+                    <span className={`shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${color.label}`}>
+                      {r.config}
+                    </span>
+                  </div>
+
+                  <div className="px-4 pb-2 flex-1">
+                    <div className="text-xs text-slate-600 leading-relaxed max-h-40 overflow-y-auto bg-white/50 rounded-lg p-2.5 border border-slate-100 whitespace-pre-wrap [&_strong]:font-semibold [&_strong]:text-slate-800" dangerouslySetInnerHTML={{ __html: formatBold(r.texto.length > 600 ? r.texto.slice(0, 600) + '…' : r.texto) }} />
                   </div>
 
                   <div className="px-4 pb-2">
-                    <div className="text-xs text-slate-600 leading-relaxed max-h-40 overflow-y-auto bg-white/50 rounded-lg p-2.5 border border-slate-100 whitespace-pre-wrap">
-                      {r.texto.length > 600 ? r.texto.slice(0, 600) + '…' : r.texto}
-                    </div>
-                  </div>
-
-                  <div className="px-4 pb-3">
-                    <p className="text-[11px] font-medium text-slate-500 mb-1.5">Utilidad:</p>
+                    <p className="text-[11px] font-medium text-slate-500 mb-1">Utilidad:</p>
                     <div className="flex gap-1">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <button
@@ -388,6 +357,25 @@ export default function SurveyForm({
                       )}
                     </div>
                   </div>
+
+                  <div className="px-4 pb-3">
+                    <button
+                      type="button"
+                      onClick={() => toggleSelection(q.id, r.config)}
+                      className={`flex items-center gap-1.5 w-full justify-center py-2 rounded-lg text-xs font-medium border transition-colors ${
+                        isSelected
+                          ? 'bg-blue-50 border-blue-200 text-blue-700'
+                          : 'bg-white border-slate-200 text-slate-500 hover:border-blue-200 hover:text-blue-600'
+                      }`}
+                    >
+                      {isSelected ? (
+                        <CheckCircle2 className="w-4 h-4" />
+                      ) : (
+                        <Circle className="w-4 h-4" />
+                      )}
+                      {isSelected ? 'Mejor respuesta' : 'Marcar como mejor'}
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -395,7 +383,6 @@ export default function SurveyForm({
         </>
       )}
 
-      {/* Error */}
       {error && (
         <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
           <AlertCircle className="w-4 h-4 shrink-0" />
@@ -403,7 +390,6 @@ export default function SurveyForm({
         </div>
       )}
 
-      {/* Navigation */}
       <div className="flex items-center justify-between gap-3">
         <button
           type="button"
@@ -417,7 +403,7 @@ export default function SurveyForm({
 
         <span className="text-xs text-slate-400">
           {currentIdx + 1} / {totalSteps}
-          {!isExtraStep && !allRated && (
+          {isLast && !allRated && (
             <span className="ml-2 text-amber-500">Faltan calificaciones</span>
           )}
           {isC1Step && c1 === null && (
@@ -425,6 +411,12 @@ export default function SurveyForm({
           )}
           {isC2Step && c2 === null && (
             <span className="ml-2 text-amber-500">Seleccione una opción</span>
+          )}
+          {!isExtraStep && !currentRated && (
+            <span className="ml-2 text-amber-500">Califique los 3 enfoques</span>
+          )}
+          {!isExtraStep && currentRated && !currentSelected && (
+            <span className="ml-2 text-amber-500">Marque el mejor</span>
           )}
         </span>
 
@@ -442,7 +434,7 @@ export default function SurveyForm({
           <button
             type="button"
             onClick={() => setCurrentIdx((i) => Math.min(totalSteps - 1, i + 1))}
-            disabled={(isC1Step && c1 === null) || (isC2Step && c2 === null)}
+            disabled={(!isExtraStep && (!currentRated || !currentSelected)) || (isC1Step && c1 === null) || (isC2Step && c2 === null)}
             className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Siguiente
@@ -451,14 +443,13 @@ export default function SurveyForm({
         )}
       </div>
 
-      {/* Confirm dialog */}
       {showConfirm && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4">
             <h3 className="text-lg font-bold text-slate-900">¿Enviar encuesta?</h3>
             <p className="text-sm text-slate-600">
               Una vez enviada no podrá modificar sus respuestas. Ha calificado{' '}
-              {Object.keys(ratings).length} respuestas y seleccionado la mejor en{' '}
+              {Object.keys(ratings).length} enfoques y seleccionado la mejor en{' '}
               {Object.keys(selections).length} preguntas.
             </p>
             <div className="flex justify-end gap-3">

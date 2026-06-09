@@ -1,0 +1,65 @@
+[
+  {
+    "question_id": "Q002",
+    "question_text": "Aparece BatFlt en el display del 5500. ¿Qué falla?",
+    "resumenes": {
+      "B5": "Verifica conexión y estado físico de la batería de emergencia.",
+      "E": "Verifica carga de la batería y que no esté agotada o dañada.",
+      "D": "Verifica conexión y signos de daño o mal funcionamiento."
+    }
+  },
+  {
+    "question_id": "Q010",
+    "question_text": "Error RdvBVR fijo en pantalla. ¿Qué ocurrió?",
+    "resumenes": {
+      "B5": "Verifica alimentación y que el circuito de seguridad esté cerrado.",
+      "E": "Verifica alimentación y circuito de seguridad asociado al limitador de velocidad.",
+      "D": "Interpreta RdvBVR como indicación de reset del limitador de velocidad."
+    }
+  },
+  {
+    "question_id": "Q021",
+    "question_text": "Técnico dice: \"El ascensor está muerto\".",
+    "resumenes": {
+      "B5": "Verifica alimentación eléctrica y cierre del circuito de seguridad.",
+      "E": "Verifica alimentación, circuito de seguridad y LEDs del controlador.",
+      "D": "Verifica alimentación, cierre de puertas y LEDs del controlador."
+    }
+  },
+  {
+    "question_id": "Q042",
+    "question_text": "Procedimiento para registrar LOPs (Botoneras) en el 3300.",
+    "resumenes": {
+      "B5": "Cambia a LE00, pulsa OK y busca indicador LC parpadeando en la HMI.",
+      "E": "Ingresa a modo configuración, verifica LE00 y revisa circuito de seguridad.",
+      "D": "Escucha sonido de confirmación DT-O en la COP al pulsar el botón."
+    }
+  },
+  {
+    "question_id": "Q062",
+    "question_text": "Valor nominal de resistencia para bobinas de freno MGB.",
+    "resumenes": {
+      "B5": "Mide resistencia MGB: 190-1700 Ω (FML/PML) o 80-120 Ω (FMR/PMR).",
+      "E": "Mide resistencia MGB con rangos específicos según el tipo de máquina.",
+      "D": "Admite no tener datos de MGB y sugiere revisar el manual del fabricante."
+    }
+  },
+  {
+    "question_id": "Q081",
+    "question_text": "¿Dónde se ubica físicamente la HMI en el sistema Bionic 5 (3300 sin cuarto de máquinas)?",
+    "resumenes": {
+      "B5": "La HMI está integrada en la LDU del ascensor.",
+      "E": "La HMI está en la LDU, parte frontal con LEDs y pulsadores.",
+      "D": "No responde ubicación; sugiere escuchar sonidos inusuales al encender."
+    }
+  },
+  {
+    "question_id": "Q085",
+    "question_text": "Identificación visual de pines para contacto KB cerrado (Freno PML 200).",
+    "resumenes": {
+      "B5": "Mide resistencia en cable KB entre pines 1-2; debe ser 0 Ω.",
+      "E": "Mide resistencia en cable KB entre pines 1-2; debe ser aprox. 0 Ω.",
+      "D": "Verifica LEDs del freno: KB debe estar ON y KB1/KB3 apagados."
+    }
+  }
+]

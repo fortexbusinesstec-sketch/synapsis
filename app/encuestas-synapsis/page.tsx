@@ -45,7 +45,7 @@ export default function EncuestasLanding() {
               ¿En qué consiste su participación?
             </h3>
             <ul className="list-disc pl-5 space-y-1">
-              <li>Le mostraremos <strong>12 preguntas o situaciones técnicas reales</strong> relacionadas con diagnósticos de ascensores.</li>
+              <li>Le mostraremos <strong>7 preguntas o situaciones técnicas reales</strong> relacionadas con diagnósticos de ascensores.</li>
               <li>Para cada pregunta, verá <strong>tres posibles respuestas</strong> generadas por diferentes versiones del sistema.</li>
               <li>Usted deberá:
                 <ul className="list-[circle] pl-5 mt-1 space-y-0.5">
@@ -53,6 +53,7 @@ export default function EncuestasLanding() {
                   <li>Señalar cuál de las tres respuestas le parece <strong>más útil</strong> para resolver el problema.</li>
                 </ul>
               </li>
+              <li>Al final, responderá <strong>2 preguntas adicionales</strong> sobre la utilidad general del sistema.</li>
               <li>El tiempo estimado para completar la encuesta es de <strong>10 a 15 minutos</strong>.</li>
             </ul>
           </section>
