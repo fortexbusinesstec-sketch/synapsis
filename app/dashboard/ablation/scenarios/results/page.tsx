@@ -214,6 +214,7 @@ interface AgentLogRow {
 const CONFIG_COLORS: Record<string, string> = {
   'A': '#2563eb', // Azul fuerte (MAS Completo)
   'B': '#3b82f6', // Azul (Sin Planificador)
+  'Bv2': '#8b5cf6', // Violeta (B + Enrutador + Verificador + Loop)
   'C': '#6366f1', // Indigo2
   'D': '#94a3b8', // Gris (RAG Base)
   'E': '#cbd5e1',
@@ -249,7 +250,7 @@ function ChartCard({ title, description, children, height = 450, accent = 'blue'
 
 // 1. Radar Chart
 function RadarChartAcademic({ scenarios }: { scenarios: ScenRunRow[] }) {
-  const configs = ['A', 'B', 'C', 'D'];
+  const configs = ['A', 'B', 'Bv2', 'C', 'D'];
   const dimensions = [
     { key: 'score_diagnostic_progression', label: 'Diag' },
     { key: 'score_factual_consistency', label: 'Factual' },
@@ -295,7 +296,7 @@ function RadarChartAcademic({ scenarios }: { scenarios: ScenRunRow[] }) {
 
 // 2. Composed Chart (Bar + Line)
 function ComposedChartDual({ scenarios, summaryAll }: { scenarios: ScenRunRow[], summaryAll: SummaryRow[] }) {
-  const data = ['A', 'B', 'C', 'D'].map(cid => {
+  const data = ['A', 'B', 'Bv2', 'C', 'D'].map(cid => {
     const scenRuns = scenarios.filter(s => s.config_id === cid);
     const resolvedPct = scenRuns.length ? (scenRuns.filter(r => (r.judge_resolution_reached ?? r.resolution_reached) === 1).length / scenRuns.length) * 100 : 0;
     const summary = summaryAll.find(s => s.config_id === cid);
@@ -345,7 +346,7 @@ function ComposedChartDual({ scenarios, summaryAll }: { scenarios: ScenRunRow[],
 
 // 3. Simple Bar Chart (Loops)
 function BarChartLoops({ scenarios }: { scenarios: ScenRunRow[] }) {
-  const data = ['A', 'B', 'C', 'D'].map(cid => {
+  const data = ['A', 'B', 'Bv2', 'C', 'D'].map(cid => {
     const cfgRuns = scenarios.filter(s => s.config_id === cid);
     const avgLoops = cfgRuns.length ? cfgRuns.reduce((sum, r) => sum + Number(r.total_loops_fired ?? 0), 0) / cfgRuns.length : 0;
     return { name: cid, loops: Number(avgLoops.toFixed(3)) };
@@ -372,7 +373,7 @@ function BarChartLoops({ scenarios }: { scenarios: ScenRunRow[] }) {
 
 // 4. Heatmap (CSS Grid)
 function HeatmapAcademic({ data }: { data: any[] }) {
-  const configs = ['A', 'B', 'C', 'D'];
+  const configs = ['A', 'B', 'Bv2', 'C', 'D'];
 
   // Extraer categorías únicas presentes en la data
   const rawCats = [...new Set(data.map(d => d.question_category || d.category))];
@@ -602,7 +603,7 @@ function LatencyEfficiencyChart({ data }: { data: any[] }) {
 
 // ── B8. Costo por Configuración (estimado) ───────────────────────────────────
 function CostEffectivenessChart({ scenarios }: { scenarios: ScenRunRow[] }) {
-  const cfgIds = ['A', 'B', 'C', 'D'];
+  const cfgIds = ['A', 'B', 'Bv2', 'C', 'D'];
   const data = cfgIds.map(cid => {
     const sRuns = scenarios.filter(r => r.config_id === cid && r.status === 'done');
     const withCost = sRuns.filter(r => (r.total_cost_usd ?? 0) > 0);
@@ -671,7 +672,7 @@ function TurnsToResolutionChart({ scenarios }: { scenarios: ScenRunRow[] }) {
 
 // ── B10. Gap Engine Stop Reasons (Stacked) ────────────────────────────────────
 function ConsistencyChart({ scenarios }: { scenarios: ScenRunRow[] }) {
-  const configs = ['A', 'B', 'C', 'D'];
+  const configs = ['A', 'B', 'Bv2', 'C', 'D'];
   const data = scenarios
     .filter(r => r.score_total !== null)
     .map(r => ({

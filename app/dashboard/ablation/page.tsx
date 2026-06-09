@@ -1797,8 +1797,8 @@ type ScenTabId = typeof SCENARIO_TABS[number]['id'];
 type BatchTabId = typeof BATCH_TABS[number]['id'];
 
 // IDs de configs por flujo
-const INDIVIDUAL_CONFIG_IDS = ['B', 'D', 'config_bm25_bert', 'config_goms'];
-const SCENARIO_CONFIG_IDS = ['A', 'B', 'C', 'D'];
+const INDIVIDUAL_CONFIG_IDS = ['B', 'Bv2', 'D', 'config_bm25_bert', 'config_goms'];
+const SCENARIO_CONFIG_IDS = ['A', 'B', 'Bv2', 'C', 'D'];
 
 export default function AblationPage() {
   const [parentTab, setParentTab] = useState<ParentTabId>('individual');

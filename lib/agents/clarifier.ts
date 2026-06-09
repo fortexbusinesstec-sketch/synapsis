@@ -104,7 +104,7 @@ export async function runClarifier(
       (input.equipmentModel ? `\nModelo de equipo en contexto: ${input.equipmentModel}` : '') +
       (input.historyContext  ? `\nHistorial reciente:\n${input.historyContext}`          : '');
 
-    const { text } = await generateText({
+    const { text, usage } = await generateText({
       model:     openai('gpt-4o-mini'),
       maxTokens: 300,
       messages: [
@@ -131,7 +131,8 @@ export async function runClarifier(
                             ? Math.min(1, Math.max(0, parsed.confidence))
                             : 0.5,
       use_original_query: true, // siempre true por spec
-    };
+      _usage: { promptTokens: usage.promptTokens ?? 0, completionTokens: usage.completionTokens ?? 0 },
+    } as ClarifierOutput & { _usage: { promptTokens: number; completionTokens: number } };
   } catch (err) {
     console.error('[clarifier] Error, usando failsafe:', (err as Error).message);
     return CLARIFIER_FAILSAFE;

@@ -98,7 +98,7 @@ export async function runPlanner(
     `\nGenera queries quirúrgicas para obtener la información necesaria para cerrar este Gap.`;
 
   try {
-    const { text } = await generateText({
+    const { text, usage } = await generateText({
       model:     openai('gpt-4o-mini'),
       maxTokens: 250,
       messages: [
@@ -118,7 +118,8 @@ export async function runPlanner(
     return {
       text_query:  parsed.text_query.trim(),
       image_query: parsed.image_query.trim(),
-    };
+      _usage: { promptTokens: usage.promptTokens ?? 0, completionTokens: usage.completionTokens ?? 0 },
+    } as SearchPlan & { _usage: { promptTokens: number; completionTokens: number } };
   } catch (err) {
     return defaultPlannerOutput(input.query, input.entities);
   }

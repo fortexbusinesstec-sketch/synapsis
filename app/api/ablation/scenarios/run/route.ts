@@ -57,14 +57,17 @@ function estimateTurnCost(
 function configToAgentFlags(row: Record<string, unknown>) {
   const ragOk = row.rag_enabled !== 0;
   return {
-    clarifier:     row.clarifier_enabled      !== 0,
-    planner:       (row.planner_enabled       ?? 1) !== 0 && ragOk,
-    bibliotecario: row.bibliotecario_enabled  !== 0 && ragOk,
-    enrichments:   row.enrichments_enabled    !== 0,
-    images:        (row.images_enabled        ?? 1) !== 0,
-    selector:      (row.selector_enabled      ?? 1) !== 0,
-    analista:      row.analista_enabled       !== 0,
-    metrifier:     true,
+    clarifier:       row.clarifier_enabled            !== 0,
+    planner:         (row.planner_enabled             ?? 1) !== 0 && ragOk,
+    bibliotecario:   row.bibliotecario_enabled        !== 0 && ragOk,
+    enrichments:     row.enrichments_enabled          !== 0,
+    images:          (row.images_enabled              ?? 1) !== 0,
+    selector:        (row.selector_enabled            ?? 1) !== 0,
+    analista:        row.analista_enabled             !== 0,
+    metrifier:       true,
+    semantic_router: (row.semantic_router_enabled     ?? 0) !== 0,
+    verifier:        (row.verifier_enabled            ?? 0) !== 0,
+    react_loop:      (row.react_loop_enabled          ?? 0) !== 0,
   };
 }
 

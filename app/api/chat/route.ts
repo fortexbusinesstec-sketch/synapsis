@@ -1,12 +1,15 @@
 /**
- * POST /api/chat — "Comité de Diagnóstico" Multi-Agent v2
+ * POST /api/chat — "Comité de Diagnóstico" Multi-Agent v3
  *
- * FASE 0 — CLARIFICADOR    : gpt-4o-mini. Solo en primer mensaje corto sin contexto técnico.
- * FASE 1 — BIBLIOTECARIO   : Retrieval vectorial en Turso (chunks + imágenes)
- * FASE 2 — ANALISTA        : Internal monologue con gpt-4o (no stream)
- * FASE 3 — INGENIERO JEFE  : Streaming response con gpt-4o-mini
- * AGENTE 4 — VALIDADOR     : Filtrado puro de imágenes antes de enviar
- * AGENTE 5 — METRIFICADOR  : Persiste métricas en modo 'record'
+ * FASE 0     — CLARIFICADOR       : gpt-4o-mini. Clasificación silenciosa de intención.
+ * FASE 0.5  — ENRUTADOR SEMÁNTICO : gpt-4o-mini. Extrae entidades para filtros SQL.
+ * FASE 1     — BIBLIOTECARIO      : Retrieval vectorial en Turso (chunks + imágenes).
+ * FASE 2     — ANALISTA           : Internal monologue con gap detection.
+ *              └→ ReAct Loop      : Planificador → re-retrieval → re-análisis (max 3).
+ * FASE 2.5  — VERIFICADOR         : gpt-4o-mini. Audita fidelidad contra fuente RAG.
+ * FASE 3     — INGENIERO JEFE     : Streaming response con gpt-4o-mini.
+ * AGENTE 4   — VALIDADOR          : Filtrado puro de imágenes antes de enviar.
+ * AGENTE 5   — METRIFICADOR       : Persiste métricas en modo 'record'.
  *
  * Headers de respuesta:
  *   x-retrieved-images   → JSON de imágenes validadas
@@ -22,6 +25,9 @@
  *   x-images-retrieved   → imágenes antes del validador
  *   x-images-shown       → imágenes tras el validador
  *   x-enrichments-used   → '1' si se incluyeron notas de experto
+ *   x-loops-used         → número de re-loops ejecutados (0-2)
+ *   x-final-confidence   → confianza final del analista
+ *   x-verifier-valid     → '1' si el verificador aprobó la hipótesis
  */
 
 import { streamText } from 'ai';
@@ -31,14 +37,18 @@ import type { Message } from 'ai';
 
 import { runClarifier } from '@/lib/agents/clarifier';
 import type { ClarifierInput } from '@/lib/agents/clarifier';
-import { runAnalista, ANALISTA_FAILSAFE } from '@/lib/agents/analista';
+import { runAnalista, ANALISTA_FAILSAFE, shouldLoop } from '@/lib/agents/analista';
 import { saveChatMessage } from '@/lib/agents/metrifier';
 import { PROMPT_MENTOR_V2, PROMPT_DIAGNOSTICO, type ModoType } from '@/lib/agents/prompts';
-import type { AnalistaOutput } from '@/lib/types/agents';
+import type { AnalistaOutput, LoopState } from '@/lib/types/agents';
 import { runBuscadorDocumental } from '@/lib/agents/sub-buscador-documental';
 import { runBuscadorVisual } from '@/lib/agents/sub-buscador-visual';
 import { runCurador } from '@/lib/agents/sub-curador';
 import type { CuradorResult } from '@/lib/agents/sub-curador';
+import { runSemanticRouter } from '@/lib/agents/semantic_router';
+import type { SemanticRouterOutput } from '@/lib/agents/semantic_router';
+import { runPlanner } from '@/lib/agents/planner';
+import { runVerifier } from '@/lib/agents/verifier';
 
 export const maxDuration = 60;
 
@@ -87,7 +97,10 @@ export async function POST(req: Request) {
   let clarificationAnswers: Record<string, string> | null;
   let modo: ModoType = 'diagnostico'; // default
 
-  let agentFlags = { planner: false, clarifier: true, analyst: true };
+  let agentFlags = {
+    planner: false, clarifier: true, analyst: true,
+    semantic_router: false, verifier: false, react_loop: false,
+  };
 
   try {
     const body = await req.json();
@@ -143,6 +156,23 @@ export async function POST(req: Request) {
     }
   }
 
+  /* ────────────────────────────────────────────────────────────────────────
+     FASE 0.5 — ENRUTADOR SEMÁNTICO (Knowledge Graph ligero pre-retrieval)
+     Extrae entidades físicas, marcas y componentes del reporte del técnico
+     para enriquecer la búsqueda vectorial antes del Bibliotecario.
+  ──────────────────────────────────────────────────────────────────────── */
+  let semanticRoute: SemanticRouterOutput | null = null;
+  if (agentFlags.semantic_router) {
+    try {
+      const result = await runSemanticRouter(enrichedQuery);
+      semanticRoute = result.data;
+    } catch (e) {
+      console.error(`[${timestamp}][chat:fase0.5] Enrutador semántico falló:`, (e as Error).message);
+    }
+  }
+
+  const entitiesForSearch = semanticRoute?.entidades_criticas ?? [];
+
   /* ── Historial de usuario para refinar búsqueda ─────────────────────── */
   const historyTurnos = messages
     .filter(m => m.role === 'user')
@@ -153,6 +183,11 @@ export async function POST(req: Request) {
   const searchQuery = historyTurnos.length > 0
     ? `${historyTurnos.join(' ')} ${enrichedQuery}`
     : enrichedQuery;
+
+  // Enriquecer la search query con entidades del Enrutador
+  const enhancedSearchQuery = entitiesForSearch.length > 0
+    ? `${searchQuery} ${entitiesForSearch.join(' ')}`
+    : searchQuery;
 
   /* ────────────────────────────────────────────────────────────────────────
      FASE 1 — BIBLIOTECARIO: 3 sub-agentes
@@ -171,10 +206,10 @@ export async function POST(req: Request) {
   const t1start = Date.now();
 
   try {
-    const docResult = await runBuscadorDocumental(searchQuery, equipmentModel, queryIntent as 'troubleshooting' | 'education_info', []);
+    const docResult = await runBuscadorDocumental(enhancedSearchQuery, equipmentModel, queryIntent as 'troubleshooting' | 'education_info', entitiesForSearch);
 
     const docIds = [...new Set(docResult.chunks.map(c => c.document_id))];
-    const imgResult = await runBuscadorVisual(searchQuery, docIds, equipmentModel);
+    const imgResult = await runBuscadorVisual(enhancedSearchQuery, docIds, equipmentModel);
     imagesRetrievedCount = imgResult.images.length;
 
     const curadorResult = await runCurador(docResult.chunks, imgResult.images, userQuery, equipmentModel);
@@ -203,21 +238,21 @@ export async function POST(req: Request) {
   const t1end = Date.now();
 
   /* ────────────────────────────────────────────────────────────────────────
-     FASE 2 — ANALISTA: Internal monologue (nunca detiene la Fase 3)
+     FASE 2 — ANALISTA: Internal monologue + ReAct Loop
+     El Analista evalúa el contexto. Si detecta un gap, el ReAct Loop
+     ejecuta Planificador → re-retrieval → re-análisis (hasta 3 iteraciones).
   ──────────────────────────────────────────────────────────────────────── */
   let analista: AnalistaOutput = ANALISTA_FAILSAFE;
   let phase2Tokens = 0;
 
   let t2start = Date.now();
   let t2end = Date.now();
-  if (agentFlags.analyst) {
-    t2start = Date.now();
 
-    try {
-      if (componentMismatch || rescueUsed) {
-        console.log(`[chat:fase2] BYPASS Analista: mismatch=${componentMismatch}, rescue=${rescueUsed}`);
-
-        analista = {
+  async function ejecutarAnalista(loopIndex: number): Promise<{ output: AnalistaOutput; totalTokens: number }> {
+    if (componentMismatch || rescueUsed) {
+      console.log(`[chat:fase2] BYPASS Analista (loop ${loopIndex}): mismatch=${componentMismatch}, rescue=${rescueUsed}`);
+      return {
+        output: {
           root_cause_hypothesis: 'Alimentación no detectada en el componente indicado. Aplicando protocolo de verificación base del modelo.',
           confidence: 0.6,
           requires_verification: true,
@@ -225,29 +260,127 @@ export async function POST(req: Request) {
           response_mode: 'TROUBLESHOOTING',
           needs_more_info: false,
           gap: null,
-        };
-        phase2Tokens = 0;
+        },
+        totalTokens: 0,
+      };
+    }
+    return runAnalista({
+      userQuery: enrichedQuery,
+      groundTruth,
+      imageContext: '',
+      intent: queryIntent,
+      historyContext: '',
+      loopIndex,
+      modo,
+      componentMismatch,
+      rescueUsed,
+      entities: entitiesForSearch,
+    });
+  }
 
-      } else {
-        const analyzeResult = await runAnalista({
-          userQuery: enrichedQuery,
-          groundTruth,
-          imageContext: '',
-          intent: queryIntent,
-          historyContext: '',
-          loopIndex: 0,
-          modo,
-          componentMismatch,
-          rescueUsed,
-        });
-        analista = analyzeResult.output;
-        phase2Tokens = analyzeResult.totalTokens;
-      }
-
+  // Primera ejecución del Analista (loop 0)
+  if (agentFlags.analyst) {
+    t2start = Date.now();
+    try {
+      const result = await ejecutarAnalista(0);
+      analista = result.output;
+      phase2Tokens = result.totalTokens;
     } catch (e) {
       console.error(`[${timestamp}][chat:fase2] Analista falló:`, (e as Error).message);
     }
     t2end = Date.now();
+  }
+
+  // ReAct Loop: Planificador → re-retrieval → re-análisis (max 3 iteraciones total)
+  let loopIndex = 0;
+  let totalLoopsUsed = 0;
+  const loopHistory: LoopState[] = [];
+
+  while (agentFlags.react_loop && loopIndex < 2 && shouldLoop(analista, loopIndex, loopHistory)) {
+    loopHistory.push({
+      loopIndex,
+      confidence: analista.confidence,
+      gap: analista.gap,
+      chunks_used: [],
+    });
+
+    loopIndex++;
+    totalLoopsUsed++;
+
+    try {
+      console.log(`[${timestamp}][chat:react-loop] Iniciando re-loop ${loopIndex} — gap: ${analista.gap?.target ?? 'desconocido'}`);
+
+      const plan = await runPlanner({
+        query: userQuery,
+        intent: queryIntent,
+        entities: entitiesForSearch,
+        loopIndex,
+        analystFeedback: {
+          gap: analista.gap!,
+          confidence: analista.confidence,
+        },
+        searchMemory: {
+          previous_queries: [],
+          previous_chunk_ids: [],
+        },
+      }, equipmentModel);
+
+      const docResult = await runBuscadorDocumental(plan.text_query, equipmentModel, queryIntent as 'troubleshooting' | 'education_info', entitiesForSearch);
+
+      const docIds = [...new Set(docResult.chunks.map(c => c.document_id))];
+      const imgResult = await runBuscadorVisual(plan.image_query, docIds, equipmentModel);
+
+      const curadorResult = await runCurador(docResult.chunks, imgResult.images, userQuery, equipmentModel);
+
+      // Acumular contexto: anexar nueva información a la existente
+      groundTruth = groundTruth
+        ? `${groundTruth}\n\n--- INFORMACIÓN ADICIONAL (Iteración ${loopIndex}) ---\n\n${curadorResult.groundTruth}`
+        : curadorResult.groundTruth;
+      validatedImages = curadorResult.validatedImages;
+      chunksRetrieved += curadorResult.chunksRetrieved;
+      hasEnrichments = hasEnrichments || curadorResult.hasEnrichments;
+      bestDistance = Math.min(bestDistance, curadorResult.bestDistance);
+      componentMismatch = componentMismatch || curadorResult.componentMismatch;
+      rescueUsed = rescueUsed || curadorResult.rescueUsed;
+      docsConsultados = curadorResult.docsConsultados;
+
+      const analyzeResult = await ejecutarAnalista(loopIndex);
+      analista = analyzeResult.output;
+      phase2Tokens += analyzeResult.totalTokens;
+
+      console.log(`[${timestamp}][chat:react-loop] Re-loop ${loopIndex} completado — confianza: ${analista.confidence}, needs_more_info: ${analista.needs_more_info}`);
+    } catch (e) {
+      console.error(`[${timestamp}][chat:react-loop] Iteración ${loopIndex} falló:`, (e as Error).message);
+      break;
+    }
+  }
+
+  /* ────────────────────────────────────────────────────────────────────────
+     FASE 2.5 — VERIFICADOR DE FIDELIDAD (Safety Auditor)
+     Compara la hipótesis del Analista contra la fuente RAG y bloquea
+     planes no respaldados por documentación oficial.
+  ──────────────────────────────────────────────────────────────────────── */
+  let verifierValid: boolean | null = null;
+
+  // Solo verificar si el Analista tiene una hipótesis concreta (sin gap activo)
+  if (agentFlags.verifier && (analista.gap === null || !analista.needs_more_info)) {
+    try {
+      const verifierResult = await runVerifier(groundTruth, analista.root_cause_hypothesis);
+      verifierValid = verifierResult.data.is_valid;
+
+      if (!verifierResult.data.is_valid) {
+        console.log(`[${timestamp}][chat:fase2.5] Verificador rechazó hipótesis: ${verifierResult.data.critique}`);
+        analista.root_cause_hypothesis = verifierResult.data.safe_fallback_response;
+        analista.confidence = Math.min(analista.confidence, verifierResult.data.confidence_score);
+        analista.requires_verification = true;
+      } else {
+        console.log(`[${timestamp}][chat:fase2.5] Verificador aprobó hipótesis (confianza: ${verifierResult.data.confidence_score})`);
+      }
+
+      phase2Tokens += verifierResult.usage.promptTokens + verifierResult.usage.completionTokens;
+    } catch (e) {
+      console.error(`[${timestamp}][chat:fase2.5] Verificador falló:`, (e as Error).message);
+    }
   }
 
   /* ────────────────────────────────────────────────────────────────────────
@@ -356,6 +489,10 @@ export async function POST(req: Request) {
         'x-rescue-used': String(rescueUsed ? 1 : 0),
         'x-doc-base-used': String(docsConsultados.docBaseUsed ? 1 : 0),
         'x-doc-titulos': encodeURIComponent(JSON.stringify(docsConsultados.titulos)),
+        // Telemetría del ReAct Loop
+        'x-loops-used': String(totalLoopsUsed),
+        'x-final-confidence': String(analista.confidence),
+        'x-verifier-valid': verifierValid === null ? '' : String(verifierValid ? 1 : 0),
       },
     });
 

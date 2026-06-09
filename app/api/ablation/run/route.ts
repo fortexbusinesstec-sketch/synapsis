@@ -18,14 +18,17 @@ export const maxDuration = 120; // requiere Vercel Pro; en dev no aplica
 function configToAgentFlags(row: Record<string, unknown>) {
   const ragOk = row.rag_enabled !== 0; // legacy — se mantiene para retro-compat
   return {
-    clarifier:     row.clarifier_enabled      !== 0,
-    planner:       (row.planner_enabled       ?? 1) !== 0 && ragOk,
-    bibliotecario: row.bibliotecario_enabled  !== 0 && ragOk,
-    enrichments:   row.enrichments_enabled    !== 0,
-    images:        (row.images_enabled        ?? 1) !== 0,
-    selector:      (row.selector_enabled      ?? 1) !== 0,
-    analista:      row.analista_enabled       !== 0,
-    metrifier:     true, // siempre activo para persistir la sesión real
+    clarifier:       row.clarifier_enabled            !== 0,
+    planner:         (row.planner_enabled             ?? 1) !== 0 && ragOk,
+    bibliotecario:   row.bibliotecario_enabled        !== 0 && ragOk,
+    enrichments:     row.enrichments_enabled          !== 0,
+    images:          (row.images_enabled              ?? 1) !== 0,
+    selector:        (row.selector_enabled            ?? 1) !== 0,
+    analista:        row.analista_enabled             !== 0,
+    metrifier:       true, // siempre activo para persistir la sesión real
+    semantic_router: (row.semantic_router_enabled     ?? 0) !== 0,
+    verifier:        (row.verifier_enabled            ?? 0) !== 0,
+    react_loop:      (row.react_loop_enabled          ?? 0) !== 0,
   };
 }
 
@@ -78,7 +81,10 @@ export async function POST(req: Request) {
                    c.enrichments_enabled, c.rag_enabled,
                    COALESCE(c.planner_enabled,   1) AS planner_enabled,
                    COALESCE(c.selector_enabled,  1) AS selector_enabled,
-                   COALESCE(c.images_enabled,    1) AS images_enabled
+                   COALESCE(c.images_enabled,    1) AS images_enabled,
+                   COALESCE(c.semantic_router_enabled, 0) AS semantic_router_enabled,
+                   COALESCE(c.verifier_enabled,        0) AS verifier_enabled,
+                   COALESCE(c.react_loop_enabled,      0) AS react_loop_enabled
             FROM ablation_runs r
             JOIN ablation_questions      q ON r.question_id = q.id
             JOIN ablation_configurations c ON r.config_id   = c.id

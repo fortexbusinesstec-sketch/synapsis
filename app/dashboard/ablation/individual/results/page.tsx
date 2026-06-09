@@ -48,10 +48,11 @@ interface ApiPayload {
 }
 
 /* ── Constantes ───────────────────────────────────────────────────────────── */
-const INDIVIDUAL_CONFIGS = ['B', 'D', 'config_bm25_bert', 'config_goms'];
+const INDIVIDUAL_CONFIGS = ['B', 'Bv2', 'D', 'config_bm25_bert', 'config_goms'];
 
 const CONFIG_META: Record<string, { label: string; color: string; shortName: string }> = {
     'B': { label: 'Config B (MAS)', color: '#3b82f6', shortName: 'MAS' },
+    'Bv2': { label: 'Config Bv2 (B + Enrutador + Verificador + Loop)', color: '#8b5cf6', shortName: 'Bv2' },
     'D': { label: 'Config D (RAG Base)', color: '#94a3b8', shortName: 'RAG' },
     'config_bm25_bert': { label: 'BM25 + BERT', color: '#f59e0b', shortName: 'BM25' },
     'config_goms': { label: 'GOMS (Humano)', color: '#10b981', shortName: 'GOMS' },

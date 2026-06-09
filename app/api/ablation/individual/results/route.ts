@@ -12,7 +12,7 @@
 import { NextResponse } from 'next/server';
 import { client } from '@/lib/db';
 
-const INDIVIDUAL_CONFIGS = ['B', 'D', 'config_bm25_bert', 'config_goms'];
+const INDIVIDUAL_CONFIGS = ['B', 'Bv2', 'D', 'config_bm25_bert', 'config_goms'];
 
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);

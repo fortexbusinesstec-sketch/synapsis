@@ -114,7 +114,7 @@ function parseGap(raw: unknown): GapDescriptor | null {
 
 export async function runAnalista(
   input: AnalistaInput,
-): Promise<{ output: AnalistaOutput; totalTokens: number }> {
+): Promise<{ output: AnalistaOutput; totalTokens: number; usage?: { promptTokens: number; completionTokens: number } }> {
 
   /* ── CORTOCIRCUITO: query ambigua — sin LLM, sin hipótesis ──────────────── */
   if (input.isAmbiguous) {
@@ -369,6 +369,7 @@ RESTRICCIONES:
 
       },
       totalTokens,
+      usage: { promptTokens: usage.promptTokens ?? 0, completionTokens: usage.completionTokens ?? 0 },
     };
   } catch (err) {
     console.error('[analista] Parse falló, usando failsafe:', (err as Error).message);

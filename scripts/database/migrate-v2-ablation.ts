@@ -53,9 +53,12 @@ async function run() {
 
   // ── 1. Añadir columnas a ablation_configurations ───────────────────────
   console.log('── ablation_configurations: nuevas columnas');
-  await safeAlter('ALTER TABLE ablation_configurations ADD COLUMN planner_enabled  INTEGER DEFAULT 1');
-  await safeAlter('ALTER TABLE ablation_configurations ADD COLUMN selector_enabled INTEGER DEFAULT 1');
-  await safeAlter('ALTER TABLE ablation_configurations ADD COLUMN images_enabled   INTEGER DEFAULT 1');
+  await safeAlter('ALTER TABLE ablation_configurations ADD COLUMN planner_enabled         INTEGER DEFAULT 1');
+  await safeAlter('ALTER TABLE ablation_configurations ADD COLUMN selector_enabled        INTEGER DEFAULT 1');
+  await safeAlter('ALTER TABLE ablation_configurations ADD COLUMN images_enabled          INTEGER DEFAULT 1');
+  await safeAlter('ALTER TABLE ablation_configurations ADD COLUMN semantic_router_enabled INTEGER DEFAULT 0');
+  await safeAlter('ALTER TABLE ablation_configurations ADD COLUMN verifier_enabled        INTEGER DEFAULT 0');
+  await safeAlter('ALTER TABLE ablation_configurations ADD COLUMN react_loop_enabled      INTEGER DEFAULT 0');
 
   // ── 2. Añadir columnas a ablation_runs ────────────────────────────────
   console.log('\n── ablation_runs: nuevas columnas');
@@ -105,51 +108,59 @@ async function run() {
     number, // images_enabled
     number, // is_baseline
     number, // display_order
+    number, // semantic_router_enabled
+    number, // verifier_enabled
+    number, // react_loop_enabled
   ];
 
   const configs: ConfigRow[] = [
     ['A', 'Sistema completo v2',
      'Todos los agentes v2 activos. Benchmark.',
-     1, 1, 1, 1, 1, 1, 1,  1, 1],
+     1, 1, 1, 1, 1, 1, 1,  1, 1, 0, 0, 1],
 
     ['B', 'Sin Planificador',
      'Desactiva la re-planificación. Bloquea el Loop 1+ al no permitir búsquedas quirúrgicas de rescate.',
-     1, 1, 0, 1, 1, 1, 1,  0, 2],
+     1, 1, 0, 1, 1, 1, 1,  0, 2, 0, 0, 0],
+
+    ['Bv2', 'B + Enrutador + Verificador + ReAct Loop',
+     'Config B con Enrutador Semántico, Verificador de Fidelidad y ReAct Loop activados.',
+     1, 1, 0, 1, 1, 1, 1,  0, 9, 1, 1, 1],
 
     ['C', 'Bibliotecario sin enrichments',
      'Solo document_chunks y extracted_images. Sin Q&A experto.',
-     1, 1, 1, 1, 0, 1, 1,  0, 3],
+     1, 1, 1, 1, 0, 1, 1,  0, 3, 0, 0, 0],
 
     ['D', 'Sin Clarificador',
      'Query cruda al Planificador sin análisis semántico.',
-     0, 1, 1, 1, 1, 1, 1,  0, 4],
+     0, 1, 1, 1, 1, 1, 1,  0, 4, 0, 0, 0],
 
     ['E', 'Sin Analista',
      'El IJ recibe chunks del Selector sin monólogo interno.',
-     1, 1, 1, 1, 1, 0, 1,  0, 5],
+     1, 1, 1, 1, 1, 0, 1,  0, 5, 0, 0, 0],
 
     ['F', 'Bibliotecario sin imágenes',
      'Solo document_chunks + enrichments. Sin extracted_images.',
-     1, 1, 1, 1, 1, 1, 0,  0, 6],
+     1, 1, 1, 1, 1, 1, 0,  0, 6, 0, 0, 0],
 
     ['G', 'Sin Selector de Contexto',
      'Los 10 chunks del Bibliotecario van directos al Analista.',
-     1, 1, 1, 0, 1, 1, 1,  0, 7],
+     1, 1, 1, 0, 1, 1, 1,  0, 7, 0, 0, 0],
 
     ['H', 'Solo RAG + LLM base',
      'Solo Bibliotecario chunks + Ingeniero Jefe. Sin orquestación.',
-     0, 1, 0, 0, 0, 0, 0,  1, 8],
+     0, 1, 0, 0, 0, 0, 0,  1, 8, 0, 0, 0],
   ];
 
-  for (const [id, name, desc, cl, bi, pl, se, en, an, im, isBase, order] of configs) {
+  for (const [id, name, desc, cl, bi, pl, se, en, an, im, isBase, order, sr, ve, rl] of configs) {
     await client.execute({
       sql: `INSERT INTO ablation_configurations
               (id, name, description,
                clarifier_enabled, bibliotecario_enabled, planner_enabled,
                selector_enabled, enrichments_enabled, analista_enabled,
-               images_enabled, is_baseline, display_order, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, unixepoch())`,
-      args: [id, name, desc, cl, bi, pl, se, en, an, im, isBase, order],
+               images_enabled, is_baseline, display_order, created_at,
+               semantic_router_enabled, verifier_enabled, react_loop_enabled)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, unixepoch(), ?, ?, ?)`,
+      args: [id, name, desc, cl, bi, pl, se, en, an, im, isBase, order, sr, ve, rl],
     });
     console.log(`  ✓ Config ${id}: ${name}`);
   }

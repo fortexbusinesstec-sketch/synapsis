@@ -123,7 +123,7 @@ export async function runVerifier(
   hipotesis_analista:  string,
 ): Promise<{ data: VerifierOutput; usage: { promptTokens: number; completionTokens: number } }> {
   const { object, usage } = await generateObject({
-    model:       openai('gpt-4o'),
+      model:       openai('gpt-4o-mini'),
     schema:      VerifierOutputSchema,
     maxTokens:   600,
     temperature: 0,   // Auditor determinístico — sin creatividad

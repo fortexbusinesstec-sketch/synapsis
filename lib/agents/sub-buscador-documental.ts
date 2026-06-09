@@ -30,9 +30,13 @@ export async function runBuscadorDocumental(
   entities: string[],
 ): Promise<BuscadorDocumentalResult> {
 
+  const enhancedQuery = entities.length > 0
+    ? `${query} ${entities.slice(0, 5).join(' ')}`
+    : query;
+
   const { embedding } = await embed({
     model: openai.embedding('text-embedding-3-small'),
-    value: query,
+    value: enhancedQuery,
   });
 
   const vec = new Uint8Array(new Float32Array(embedding).buffer);

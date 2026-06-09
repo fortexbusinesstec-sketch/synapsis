@@ -6,10 +6,13 @@ export async function GET() {
   const result = await client.execute(
     `SELECT id, name, description,
             clarifier_enabled, bibliotecario_enabled,
-            COALESCE(planner_enabled,  1) AS planner_enabled,
-            COALESCE(selector_enabled, 1) AS selector_enabled,
+            COALESCE(planner_enabled,        1) AS planner_enabled,
+            COALESCE(selector_enabled,       1) AS selector_enabled,
             analista_enabled, enrichments_enabled,
-            COALESCE(images_enabled,   1) AS images_enabled,
+            COALESCE(images_enabled,         1) AS images_enabled,
+            COALESCE(semantic_router_enabled, 0) AS semantic_router_enabled,
+            COALESCE(verifier_enabled,        0) AS verifier_enabled,
+            COALESCE(react_loop_enabled,      0) AS react_loop_enabled,
             is_baseline, display_order, created_at
      FROM ablation_configurations
      ORDER BY display_order`,
@@ -30,6 +33,9 @@ export async function POST(req: Request) {
     analista_enabled?:       number;
     enrichments_enabled?:    number;
     images_enabled?:         number;
+    semantic_router_enabled?: number;
+    verifier_enabled?:        number;
+    react_loop_enabled?:      number;
     is_baseline?:            number;
     display_order?:          number;
   };
@@ -67,21 +73,25 @@ export async function POST(req: Request) {
             (id, name, description,
              clarifier_enabled, bibliotecario_enabled, planner_enabled,
              selector_enabled, analista_enabled, enrichments_enabled,
-             images_enabled, is_baseline, display_order)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             images_enabled, is_baseline, display_order,
+             semantic_router_enabled, verifier_enabled, react_loop_enabled)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       id.trim(),
       name.trim(),
-      body.description           ?? null,
-      body.clarifier_enabled     ?? 1,
-      body.bibliotecario_enabled ?? 1,
-      body.planner_enabled       ?? 1,
-      body.selector_enabled      ?? 1,
-      body.analista_enabled      ?? 1,
-      body.enrichments_enabled   ?? 1,
-      body.images_enabled        ?? 1,
-      body.is_baseline           ?? 0,
+      body.description              ?? null,
+      body.clarifier_enabled        ?? 1,
+      body.bibliotecario_enabled    ?? 1,
+      body.planner_enabled          ?? 1,
+      body.selector_enabled         ?? 1,
+      body.analista_enabled         ?? 1,
+      body.enrichments_enabled      ?? 1,
+      body.images_enabled           ?? 1,
+      body.is_baseline              ?? 0,
       displayOrder,
+      body.semantic_router_enabled ?? 0,
+      body.verifier_enabled        ?? 0,
+      body.react_loop_enabled      ?? 0,
     ],
   });
 

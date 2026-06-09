@@ -375,6 +375,9 @@ export const ablationConfigurations = sqliteTable("ablation_configurations", {
   imageValidatorEnabled: integer("image_validator_enabled").default(1),
   enrichmentsEnabled: integer("enrichments_enabled").default(1),
   ragEnabled: integer("rag_enabled").default(1), // 0 = Config F (LLM base sin RAG)
+  semanticRouterEnabled: integer("semantic_router_enabled").default(0),
+  verifierEnabled: integer("verifier_enabled").default(0),
+  reactLoopEnabled: integer("react_loop_enabled").default(0),
   isBaseline: integer("is_baseline").default(0), // 1 = Config A (techo) o F (piso)
   displayOrder: integer("display_order").default(0),
   createdAt: integer("created_at").default(sql`(unixepoch())`),
