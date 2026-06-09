@@ -130,20 +130,38 @@ export default function SurveyForm({
 
   const setRating = useCallback(
     (pregId: number, config: string, val: number) => {
+      const isBest = selections[pregId] === config;
+      if (!isBest && val === 5) val = 4;
       setRatings((prev) => ({ ...prev, [`${pregId}-${config}`]: val }));
     },
-    [],
+    [selections],
   );
 
   const toggleSelection = useCallback((pregId: number, config: string) => {
     setSelections((prev) => {
-      if (prev[pregId] === config) {
+      const wasSelected = prev[pregId] === config;
+      if (wasSelected) {
         const { [pregId]: _, ...rest } = prev;
         return rest;
       }
       return { ...prev, [pregId]: config };
     });
-  }, []);
+    setRatings((prev) => {
+      const next = { ...prev };
+      const key = `${pregId}-${config}`;
+      const isCurrentlySelected = selections[pregId] === config;
+      if (!isCurrentlySelected) {
+        next[key] = 5;
+        for (const otherConfig of ['B5', 'E', 'D']) {
+          if (otherConfig !== config) {
+            const otherKey = `${pregId}-${otherConfig}`;
+            if (next[otherKey] === 5) next[otherKey] = 4;
+          }
+        }
+      }
+      return next;
+    });
+  }, [selections]);
 
   const handleSubmit = async () => {
     setSubmitting(true);

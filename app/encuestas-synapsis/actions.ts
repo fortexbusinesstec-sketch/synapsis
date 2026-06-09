@@ -35,11 +35,14 @@ export async function registrarTecnico(
   }
 
   const experiencia = parseInt(formData.get('experiencia') as string, 10);
-  if (isNaN(experiencia) || experiencia < 0) {
-    return { success: false, message: 'Ingrese un número válido de años de experiencia.' };
+  if (isNaN(experiencia) || experiencia < 1 || experiencia > 99) {
+    return { success: false, message: 'Ingrese un número válido de años de experiencia (1-99).' };
   }
 
-  const anonimizar = formData.get('anonimizar') === 'si';
+  const nombre = (formData.get('nombre') as string) || '';
+  if (!nombre.trim()) {
+    return { success: false, message: 'Ingrese su nombre completo.' };
+  }
 
   const db = getDb();
   let codigo = '';
@@ -56,29 +59,14 @@ export async function registrarTecnico(
     }
 
     const email = (formData.get('email') as string) || null;
+    const hashIdVal = hashId(email || nombre);
 
-    if (anonimizar) {
-      // No guardar nombre, usar identificador hash del email si existe
-      const hashIdVal = email ? hashId(email) : codigo;
-      await db.execute({
-        sql: `INSERT INTO encuesta_tecnicos
-          (codigo_tecnico, nombre_completo, email, anos_experiencia, consentimiento, anonimizado, hash_identificador)
-          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        args: [codigo, null, email, experiencia, true, true, hashIdVal],
-      });
-    } else {
-      const nombre = (formData.get('nombre') as string) || '';
-      if (!nombre.trim()) {
-        return { success: false, message: 'Ingrese su nombre completo o marque la opción de anonimizar.' };
-      }
-      const hashIdVal = hashId(email || nombre);
-      await db.execute({
-        sql: `INSERT INTO encuesta_tecnicos
-          (codigo_tecnico, nombre_completo, email, anos_experiencia, consentimiento, anonimizado, hash_identificador)
-          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        args: [codigo, nombre.trim(), email, experiencia, true, false, hashIdVal],
-      });
-    }
+    await db.execute({
+      sql: `INSERT INTO encuesta_tecnicos
+        (codigo_tecnico, nombre_completo, email, anos_experiencia, consentimiento, anonimizado, hash_identificador)
+        VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      args: [codigo, nombre.trim(), email, experiencia, true, 0, hashIdVal],
+    });
 
     // Crear sesión
     const headersList = await headers();

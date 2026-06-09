@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+import { createClient } from '@libsql/client';
 import SurveyForm from './survey-form';
 
 interface SurveyEntry {
@@ -25,6 +26,13 @@ const CONFIG_LABELS: Record<string, string> = {
   D: 'D – Solo RAG + LLM base',
 };
 
+function getDb() {
+  return createClient({
+    url: process.env.TURSO_URL_TESIS!,
+    authToken: process.env.TURSO_TOKEN_TESIS,
+  });
+}
+
 export default async function EncuestaPage({
   searchParams,
 }: {
@@ -33,6 +41,17 @@ export default async function EncuestaPage({
   const params = await searchParams;
   const codigo = params.codigo;
   if (!codigo) redirect('/encuestas-synapsis');
+
+  const db = getDb();
+  const exists = await db.execute({
+    sql: 'SELECT codigo_tecnico FROM encuesta_tecnicos WHERE codigo_tecnico = ? LIMIT 1',
+    args: [codigo],
+  });
+  db.close();
+
+  if (exists.rows.length === 0) {
+    redirect(`/encuestas-synapsis?clear=${codigo}`);
+  }
 
   const preguntasData = loadSurveyData().map((entry, idx) => ({
     id: idx + 1,

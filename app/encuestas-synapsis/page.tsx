@@ -5,7 +5,13 @@ export const metadata = {
   title: 'Encuesta Synapsis – Validación de Asistente Técnico',
 };
 
-export default function EncuestasLanding() {
+export default async function EncuestasLanding({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | undefined }>;
+}) {
+  const params = await searchParams;
+  const clearCode = params.clear;
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
       <div className="max-w-3xl mx-auto px-4 py-12">
@@ -119,7 +125,7 @@ export default function EncuestasLanding() {
             <Clock className="w-5 h-5 text-blue-500" />
             Comenzar encuesta
           </h2>
-          <RegistrationForm />
+          <RegistrationForm clearCode={clearCode} />
         </div>
 
         <p className="text-center text-[11px] text-slate-400 mt-8">
