@@ -306,7 +306,6 @@ export default function GraphicsPage() {
           {activeTemplate === "architecture" && (
             <ArchitectureDiagram
               primaryColor={colorScheme.primary}
-              secondaryColor={colorScheme.secondary}
             />
           )}
           {activeTemplate === "pipeline" && (

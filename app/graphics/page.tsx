@@ -200,7 +200,7 @@ export default function GraphicsPage() {
         <div ref={canvasRef}>
           <GraphicsCanvas width={template.width} height={template.height} label={template.label}>
             {activeTemplate === "architecture" && (
-              <ArchitectureDiagram primaryColor={colorScheme.primary} secondaryColor={colorScheme.secondary} />
+              <ArchitectureDiagram primaryColor={colorScheme.primary} />
             )}
             {activeTemplate === "pipeline" && (
               <PipelineDiagram primaryColor={colorScheme.primary} />
