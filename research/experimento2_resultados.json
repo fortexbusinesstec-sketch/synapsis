@@ -1,0 +1,1467 @@
+{
+  "experimento": {
+    "id": "exp2_benchmarking_singleturn",
+    "descripcion": "Benchmarking single-turn: 100 preguntas individuales × 4 configuraciones (B, D, BM25+BERT, GOMS). Score_total = (factual × 0.5 + diagnostic × 0.5). GOMS usa rúbrica de 5 dimensiones (score_correctness, completeness, relevance, clarity, ablation_impact) con escala 0–1.",
+    "fecha_extraccion": "2026-06-11T02:56:00.178Z",
+    "total_preguntas": 100,
+    "total_configs": 4,
+    "total_runs": 400,
+    "configuraciones": {
+      "B": {
+        "id": "B",
+        "name": "Sin Planificador",
+        "description": "Desactiva la re-planificación. Bloquea el Loop 1+ al no permitir búsquedas quirúrgicas de rescate."
+      },
+      "D": {
+        "id": "D",
+        "name": "Solo RAG + LLM base",
+        "description": "Solo Bibliotecario chunks + Ingeniero Jefe. Sin orquestación."
+      },
+      "config_bm25_bert": {
+        "id": "config_bm25_bert",
+        "name": "Baseline Léxico/Denso",
+        "description": "Two-Stage Retriever: Okapi BM25 + BERT Cross-Encoder sin generación de lenguaje."
+      },
+      "config_goms": {
+        "id": "config_goms",
+        "name": "Baseline Operativo (Humano)",
+        "description": "Modelo matemático GOMS para Keyhole Navigation en interfaz móvil."
+      }
+    },
+    "categorias": {
+      "ambigua": {
+        "category": "ambigua",
+        "count": 20
+      },
+      "diagnostico_tecnico": {
+        "category": "diagnostico_tecnico",
+        "count": 20
+      },
+      "enriquecimiento": {
+        "category": "enriquecimiento",
+        "count": 20
+      },
+      "secuencial": {
+        "category": "secuencial",
+        "count": 20
+      },
+      "visual": {
+        "category": "visual",
+        "count": 20
+      }
+    },
+    "nota_score_goms": "GOMS no tiene score_factual ni score_diagnostic. Su score_total = score_correctness×0.30 + completeness×0.20 + relevance×0.20 + clarity×0.15 + ablation_impact×0.15 (escala 0–1). Para B/D/BM25 se usa la rúbrica dual (0–2)."
+  },
+  "preguntas": [
+    {
+      "id": "Q001",
+      "category": "diagnostico_tecnico",
+      "category_number": 1,
+      "question_text": "¿Qué significa el código 0020 en el SMLCD o HMI?",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q002",
+      "category": "diagnostico_tecnico",
+      "category_number": 1,
+      "question_text": "Aparece BatFlt en el display del 5500. ¿Qué falla?",
+      "difficulty": "easy",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q003",
+      "category": "diagnostico_tecnico",
+      "category_number": 1,
+      "question_text": "HMI arroja error 1514. ¿Cuál es la temperatura límite superada?",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q004",
+      "category": "diagnostico_tecnico",
+      "category_number": 1,
+      "question_text": "Equipo 5500 bloqueado con mensaje AccTBlk. ¿Qué significa?",
+      "difficulty": "easy",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q005",
+      "category": "diagnostico_tecnico",
+      "category_number": 1,
+      "question_text": "SMLCD indica SB Fault al intentar arrancar. ¿Qué componente revisar?",
+      "difficulty": "hard",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q006",
+      "category": "diagnostico_tecnico",
+      "category_number": 1,
+      "question_text": "¿Qué indica el mensaje LMSnRdy?",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q007",
+      "category": "diagnostico_tecnico",
+      "category_number": 1,
+      "question_text": "Aparece PEBOFlt en el histórico. ¿A qué sistema corresponde?",
+      "difficulty": "medium",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q008",
+      "category": "diagnostico_tecnico",
+      "category_number": 1,
+      "question_text": "Ascensor viaja pero el display marca Creep de forma sostenida.",
+      "difficulty": "hard",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q009",
+      "category": "diagnostico_tecnico",
+      "category_number": 1,
+      "question_text": "Equipo marca BMIni y no arranca tras un reinicio.",
+      "difficulty": "medium",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q010",
+      "category": "diagnostico_tecnico",
+      "category_number": 1,
+      "question_text": "Error RdvBVR fijo en pantalla. ¿Qué ocurrió?",
+      "difficulty": "hard",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q011",
+      "category": "diagnostico_tecnico",
+      "category_number": 1,
+      "question_text": "Circuito de seguridad abre en KNE. ¿Dónde está el problema?",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q012",
+      "category": "diagnostico_tecnico",
+      "category_number": 1,
+      "question_text": "Falla KSKB registrada en el operador de puertas.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q013",
+      "category": "diagnostico_tecnico",
+      "category_number": 1,
+      "question_text": "Fusible SIH de la placa principal quemado. ¿Qué protege?",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q014",
+      "category": "diagnostico_tecnico",
+      "category_number": 1,
+      "question_text": "¿Qué falla se asocia al sensor KTHM?",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q015",
+      "category": "diagnostico_tecnico",
+      "category_number": 1,
+      "question_text": "Display LDU marca Ovrload con cabina vacía. Causa más probable.",
+      "difficulty": "medium",
+      "equipment_model": "3300"
+    },
+    {
+      "id": "Q016",
+      "category": "diagnostico_tecnico",
+      "category_number": 1,
+      "question_text": "Ascensor no hace la llamada de fase 1 de bomberos. Placa apagada.",
+      "difficulty": "medium",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q017",
+      "category": "diagnostico_tecnico",
+      "category_number": 1,
+      "question_text": "Falla de comunicación CAN entre SCIC y SDIC. Síntoma principal.",
+      "difficulty": "hard",
+      "equipment_model": "3300"
+    },
+    {
+      "id": "Q018",
+      "category": "diagnostico_tecnico",
+      "category_number": 1,
+      "question_text": "Display marca Correct. ¿Es una falla crítica?",
+      "difficulty": "easy",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q019",
+      "category": "diagnostico_tecnico",
+      "category_number": 1,
+      "question_text": "Contacto KSS abierto en foso. Causa física.",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q020",
+      "category": "diagnostico_tecnico",
+      "category_number": 1,
+      "question_text": "Variodyn ACVF reinicia al arrancar en subida.",
+      "difficulty": "hard",
+      "equipment_model": "3300"
+    },
+    {
+      "id": "Q021",
+      "category": "ambigua",
+      "category_number": 2,
+      "question_text": "Técnico dice: \"El ascensor está muerto\".",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q022",
+      "category": "ambigua",
+      "category_number": 2,
+      "question_text": "Reportan \"ruido raro al llegar al primer piso\".",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q023",
+      "category": "ambigua",
+      "category_number": 2,
+      "question_text": "Técnico: \"No me funcionan los botones nuevos que instalé\".",
+      "difficulty": "medium",
+      "equipment_model": "3300"
+    },
+    {
+      "id": "Q024",
+      "category": "ambigua",
+      "category_number": 2,
+      "question_text": "Cliente reporta: \"La puerta intenta cerrar pero se regresa sola repetidamente\".",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q025",
+      "category": "ambigua",
+      "category_number": 2,
+      "question_text": "Técnico en techo: \"Muevo el joystick de revisión y no hace nada\".",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q026",
+      "category": "ambigua",
+      "category_number": 2,
+      "question_text": "Técnico: \"El equipo resbala al frenar\".",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q027",
+      "category": "ambigua",
+      "category_number": 2,
+      "question_text": "Reportan \"luces de pasillo parpadean aleatoriamente\".",
+      "difficulty": "hard",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q028",
+      "category": "ambigua",
+      "category_number": 2,
+      "question_text": "Ascensor no abre la puerta al llegar a un piso específico.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q029",
+      "category": "ambigua",
+      "category_number": 2,
+      "question_text": "Técnico: \"La flecha de piso marca al revés de lo que viaja\".",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q030",
+      "category": "ambigua",
+      "category_number": 2,
+      "question_text": "Técnico: \"Saltó el diferencial de luz del edificio al usar el ascensor\".",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q031",
+      "category": "ambigua",
+      "category_number": 2,
+      "question_text": "Reporte: \"La cabina se mueve sola a velocidad hiper lenta\".",
+      "difficulty": "hard",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q032",
+      "category": "ambigua",
+      "category_number": 2,
+      "question_text": "Técnico: \"La evacuación manual avanza a golpes muy fuertes\".",
+      "difficulty": "medium",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q033",
+      "category": "ambigua",
+      "category_number": 2,
+      "question_text": "Cliente: \"El ascensor se va al piso 4 a cada rato vacío\".",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q034",
+      "category": "ambigua",
+      "category_number": 2,
+      "question_text": "Técnico: \"No puedo descargar el software al Variodyn\".",
+      "difficulty": "medium",
+      "equipment_model": "3300"
+    },
+    {
+      "id": "Q035",
+      "category": "ambigua",
+      "category_number": 2,
+      "question_text": "Reporte: \"El intercomunicador no suena en cabina\".",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q036",
+      "category": "ambigua",
+      "category_number": 2,
+      "question_text": "Técnico: \"Puse la placa SCIC nueva y marca puros errores de motor\".",
+      "difficulty": "medium",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q037",
+      "category": "ambigua",
+      "category_number": 2,
+      "question_text": "Reporte: \"El ascensor huele a laca de bobina quemada\".",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q038",
+      "category": "ambigua",
+      "category_number": 2,
+      "question_text": "Técnico: \"Me piden medir el microswitch de freno pero no tengo esquemas\".",
+      "difficulty": "hard",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q039",
+      "category": "ambigua",
+      "category_number": 2,
+      "question_text": "Cliente: \"Vi el ascensor pasar con mi puerta de pasillo abierta\".",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q040",
+      "category": "ambigua",
+      "category_number": 2,
+      "question_text": "Técnico: \"El motor de la puerta gira pero las hojas ni se mueven\".",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q041",
+      "category": "secuencial",
+      "category_number": 3,
+      "question_text": "¿Cuál es la secuencia para evacuar con PEBO en 5500?",
+      "difficulty": "medium",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q042",
+      "category": "secuencial",
+      "category_number": 3,
+      "question_text": "Procedimiento para registrar LOPs (Botoneras) en el 3300.",
+      "difficulty": "medium",
+      "equipment_model": "3300"
+    },
+    {
+      "id": "Q043",
+      "category": "secuencial",
+      "category_number": 3,
+      "question_text": "Pasos para calibrar el CERO del pesacargas (LMG).",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q044",
+      "category": "secuencial",
+      "category_number": 3,
+      "question_text": "Pasos para calibrar el PESO DE REFERENCIA (LMG).",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q045",
+      "category": "secuencial",
+      "category_number": 3,
+      "question_text": "Procedimiento para resetear fallo complejo PEBOFlt.",
+      "difficulty": "hard",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q046",
+      "category": "secuencial",
+      "category_number": 3,
+      "question_text": "¿Cómo guardar parámetros del motor tras cambio de drive en 5500?",
+      "difficulty": "hard",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q047",
+      "category": "secuencial",
+      "category_number": 3,
+      "question_text": "Secuencia de Reset de Test de Aceptación (AccTBlk).",
+      "difficulty": "medium",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q048",
+      "category": "secuencial",
+      "category_number": 3,
+      "question_text": "Secuencia para calibrar par previo (Menú 123) en 3300.",
+      "difficulty": "hard",
+      "equipment_model": "3300"
+    },
+    {
+      "id": "Q049",
+      "category": "secuencial",
+      "category_number": 3,
+      "question_text": "Descarga de SW al Inversor ACVF (DR07049).",
+      "difficulty": "hard",
+      "equipment_model": "3300"
+    },
+    {
+      "id": "Q050",
+      "category": "secuencial",
+      "category_number": 3,
+      "question_text": "Reset manual de límite de velocidad RdvBVR.",
+      "difficulty": "hard",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q051",
+      "category": "secuencial",
+      "category_number": 3,
+      "question_text": "Procedimiento seguro para medir MGB.",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q052",
+      "category": "secuencial",
+      "category_number": 3,
+      "question_text": "Ajuste de microswitch de freno KBA.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q053",
+      "category": "secuencial",
+      "category_number": 3,
+      "question_text": "Limpieza preventiva de fotocélula PHS.",
+      "difficulty": "easy",
+      "equipment_model": "3300"
+    },
+    {
+      "id": "Q054",
+      "category": "secuencial",
+      "category_number": 3,
+      "question_text": "Acortamiento de cables por activación KSS.",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q055",
+      "category": "secuencial",
+      "category_number": 3,
+      "question_text": "Diagnóstico de sobrecorriente motor (Corto a tierra).",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q056",
+      "category": "secuencial",
+      "category_number": 3,
+      "question_text": "Instalación correcta del faldón de cabina.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q057",
+      "category": "secuencial",
+      "category_number": 3,
+      "question_text": "Reseteo básico de maniobra (Doble Reset).",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q058",
+      "category": "secuencial",
+      "category_number": 3,
+      "question_text": "Procedimiento tras puenteo ilegal detectado.",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q059",
+      "category": "secuencial",
+      "category_number": 3,
+      "question_text": "Revisión de placa AS por falla incendio.",
+      "difficulty": "medium",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q060",
+      "category": "secuencial",
+      "category_number": 3,
+      "question_text": "Aprendizaje de hueco (Viaje de reconocimiento).",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q061",
+      "category": "enriquecimiento",
+      "category_number": 4,
+      "question_text": "¿Cuál es el valor nominal de resistencia del bus CAN?",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q062",
+      "category": "enriquecimiento",
+      "category_number": 4,
+      "question_text": "Valor nominal de resistencia para bobinas de freno MGB.",
+      "difficulty": "medium",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q063",
+      "category": "enriquecimiento",
+      "category_number": 4,
+      "question_text": "Especificaciones exigidas para el multímetro de diagnóstico CO SC 1.0.",
+      "difficulty": "easy",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q064",
+      "category": "enriquecimiento",
+      "category_number": 4,
+      "question_text": "Significado de la sigla KTC en el esquema eléctrico.",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q065",
+      "category": "enriquecimiento",
+      "category_number": 4,
+      "question_text": "Significado de la sigla KTS en el esquema eléctrico.",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q066",
+      "category": "enriquecimiento",
+      "category_number": 4,
+      "question_text": "Corriente típica y voltaje del fusible SIH.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q067",
+      "category": "enriquecimiento",
+      "category_number": 4,
+      "question_text": "Significado de las siglas LMG en parámetros de configuración.",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q068",
+      "category": "enriquecimiento",
+      "category_number": 4,
+      "question_text": "Definición de \"Creep\" en el manual de control.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q069",
+      "category": "enriquecimiento",
+      "category_number": 4,
+      "question_text": "¿Qué es el módulo PEBO?",
+      "difficulty": "easy",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q070",
+      "category": "enriquecimiento",
+      "category_number": 4,
+      "question_text": "Significado de SCIC.",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q071",
+      "category": "enriquecimiento",
+      "category_number": 4,
+      "question_text": "Significado de SDIC.",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q072",
+      "category": "enriquecimiento",
+      "category_number": 4,
+      "question_text": "¿Qué función cumple la red LON en la arquitectura del 5500?",
+      "difficulty": "medium",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q073",
+      "category": "enriquecimiento",
+      "category_number": 4,
+      "question_text": "Límites de temperatura E_FC_CONVERTER_OVERTEMPERATURE (Error 1514).",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q074",
+      "category": "enriquecimiento",
+      "category_number": 4,
+      "question_text": "Nomenclatura KNE.",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q075",
+      "category": "enriquecimiento",
+      "category_number": 4,
+      "question_text": "¿Qué voltaje rectificado utiliza típicamente la bobina del freno (MGB)?",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q076",
+      "category": "enriquecimiento",
+      "category_number": 4,
+      "question_text": "Diferencia entre CF98 y CF99 en el Menú 40.",
+      "difficulty": "hard",
+      "equipment_model": "3300"
+    },
+    {
+      "id": "Q077",
+      "category": "enriquecimiento",
+      "category_number": 4,
+      "question_text": "Función del jumper terminador en red CAN/LON.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q078",
+      "category": "enriquecimiento",
+      "category_number": 4,
+      "question_text": "¿Por qué la ausencia de la tolva es riesgo fatal según el Manual de Seguridad (pág 68)?",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q079",
+      "category": "enriquecimiento",
+      "category_number": 4,
+      "question_text": "Definición de \"AccTBlk\".",
+      "difficulty": "easy",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q080",
+      "category": "enriquecimiento",
+      "category_number": 4,
+      "question_text": "Rango de operación seguro del multímetro Fluke certificado para Schindler.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q081",
+      "category": "visual",
+      "category_number": 5,
+      "question_text": "¿Dónde se ubica físicamente la HMI en el sistema Bionic 5 (3300 sin cuarto)?",
+      "difficulty": "easy",
+      "equipment_model": "3300"
+    },
+    {
+      "id": "Q082",
+      "category": "visual",
+      "category_number": 5,
+      "question_text": "Color y función del LED LUET en placa SMICHMI / SDIC.",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q083",
+      "category": "visual",
+      "category_number": 5,
+      "question_text": "Color y función del LED RPHT en techo de cabina.",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q084",
+      "category": "visual",
+      "category_number": 5,
+      "question_text": "¿Dónde está alojada la caja de baterías TSU en el 3300?",
+      "difficulty": "medium",
+      "equipment_model": "3300"
+    },
+    {
+      "id": "Q085",
+      "category": "visual",
+      "category_number": 5,
+      "question_text": "Identificación visual de pines para contacto KB cerrado (Freno PML 200).",
+      "difficulty": "hard",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q086",
+      "category": "visual",
+      "category_number": 5,
+      "question_text": "¿Qué buscar visualmente si el display de pasillo (TDIF) marca dirección contraria?",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q087",
+      "category": "visual",
+      "category_number": 5,
+      "question_text": "Ubicación de los LEDs de comunicación CAN en placa SCIC.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q088",
+      "category": "visual",
+      "category_number": 5,
+      "question_text": "¿Cómo saber si el freno MGB no está abriendo a simple vista?",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q089",
+      "category": "visual",
+      "category_number": 5,
+      "question_text": "Inspección visual de desgaste de tracción en polea principal.",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q090",
+      "category": "visual",
+      "category_number": 5,
+      "question_text": "Revisión del estado del contacto KNE en riel.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q091",
+      "category": "visual",
+      "category_number": 5,
+      "question_text": "¿Cómo luce físicamente una placa SCIC con falla térmica grave?",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q092",
+      "category": "visual",
+      "category_number": 5,
+      "question_text": "Identificar falta de faldón o tolva bajo cabina.",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q093",
+      "category": "visual",
+      "category_number": 5,
+      "question_text": "Aspecto de un condensador DC Link dañado en Variodyn.",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q094",
+      "category": "visual",
+      "category_number": 5,
+      "question_text": "Ubicación visual del fusible F1 en Placa Options AS.",
+      "difficulty": "medium",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q095",
+      "category": "visual",
+      "category_number": 5,
+      "question_text": "Verificación de la cortina óptica PHS (Herradura de nivelación).",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q096",
+      "category": "visual",
+      "category_number": 5,
+      "question_text": "¿Cómo se indica visualmente un cortocircuito en el bus CAN desde la maniobra?",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q097",
+      "category": "visual",
+      "category_number": 5,
+      "question_text": "¿Dónde se enchufa la herramienta de PC o CADI en el 5500?",
+      "difficulty": "medium",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q098",
+      "category": "visual",
+      "category_number": 5,
+      "question_text": "Identificación visual de interruptor JH principal.",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q099",
+      "category": "visual",
+      "category_number": 5,
+      "question_text": "¿Cómo se ve el sensor LMG montado?",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q100",
+      "category": "visual",
+      "category_number": 5,
+      "question_text": "Chequeo visual de contactos de puerta KTS flojos.",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    }
+  ],
+  "resultados_por_config": [
+    {
+      "config_id": "B",
+      "nombre": "Sin Planificador",
+      "pipeline": "synapsis",
+      "n": 100,
+      "scores": {
+        "score_total": {
+          "mean": 0.4575,
+          "sd": 0.4154
+        },
+        "factual": {
+          "mean": 0.27,
+          "sd": 0.4971
+        },
+        "diagnostic": {
+          "mean": 0.645,
+          "sd": 0.3892
+        }
+      },
+      "flags": {
+        "useful_rate": 89,
+        "safe_decision_rate": 14,
+        "zero_score_rate": 11
+      },
+      "eficiencia": {
+        "latency_ms": {
+          "mean": 12359,
+          "sd": 2937
+        },
+        "latency_s": {
+          "mean": 12.4,
+          "sd": 2.9
+        },
+        "cost_usd": {
+          "mean": 0.000145,
+          "sd": 0.00006481
+        },
+        "cost_efficiency": 3635.4
+      },
+      "desglose_por_categoria": [
+        {
+          "categoria": "ambigua",
+          "n": 20,
+          "score_total": {
+            "mean": 0.3875,
+            "sd": 0.2792
+          },
+          "factual": {
+            "mean": 0.125,
+            "sd": 0
+          },
+          "diagnostic": {
+            "mean": 0.65,
+            "sd": 0
+          },
+          "useful_rate": 95,
+          "sdr": 5,
+          "latency_s": {
+            "mean": 12.4,
+            "sd": 1.9
+          }
+        },
+        {
+          "categoria": "diagnostico_tecnico",
+          "n": 20,
+          "score_total": {
+            "mean": 0.6125,
+            "sd": 0.4574
+          },
+          "factual": {
+            "mean": 0.45,
+            "sd": 0
+          },
+          "diagnostic": {
+            "mean": 0.775,
+            "sd": 0
+          },
+          "useful_rate": 95,
+          "sdr": 20,
+          "latency_s": {
+            "mean": 12.3,
+            "sd": 2.8
+          }
+        },
+        {
+          "categoria": "enriquecimiento",
+          "n": 20,
+          "score_total": {
+            "mean": 0.375,
+            "sd": 0.4644
+          },
+          "factual": {
+            "mean": 0.2,
+            "sd": 0
+          },
+          "diagnostic": {
+            "mean": 0.55,
+            "sd": 0
+          },
+          "useful_rate": 75,
+          "sdr": 10,
+          "latency_s": {
+            "mean": 12.1,
+            "sd": 2.2
+          }
+        },
+        {
+          "categoria": "secuencial",
+          "n": 20,
+          "score_total": {
+            "mean": 0.4,
+            "sd": 0.3571
+          },
+          "factual": {
+            "mean": 0.2,
+            "sd": 0
+          },
+          "diagnostic": {
+            "mean": 0.6,
+            "sd": 0
+          },
+          "useful_rate": 85,
+          "sdr": 10,
+          "latency_s": {
+            "mean": 13.5,
+            "sd": 4.6
+          }
+        },
+        {
+          "categoria": "visual",
+          "n": 20,
+          "score_total": {
+            "mean": 0.5125,
+            "sd": 0.4364
+          },
+          "factual": {
+            "mean": 0.375,
+            "sd": 0
+          },
+          "diagnostic": {
+            "mean": 0.65,
+            "sd": 0
+          },
+          "useful_rate": 95,
+          "sdr": 25,
+          "latency_s": {
+            "mean": 11.5,
+            "sd": 1.9
+          }
+        }
+      ]
+    },
+    {
+      "config_id": "D",
+      "nombre": "Solo RAG + LLM base",
+      "pipeline": "synapsis",
+      "n": 100,
+      "scores": {
+        "score_total": {
+          "mean": 0.4,
+          "sd": 0.3657
+        },
+        "factual": {
+          "mean": 0.19,
+          "sd": 0.4346
+        },
+        "diagnostic": {
+          "mean": 0.61,
+          "sd": 0.3576
+        }
+      },
+      "flags": {
+        "useful_rate": 89,
+        "safe_decision_rate": 11,
+        "zero_score_rate": 11
+      },
+      "eficiencia": {
+        "latency_ms": {
+          "mean": 12233,
+          "sd": 1769
+        },
+        "latency_s": {
+          "mean": 12.2,
+          "sd": 1.8
+        },
+        "cost_usd": {
+          "mean": 0.000145,
+          "sd": 0.00006481
+        },
+        "cost_efficiency": 3245
+      },
+      "desglose_por_categoria": [
+        {
+          "categoria": "ambigua",
+          "n": 20,
+          "score_total": {
+            "mean": 0.3375,
+            "sd": 0.2408
+          },
+          "factual": {
+            "mean": 0.075,
+            "sd": 0
+          },
+          "diagnostic": {
+            "mean": 0.6,
+            "sd": 0
+          },
+          "useful_rate": 100,
+          "sdr": 5,
+          "latency_s": {
+            "mean": 11.9,
+            "sd": 1.1
+          }
+        },
+        {
+          "categoria": "diagnostico_tecnico",
+          "n": 20,
+          "score_total": {
+            "mean": 0.55,
+            "sd": 0.4444
+          },
+          "factual": {
+            "mean": 0.35,
+            "sd": 0
+          },
+          "diagnostic": {
+            "mean": 0.75,
+            "sd": 0
+          },
+          "useful_rate": 95,
+          "sdr": 25,
+          "latency_s": {
+            "mean": 12.4,
+            "sd": 2.6
+          }
+        },
+        {
+          "categoria": "enriquecimiento",
+          "n": 20,
+          "score_total": {
+            "mean": 0.325,
+            "sd": 0.3363
+          },
+          "factual": {
+            "mean": 0.1,
+            "sd": 0
+          },
+          "diagnostic": {
+            "mean": 0.55,
+            "sd": 0
+          },
+          "useful_rate": 80,
+          "sdr": 10,
+          "latency_s": {
+            "mean": 11.6,
+            "sd": 1.4
+          }
+        },
+        {
+          "categoria": "secuencial",
+          "n": 20,
+          "score_total": {
+            "mean": 0.325,
+            "sd": 0.3172
+          },
+          "factual": {
+            "mean": 0.15,
+            "sd": 0
+          },
+          "diagnostic": {
+            "mean": 0.5,
+            "sd": 0
+          },
+          "useful_rate": 75,
+          "sdr": 0,
+          "latency_s": {
+            "mean": 12.8,
+            "sd": 1.2
+          }
+        },
+        {
+          "categoria": "visual",
+          "n": 20,
+          "score_total": {
+            "mean": 0.4625,
+            "sd": 0.3975
+          },
+          "factual": {
+            "mean": 0.275,
+            "sd": 0
+          },
+          "diagnostic": {
+            "mean": 0.65,
+            "sd": 0
+          },
+          "useful_rate": 95,
+          "sdr": 15,
+          "latency_s": {
+            "mean": 12.5,
+            "sd": 1.9
+          }
+        }
+      ]
+    },
+    {
+      "config_id": "config_bm25_bert",
+      "nombre": "Baseline Léxico/Denso (BM25+BERT)",
+      "pipeline": "bm25_bert",
+      "n": 100,
+      "scores": {
+        "score_total": {
+          "mean": 0.2185,
+          "sd": 0.3267
+        },
+        "factual": {
+          "mean": 0.275,
+          "sd": 0.5804
+        },
+        "diagnostic": {
+          "mean": 0.162,
+          "sd": 0.2813
+        }
+      },
+      "flags": {
+        "useful_rate": 43,
+        "safe_decision_rate": 61,
+        "zero_score_rate": 57
+      },
+      "eficiencia": {
+        "latency_ms": {
+          "mean": 1601,
+          "sd": 1501
+        },
+        "latency_s": {
+          "mean": 1.6,
+          "sd": 1.5
+        },
+        "cost_usd": {
+          "mean": 0.000182,
+          "sd": 0.00006856
+        },
+        "cost_efficiency": 1216.7
+      },
+      "desglose_por_categoria": [
+        {
+          "categoria": "ambigua",
+          "n": 20,
+          "score_total": {
+            "mean": 0.225,
+            "sd": 0.2727
+          },
+          "factual": {
+            "mean": 0.175,
+            "sd": 0
+          },
+          "diagnostic": {
+            "mean": 0.275,
+            "sd": 0
+          },
+          "useful_rate": 55,
+          "sdr": 50,
+          "latency_s": {
+            "mean": 2.2,
+            "sd": 2
+          }
+        },
+        {
+          "categoria": "diagnostico_tecnico",
+          "n": 20,
+          "score_total": {
+            "mean": 0.4,
+            "sd": 0.3824
+          },
+          "factual": {
+            "mean": 0.5,
+            "sd": 0
+          },
+          "diagnostic": {
+            "mean": 0.3,
+            "sd": 0
+          },
+          "useful_rate": 70,
+          "sdr": 50,
+          "latency_s": {
+            "mean": 1.8,
+            "sd": 1.3
+          }
+        },
+        {
+          "categoria": "enriquecimiento",
+          "n": 20,
+          "score_total": {
+            "mean": 0.1625,
+            "sd": 0.356
+          },
+          "factual": {
+            "mean": 0.3,
+            "sd": 0
+          },
+          "diagnostic": {
+            "mean": 0.025,
+            "sd": 0
+          },
+          "useful_rate": 20,
+          "sdr": 75,
+          "latency_s": {
+            "mean": 1,
+            "sd": 0.7
+          }
+        },
+        {
+          "categoria": "secuencial",
+          "n": 20,
+          "score_total": {
+            "mean": 0.1425,
+            "sd": 0.2661
+          },
+          "factual": {
+            "mean": 0.15,
+            "sd": 0
+          },
+          "diagnostic": {
+            "mean": 0.135,
+            "sd": 0
+          },
+          "useful_rate": 35,
+          "sdr": 45,
+          "latency_s": {
+            "mean": 2.1,
+            "sd": 1.7
+          }
+        },
+        {
+          "categoria": "visual",
+          "n": 20,
+          "score_total": {
+            "mean": 0.1625,
+            "sd": 0.2655
+          },
+          "factual": {
+            "mean": 0.25,
+            "sd": 0
+          },
+          "diagnostic": {
+            "mean": 0.075,
+            "sd": 0
+          },
+          "useful_rate": 35,
+          "sdr": 85,
+          "latency_s": {
+            "mean": 0.9,
+            "sd": 0.7
+          }
+        }
+      ]
+    },
+    {
+      "config_id": "config_goms",
+      "nombre": "Baseline Operativo (Humano simulado)",
+      "pipeline": "goms",
+      "n": 100,
+      "scores": {
+        "score_total": {
+          "mean": 0.19,
+          "sd": 0.3448
+        },
+        "factual": {
+          "mean": 0,
+          "sd": 0
+        },
+        "diagnostic": {
+          "mean": 0,
+          "sd": 0
+        }
+      },
+      "flags": {
+        "useful_rate": 26,
+        "safe_decision_rate": 26,
+        "zero_score_rate": 74
+      },
+      "eficiencia": {
+        "latency_ms": {
+          "mean": 496902,
+          "sd": 250404
+        },
+        "latency_s": {
+          "mean": 496.9,
+          "sd": 250.4
+        },
+        "cost_usd": {
+          "mean": 0.186338,
+          "sd": 0.0939015
+        },
+        "cost_efficiency": 8.2
+      },
+      "desglose_por_categoria": [
+        {
+          "categoria": "ambigua",
+          "n": 20,
+          "score_total": {
+            "mean": 0.175,
+            "sd": 0.3269
+          },
+          "factual": {
+            "mean": 0,
+            "sd": 0
+          },
+          "diagnostic": {
+            "mean": 0,
+            "sd": 0
+          },
+          "useful_rate": 25,
+          "sdr": 25,
+          "latency_s": {
+            "mean": 503.9,
+            "sd": 245.4
+          }
+        },
+        {
+          "categoria": "diagnostico_tecnico",
+          "n": 20,
+          "score_total": {
+            "mean": 0.4,
+            "sd": 0.4637
+          },
+          "factual": {
+            "mean": 0,
+            "sd": 0
+          },
+          "diagnostic": {
+            "mean": 0,
+            "sd": 0
+          },
+          "useful_rate": 45,
+          "sdr": 45,
+          "latency_s": {
+            "mean": 380.5,
+            "sd": 294.3
+          }
+        },
+        {
+          "categoria": "enriquecimiento",
+          "n": 20,
+          "score_total": {
+            "mean": 0.15,
+            "sd": 0.3202
+          },
+          "factual": {
+            "mean": 0,
+            "sd": 0
+          },
+          "diagnostic": {
+            "mean": 0,
+            "sd": 0
+          },
+          "useful_rate": 20,
+          "sdr": 20,
+          "latency_s": {
+            "mean": 529.6,
+            "sd": 225.3
+          }
+        },
+        {
+          "categoria": "secuencial",
+          "n": 20,
+          "score_total": {
+            "mean": 0.2,
+            "sd": 0.2915
+          },
+          "factual": {
+            "mean": 0,
+            "sd": 0
+          },
+          "diagnostic": {
+            "mean": 0,
+            "sd": 0
+          },
+          "useful_rate": 35,
+          "sdr": 35,
+          "latency_s": {
+            "mean": 452.1,
+            "sd": 265.2
+          }
+        },
+        {
+          "categoria": "visual",
+          "n": 20,
+          "score_total": {
+            "mean": 0.025,
+            "sd": 0.109
+          },
+          "factual": {
+            "mean": 0,
+            "sd": 0
+          },
+          "diagnostic": {
+            "mean": 0,
+            "sd": 0
+          },
+          "useful_rate": 5,
+          "sdr": 5,
+          "latency_s": {
+            "mean": 618.5,
+            "sd": 118.9
+          }
+        }
+      ]
+    }
+  ]
+}

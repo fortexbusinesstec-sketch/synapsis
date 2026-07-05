@@ -121,3 +121,20 @@ export async function exportToPng300dpi(
   const blob = await setPngDpi(raw, 300);
   downloadBlob(blob, `${options.filename || "graphic"}-300dpi.png`);
 }
+
+export async function exportToPng600dpi(
+  element: HTMLElement,
+  options: ExportOptions = {}
+): Promise<void> {
+  const canvas = await toCanvas(element, {
+    ...SHARED_OPTS,
+    pixelRatio: 2,
+    backgroundColor: options.backgroundColor ?? "#ffffff",
+  });
+  const raw: Blob | null = await new Promise((resolve) => {
+    canvas.toBlob((blob) => resolve(blob), "image/png");
+  });
+  if (!raw) throw new Error("canvas.toBlob returned null");
+  const blob = await setPngDpi(raw, 600);
+  downloadBlob(blob, `${options.filename || "graphic"}-600dpi.png`);
+}

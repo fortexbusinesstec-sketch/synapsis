@@ -6,9 +6,9 @@ interface Figure1ArchitectureProps {
   accentColor?: string;
 }
 
-function OutlinedCircle({ cx, cy, r, strokeColor }: { cx: number; cy: number; r: number; strokeColor: string }) {
+function OutlinedCircle({ cx, cy, r, strokeColor, fillColor = "white" }: { cx: number; cy: number; r: number; strokeColor: string; fillColor?: string }) {
   return (
-    <circle cx={cx} cy={cy} r={r} fill="white" stroke={strokeColor} strokeWidth={2} />
+    <circle cx={cx} cy={cy} r={r} fill={fillColor} stroke={strokeColor} strokeWidth={2} />
   );
 }
 
@@ -22,6 +22,8 @@ export default function Figure1Architecture({
 
   const arrowGray = "#888888";
   const dcPurple = "#CC79A7";
+  const routerColor = "#D55E00";
+  const verifierColor = "#56B4E9";
 
   const swarmY = 90;
   const sr = 16;
@@ -36,6 +38,8 @@ export default function Figure1Architecture({
   ];
 
   const dcY = 378;
+  const agentH = 80;
+  const halfH = agentH / 2;
 
   return (
     <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} xmlns="http://www.w3.org/2000/svg" style={{ fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif" }}>
@@ -47,6 +51,14 @@ export default function Figure1Architecture({
         <linearGradient id="kbGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={infrastructureColor} />
           <stop offset="100%" stopColor="#C47D00" />
+        </linearGradient>
+        <linearGradient id="routerGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={routerColor} />
+          <stop offset="100%" stopColor="#B84900" />
+        </linearGradient>
+        <linearGradient id="verifierGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={verifierColor} />
+          <stop offset="100%" stopColor="#3D8DBF" />
         </linearGradient>
         <filter id="sh">
           <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.1" />
@@ -96,65 +108,91 @@ export default function Figure1Architecture({
       <text x={664} y={256} textAnchor="middle" fontSize={15} fontWeight="800" fill="white" letterSpacing={0.5}>DIAGNOSTIC COMMITTEE</text>
 
       {/* 1. Technician */}
-      <circle cx={144} cy={dcY} r={28} fill={primaryColor} />
-      <text x={144} y={dcY + 1} textAnchor="middle" fontSize={12} fontWeight="800" fill="#ffffff" style={{ dominantBaseline: "middle" }}>T</text>
-      <text x={144} y={dcY + 44} textAnchor="middle" fontSize={14} fontWeight="700" fill="#1e293b">Technician</text>
+      <circle cx={75} cy={dcY} r={25} fill={primaryColor} />
+      <text x={75} y={dcY + 1} textAnchor="middle" fontSize={12} fontWeight="800" fill="#ffffff" style={{ dominantBaseline: "middle" }}>T</text>
+      <text x={75} y={dcY + 40} textAnchor="middle" fontSize={13} fontWeight="700" fill="#1e293b">Technician</text>
 
-      <line x1={172} y1={dcY} x2={212} y2={dcY} stroke={arrowGray} strokeWidth={2} markerEnd="url(#arr)" />
+      <line x1={100} y1={dcY} x2={130} y2={dcY} stroke={arrowGray} strokeWidth={2} markerEnd="url(#arr)" />
 
       {/* 2. Clarifier */}
-      <rect x={212} y={dcY - 42} width={140} height={84} rx={7} fill={primaryColor} />
-      <text x={282} y={dcY + 1} textAnchor="middle" fontSize={16} fontWeight="800" fill="#ffffff" style={{ dominantBaseline: "middle" }}>Clarifier</text>
-      <text x={282} y={dcY + 30} textAnchor="middle" fontSize={11} fontWeight="600" fill="rgba(255,255,255,0.75)">disambiguates</text>
+      <rect x={130} y={dcY - halfH} width={110} height={agentH} rx={7} fill={primaryColor} />
+      <text x={185} y={dcY + 1} textAnchor="middle" fontSize={15} fontWeight="800" fill="#ffffff" style={{ dominantBaseline: "middle" }}>Clarifier</text>
+      <text x={185} y={dcY + 28} textAnchor="middle" fontSize={10} fontWeight="600" fill="rgba(255,255,255,0.75)">intent + entities</text>
 
-      <line x1={352} y1={dcY} x2={392} y2={dcY} stroke={arrowGray} strokeWidth={2} markerEnd="url(#arr)" />
+      <line x1={240} y1={dcY} x2={270} y2={dcY} stroke={arrowGray} strokeWidth={2} markerEnd="url(#arr)" />
 
-      {/* 3. ReAct Loop container */}
-      <rect x={392} y={dcY - 78} width={544} height={156} rx={9} fill="#f0faf0" stroke={accentColor} strokeWidth={2} strokeDasharray="6,4" />
-      <text x={664} y={dcY - 60} textAnchor="middle" fontSize={15} fontWeight="800" fill={accentColor} letterSpacing={0.3}>ITERATIVE REACT LOOP</text>
+      {/* 3. Semantic Router (NEW — A.2) */}
+      <rect x={270} y={dcY - halfH} width={110} height={agentH} rx={7} fill="url(#routerGrad)" filter="url(#sh)" />
+      <text x={325} y={dcY - 4} textAnchor="middle" fontSize={12} fontWeight="800" fill="#ffffff" style={{ dominantBaseline: "middle" }}>Semantic</text>
+      <text x={325} y={dcY + 14} textAnchor="middle" fontSize={12} fontWeight="800" fill="#ffffff" style={{ dominantBaseline: "middle" }}>Router</text>
+      <text x={325} y={dcY + 30} textAnchor="middle" fontSize={10} fontWeight="600" fill="rgba(255,255,255,0.8)">structured entities</text>
+      {/* NEW badge */}
+      <rect x={365} y={dcY - halfH - 8} width={32} height={14} rx={4} fill="#FFD700" />
+      <text x={381} y={dcY - halfH + 4} textAnchor="middle" fontSize={7} fontWeight="900" fill="#333" letterSpacing={0.5}>NEW</text>
 
-      {/* Planner */}
-      <OutlinedCircle cx={484} cy={dcY + 8} r={22} strokeColor={primaryColor} />
-      <text x={484} y={dcY + 12} textAnchor="middle" fontSize={10} fontWeight="700" fill={primaryColor} style={{ dominantBaseline: "middle" }}>P</text>
-      <text x={484} y={dcY + 44} textAnchor="middle" fontSize={13} fontWeight="700" fill="#1e293b">Planner</text>
+      <line x1={380} y1={dcY} x2={415} y2={dcY} stroke={arrowGray} strokeWidth={2} markerEnd="url(#arr)" />
 
-      <line x1={506} y1={dcY + 8} x2={536} y2={dcY + 8} stroke={accentColor} strokeWidth={2} markerEnd="url(#arrGreen)" />
+      {/* 4. ReAct Loop container */}
+      <rect x={415} y={dcY - halfH - 34} width={380} height={agentH + 68} rx={9} fill="#f0faf0" stroke={accentColor} strokeWidth={2} strokeDasharray="6,4" />
+      <text x={605} y={dcY - halfH - 16} textAnchor="middle" fontSize={13} fontWeight="800" fill={accentColor} letterSpacing={0.3}>ITERATIVE REACT LOOP</text>
+
+      {/* Planner inside ReAct */}
+      <OutlinedCircle cx={458} cy={dcY + 4} r={20} strokeColor={primaryColor} />
+      <text x={458} y={dcY + 7} textAnchor="middle" fontSize={10} fontWeight="700" fill={primaryColor} style={{ dominantBaseline: "middle" }}>P</text>
+      <text x={458} y={dcY + 36} textAnchor="middle" fontSize={12} fontWeight="700" fill="#1e293b">Planner</text>
+
+      <line x1={478} y1={dcY + 4} x2={500} y2={dcY + 4} stroke={accentColor} strokeWidth={2} markerEnd="url(#arrGreen)" />
 
       {/* Librarian */}
-      <rect x={536} y={dcY - 28} width={124} height={72} rx={7} fill={primaryColor} />
-      <text x={598} y={dcY + 8} textAnchor="middle" fontSize={16} fontWeight="800" fill="#ffffff" style={{ dominantBaseline: "middle" }}>Librarian</text>
+      <rect x={500} y={dcY - halfH + 4} width={100} height={68} rx={7} fill={primaryColor} />
+      <text x={550} y={dcY + 6} textAnchor="middle" fontSize={14} fontWeight="800" fill="#ffffff" style={{ dominantBaseline: "middle" }}>Librarian</text>
 
-      <line x1={660} y1={dcY + 8} x2={690} y2={dcY + 8} stroke={accentColor} strokeWidth={2} markerEnd="url(#arrGreen)" />
+      <line x1={600} y1={dcY + 4} x2={625} y2={dcY + 4} stroke={accentColor} strokeWidth={2} markerEnd="url(#arrGreen)" />
 
       {/* Ctx. Sel. */}
-      <OutlinedCircle cx={722} cy={dcY + 8} r={22} strokeColor={primaryColor} />
-      <text x={722} y={dcY + 12} textAnchor="middle" fontSize={10} fontWeight="700" fill={primaryColor} style={{ dominantBaseline: "middle" }}>C</text>
-      <text x={722} y={dcY + 44} textAnchor="middle" fontSize={13} fontWeight="700" fill="#1e293b">Ctx. Sel.</text>
+      <OutlinedCircle cx={650} cy={dcY + 4} r={20} strokeColor={primaryColor} />
+      <text x={650} y={dcY + 7} textAnchor="middle" fontSize={10} fontWeight="700" fill={primaryColor} style={{ dominantBaseline: "middle" }}>C</text>
+      <text x={650} y={dcY + 36} textAnchor="middle" fontSize={12} fontWeight="700" fill="#1e293b">Ctx. Sel.</text>
 
-      <line x1={744} y1={dcY + 8} x2={774} y2={dcY + 8} stroke={accentColor} strokeWidth={2} markerEnd="url(#arrGreen)" />
+      <line x1={670} y1={dcY + 4} x2={695} y2={dcY + 4} stroke={accentColor} strokeWidth={2} markerEnd="url(#arrGreen)" />
 
       {/* Analyst */}
-      <rect x={774} y={dcY - 28} width={124} height={72} rx={7} fill={primaryColor} />
-      <text x={836} y={dcY + 8} textAnchor="middle" fontSize={16} fontWeight="800" fill="#ffffff" style={{ dominantBaseline: "middle" }}>Analyst</text>
+      <rect x={695} y={dcY - halfH + 4} width={100} height={68} rx={7} fill={primaryColor} />
+      <text x={745} y={dcY + 6} textAnchor="middle" fontSize={14} fontWeight="800" fill="#ffffff" style={{ dominantBaseline: "middle" }}>Analyst</text>
 
-      {/* ReAct return arrow */}
-      <path d="M 898 314 Q 898 294 664 294 Q 430 294 430 310" stroke={accentColor} strokeWidth={2} strokeDasharray="5,3" fill="none" markerEnd="url(#arrGreen)" />
-      <text x={664} y={288} textAnchor="middle" fontSize={12} fontWeight="600" fill={accentColor} fontStyle="italic">insufficient context</text>
+      {/* ReAct return arrow — Analyst → Planner */}
+      <path d="M 780 310 Q 780 282 605 282 Q 440 282 440 302" stroke={accentColor} strokeWidth={2.5} strokeDasharray="5,3" fill="none" markerEnd="url(#arrGreen)" />
+      <text x={615} y={274} textAnchor="middle" fontSize={11} fontWeight="700" fill={accentColor} fontStyle="italic">insufficient context → replan &amp; iterate</text>
+      {/* iteration counter badge */}
+      <circle cx={448} cy={298} r={10} fill={accentColor} />
+      <text x={448} y={300} textAnchor="middle" fontSize={10} fontWeight="800" fill="white" style={{ dominantBaseline: "middle" }}>↻</text>
+      <text x={445} y={316} textAnchor="middle" fontSize={9} fontWeight="700" fill={accentColor}>N times</text>
 
-      <line x1={936} y1={dcY} x2={972} y2={dcY} stroke={arrowGray} strokeWidth={2} markerEnd="url(#arr)" />
+      <line x1={795} y1={dcY} x2={825} y2={dcY} stroke={arrowGray} strokeWidth={2} markerEnd="url(#arr)" />
 
-      {/* 4. Chief Engineer */}
-      <rect x={972} y={dcY - 44} width={140} height={88} rx={7} fill={dcPurple} />
-      <text x={1042} y={dcY + 1} textAnchor="middle" fontSize={16} fontWeight="800" fill="#ffffff" style={{ dominantBaseline: "middle" }}>Chief</text>
-      <text x={1042} y={dcY + 20} textAnchor="middle" fontSize={16} fontWeight="800" fill="#ffffff" style={{ dominantBaseline: "middle" }}>Engineer</text>
+      {/* 5. Chief Engineer */}
+      <rect x={825} y={dcY - halfH} width={110} height={agentH} rx={7} fill={dcPurple} />
+      <text x={880} y={dcY - 4} textAnchor="middle" fontSize={14} fontWeight="800" fill="#ffffff" style={{ dominantBaseline: "middle" }}>Chief</text>
+      <text x={880} y={dcY + 16} textAnchor="middle" fontSize={14} fontWeight="800" fill="#ffffff" style={{ dominantBaseline: "middle" }}>Engineer</text>
 
-      <line x1={1112} y1={dcY} x2={1144} y2={dcY} stroke={arrowGray} strokeWidth={2} markerEnd="url(#arr)" />
+      <line x1={935} y1={dcY} x2={965} y2={dcY} stroke={arrowGray} strokeWidth={2} markerEnd="url(#arr)" />
 
-      {/* 5. Validated Response */}
-      <circle cx={1178} cy={dcY} r={28} fill={primaryColor} />
-      <text x={1178} y={dcY + 1} textAnchor="middle" fontSize={12} fontWeight="800" fill="#ffffff" style={{ dominantBaseline: "middle" }}>V</text>
-      <text x={1178} y={dcY + 44} textAnchor="middle" fontSize={14} fontWeight="700" fill="#1e293b">Validated</text>
-      <text x={1178} y={dcY + 60} textAnchor="middle" fontSize={14} fontWeight="700" fill="#1e293b">Response</text>
+      {/* 6. Verifier (NEW — A.2) */}
+      <rect x={965} y={dcY - halfH} width={110} height={80} rx={7} fill="url(#verifierGrad)" filter="url(#sh)" />
+      <text x={1020} y={dcY - 4} textAnchor="middle" fontSize={12} fontWeight="800" fill="#ffffff" style={{ dominantBaseline: "middle" }}>Verifier</text>
+      <text x={1020} y={dcY + 14} textAnchor="middle" fontSize={12} fontWeight="800" fill="#ffffff" style={{ dominantBaseline: "middle" }}>Factual</text>
+      <text x={1020} y={dcY + 28} textAnchor="middle" fontSize={10} fontWeight="600" fill="rgba(255,255,255,0.8)">consistency</text>
+      {/* NEW badge */}
+      <rect x={1060} y={dcY - halfH - 8} width={32} height={14} rx={4} fill="#FFD700" />
+      <text x={1076} y={dcY - halfH + 4} textAnchor="middle" fontSize={7} fontWeight="900" fill="#333" letterSpacing={0.5}>NEW</text>
+
+      <line x1={1075} y1={dcY} x2={1105} y2={dcY} stroke={arrowGray} strokeWidth={2} markerEnd="url(#arr)" />
+
+      {/* 7. Validated Response */}
+      <circle cx={1130} cy={dcY} r={25} fill={primaryColor} />
+      <text x={1130} y={dcY + 1} textAnchor="middle" fontSize={12} fontWeight="800" fill="#ffffff" style={{ dominantBaseline: "middle" }}>V</text>
+      <text x={1130} y={dcY + 40} textAnchor="middle" fontSize={13} fontWeight="700" fill="#1e293b">Validated</text>
+      <text x={1130} y={dcY + 56} textAnchor="middle" fontSize={13} fontWeight="700" fill="#1e293b">Response</text>
     </svg>
   );
 }

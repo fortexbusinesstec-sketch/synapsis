@@ -1,0 +1,467 @@
+{
+  "titulo": "Protocolo de Validación Humana",
+  "version": "1.0",
+  "fecha": "2026-06-25",
+  "objetivo": "Evaluar la calidad y utilidad de las respuestas generadas por Synapsis mediante dos mecanismos complementarios: (1) juicio de evaluadores comerciales en reuniones presenciales sobre el producto y su viabilidad de mercado, y (2) evaluación de técnicos especialistas sobre la utilidad técnica de las respuestas generadas por diferentes configuraciones del sistema.",
+
+  "secciones": [
+
+    {
+      "nombre": "Evaluación Comercial — Reuniones Presenciales",
+      "alias": "comerciales",
+      "descripcion": "Evaluadores del área comercial que participaron en reuniones presenciales con el equipo de Synapsis. Se les presentó el producto, sus funcionalidades y demo en vivo, y respondieron una encuesta estructurada de 7 preguntas sobre comprensión del producto, mercado objetivo, modelo de cobro, disposición de compra y potencial de nuevo negocio.",
+
+      "metodologia": {
+        "formato": "Reunión presencial uno a uno",
+        "duracion_estimada": "30-45 minutos",
+        "contenido": "Presentación del producto + demo en vivo + encuesta guiada",
+        "preguntas": [
+          {
+            "id": "p1",
+            "etiqueta": "Comprensión del Producto",
+            "pregunta": "¿En qué fase consideras que está Synapsis?",
+            "tipo": "opcion_unica",
+            "opciones": ["Básica", "Intermedia", "Avanzada"]
+          },
+          {
+            "id": "p2",
+            "etiqueta": "Mercado Objetivo",
+            "pregunta": "¿A quién le vendería esto?",
+            "tipo": "opcion_multiple",
+            "opciones": [
+              "empresas_mantenimiento",
+              "tecnicos_independientes",
+              "edificios",
+              "constructoras",
+              "capacitacion"
+            ]
+          },
+          {
+            "id": "p3",
+            "etiqueta": "Modelo de Cobro",
+            "pregunta": "¿Cómo cree que se debería cobrar?",
+            "tipo": "opcion_multiple",
+            "opciones": [
+              "suscripcion_mensual",
+              "por_diagnostico",
+              "incluido_contrato",
+              "licencia_anual",
+              "no_vendible"
+            ]
+          },
+          {
+            "id": "p4",
+            "etiqueta": "Brecha para Venta",
+            "pregunta": "¿Qué le falta al sistema para que usted diga \"esto se vende\"?",
+            "tipo": "texto_libre"
+          },
+          {
+            "id": "p5",
+            "etiqueta": "Intención de Compra",
+            "pregunta": "¿Compraría esto para su empresa o equipo?",
+            "tipo": "opcion_unica",
+            "opciones": [
+              {"valor": 1, "etiqueta": "Sí"},
+              {"valor": 0, "etiqueta": "No"},
+              {"valor": 2, "etiqueta": "Con condiciones"}
+            ]
+          },
+          {
+            "id": "p6",
+            "etiqueta": "Disposición a Recomendar",
+            "pregunta": "¿Recomendaría esto a un colega del rubro?",
+            "tipo": "opcion_unica",
+            "opciones": [
+              {"valor": 1, "etiqueta": "Sí"},
+              {"valor": 0, "etiqueta": "No"},
+              {"valor": 2, "etiqueta": "Con modificaciones"}
+            ]
+          },
+          {
+            "id": "p7",
+            "etiqueta": "Nuevo Negocio",
+            "pregunta": "¿Esto abre algún servicio o negocio nuevo que no tenga hoy?",
+            "tipo": "opcion_unica",
+            "opciones": [
+              {"valor": 1, "etiqueta": "Sí"},
+              {"valor": 0, "etiqueta": "No"}
+            ]
+          }
+        ]
+      },
+
+      "evaluadores": [
+        {
+          "codigo": "EXP-001",
+          "nombre": "Henrry Abner Diaz Cuev",
+          "empresa": "HTL ELEVADORES S.A.C.",
+          "rol": "Comercial — Gerencia",
+          "experiencia_anios": 20,
+          "zona": "Lima",
+          "fecha_reunion": "2026-06-01",
+          "respuestas": {
+            "p1": {
+              "respuesta": "Intermedia",
+              "comentario": "Se encuentra en una fase intermedia el sistema, las palabras deben estar constituido con propiedad."
+            },
+            "p2": {
+              "respuesta": ["capacitacion", "empresas_mantenimiento", "tecnicos_independientes", "edificios", "constructoras"],
+              "comentario": null
+            },
+            "p3": {
+              "respuesta": ["suscripcion_mensual", "licencia_anual"],
+              "comentario": null
+            },
+            "p4": {
+              "respuesta": "Modificar como se muestra la información del contenido a un nivel profesional, un lenguaje técnico mejorado. El técnico debe recolectar información del mantenimiento y mostrársela al administrador, mediante imágenes, anotaciones. Que Synapsis tenga una doble vía de consulta y de envió de información."
+            },
+            "p5": {
+              "respuesta": 1,
+              "etiqueta": "Sí",
+              "condiciones": null
+            },
+            "p6": {
+              "respuesta": 0,
+              "etiqueta": "No",
+              "modificaciones": null
+            },
+            "p7": {
+              "respuesta": 0,
+              "etiqueta": "No",
+              "detalle": null
+            }
+          },
+          "comentario_adicional": "El continuar recopilando información no solo Schindler, sino Mitsubishi, Orona, Thyzen, ya que son las que empresas grandes estan tomando. Como la de OTIS, entre diferentes proveedores ya que las empresas actuales toman diferentes marcas."
+        },
+
+        {
+          "codigo": "EXP-002",
+          "nombre": "Kevin Valle Alburqueque",
+          "empresa": "CPPQ SA",
+          "rol": "Comercial",
+          "experiencia_anios": 7,
+          "zona": "Lima",
+          "fecha_reunion": "2026-06-07",
+          "respuestas": {
+            "p1": {
+              "respuesta": "Básica",
+              "comentario": null
+            },
+            "p2": {
+              "respuesta": ["empresas_mantenimiento", "edificios"],
+              "comentario": null
+            },
+            "p3": {
+              "respuesta": ["licencia_anual", "por_diagnostico"],
+              "comentario": null
+            },
+            "p4": {
+              "respuesta": "Falta mejorar el sistema en un entorno dashboard, un sistema de pos-venta después de cada diagnostico. Adicionalmente un acompañamiento de los técnicos asesorías. Adicionalmente agregar adjuntar audios e imágenes."
+            },
+            "p5": {
+              "respuesta": 1,
+              "etiqueta": "Sí",
+              "condiciones": null
+            },
+            "p6": {
+              "respuesta": 2,
+              "etiqueta": "Con modificaciones",
+              "modificaciones": "Desearía privatizar este sistema para uno mismo."
+            },
+            "p7": {
+              "respuesta": 0,
+              "etiqueta": "No",
+              "detalle": null
+            }
+          },
+          "comentario_adicional": "Lo primero es agradecer por esta entrevista, por recordar el rubro. Me parece super interesante porque la IA no remplaza al ser humano sino es un complemento. Todos tenemos que entrar a curso para manejar la IA como un complemento. Synapsis vende la solucion a una empresa para que sea mas agil y aumentar la velocidad de una respuesta."
+        },
+
+        {
+          "codigo": "EXP-003",
+          "nombre": "Karen Joane Lopez Rios",
+          "empresa": "Ascensores Elevacon",
+          "rol": "Comercial",
+          "experiencia_anios": 8,
+          "zona": "Lima",
+          "fecha_reunion": "2026-06-09",
+          "respuestas": {
+            "p1": {
+              "respuesta": "Intermedia",
+              "comentario": null
+            },
+            "p2": {
+              "respuesta": ["empresas_mantenimiento", "tecnicos_independientes"],
+              "comentario": null
+            },
+            "p3": {
+              "respuesta": ["incluido_contrato"],
+              "comentario": null
+            },
+            "p4": {
+              "respuesta": "El tema de multi marcas aspirar a diferentes marcas de ascensores. Otis, Thyssenkrup, Kone, Orona, adicional los de sistema chino que casi todas son los mismos y en Europeos seria el Mp."
+            },
+            "p5": {
+              "respuesta": 1,
+              "etiqueta": "Sí",
+              "condiciones": null
+            },
+            "p6": {
+              "respuesta": 1,
+              "etiqueta": "Sí",
+              "modificaciones": null
+            },
+            "p7": {
+              "respuesta": 0,
+              "etiqueta": "No",
+              "detalle": null
+            }
+          },
+          "comentario_adicional": "Dentro del tema de precio, los cobros semestrales, o cobros de 4 meses. Venderse todo en uno, no como solo de un mes, sino de periodo. El sistema ayuda en ahorrar tiempo, venderte como un profesional de marca, no solo aspirar al modo técnico sino aspirar comercial."
+        }
+      ],
+
+      "resumen_comerciales": {
+        "total_evaluadores": 3,
+        "comprension_producto": {
+          "basica": 1,
+          "intermedia": 2,
+          "avanzada": 0
+        },
+        "intencion_compra": {
+          "si": 3,
+          "no": 0,
+          "condiciones": 0
+        },
+        "disposicion_recomendar": {
+          "si": 1,
+          "no": 1,
+          "modificaciones": 1
+        },
+        "abre_nuevo_negocio": {
+          "si": 0,
+          "no": 3
+        },
+        "temas_comunes": [
+          "Necesidad de soporte multi-marca (Otis, Kone, Thyssenkrup, Mitsubishi, etc.)",
+          "Mejora en la presentación profesional de la información",
+          "Valoración positiva del ahorro de tiempo",
+          "Potencial como herramienta de venta técnica-comercial"
+        ]
+      }
+    },
+
+    {
+      "nombre": "Validación Humana — Técnicos Especialistas",
+      "alias": "tecnicos_especialistas",
+      "descripcion": "Cuatro técnicos especialistas en ascensores evaluaron la utilidad de las respuestas generadas por Synapsis ante preguntas reales del dominio. Cada técnico respondió 7 preguntas técnicas (falla, procedimiento, medición, ubicación) comparando 3 configuraciones del sistema (A2/B5, E, D), asignando puntuaciones de utilidad (1-5) y seleccionando su respuesta preferida.",
+
+      "metodologia": {
+        "formato": "Encuesta digital estructurada (autoadministrada)",
+        "modalidad": "Cada técnico ve las 3 respuestas (A2/B5, E, D) por pregunta y evalúa cada una individualmente",
+        "preguntas": 7,
+        "configuraciones_evaluadas": ["A2 (B5)", "E", "D"],
+        "metricas": {
+          "utilidad": "Escala 1-5 (1: nada útil, 5: muy útil)",
+          "preferencia": "Selección binaria de la mejor respuesta por pregunta"
+        }
+      },
+
+      "preguntas": [
+        {
+          "id_pregunta": 1,
+          "codigo": "Q002",
+          "categoria": "falla",
+          "texto": "Aparece BatFlt en el display del 5500. ¿Qué falla?",
+          "configuracion_referencia": "A2 (B5)",
+          "resumen_respuestas": {
+            "A2 (B5)": "Verifica conexión y estado físico de la batería de emergencia.",
+            "E": "Verifica carga de la batería y que no esté agotada o dañada.",
+            "D": "Verifica conexión y signos de daño o mal funcionamiento."
+          }
+        },
+        {
+          "id_pregunta": 2,
+          "codigo": "Q010",
+          "categoria": "falla",
+          "texto": "Error RdvBVR fijo en pantalla. ¿Qué ocurrió?",
+          "configuracion_referencia": "A2 (B5)",
+          "resumen_respuestas": {
+            "A2 (B5)": "Verifica alimentación y que el circuito de seguridad esté cerrado.",
+            "E": "Verifica alimentación y circuito de seguridad asociado al limitador de velocidad.",
+            "D": "Interpreta RdvBVR como indicación de reset del limitador de velocidad."
+          }
+        },
+        {
+          "id_pregunta": 3,
+          "codigo": "Q021",
+          "categoria": "falla",
+          "texto": "Técnico dice: \"El ascensor está muerto\".",
+          "configuracion_referencia": "A2 (B5)",
+          "resumen_respuestas": {
+            "A2 (B5)": "Verifica alimentación eléctrica y cierre del circuito de seguridad.",
+            "E": "Verifica alimentación, circuito de seguridad y LEDs del controlador.",
+            "D": "Verifica alimentación, cierre de puertas y LEDs del controlador."
+          }
+        },
+        {
+          "id_pregunta": 4,
+          "codigo": "Q042",
+          "categoria": "procedimiento",
+          "texto": "Procedimiento para registrar LOPs (Botoneras) en el 3300.",
+          "configuracion_referencia": "D",
+          "resumen_respuestas": {
+            "A2 (B5)": "Cambia a LE00, pulsa OK y busca indicador LC parpadeando en la HMI.",
+            "E": "Ingresa a modo configuración, verifica LE00 y revisa circuito de seguridad.",
+            "D": "Escucha sonido de confirmación DT-O en la COP al pulsar el botón."
+          }
+        },
+        {
+          "id_pregunta": 5,
+          "codigo": "Q062",
+          "categoria": "medicion",
+          "texto": "Valor nominal de resistencia para bobinas de freno MGB.",
+          "configuracion_referencia": "C",
+          "resumen_respuestas": {
+            "A2 (B5)": "Mide resistencia MGB: 190-1700 Ω (FML/PML) o 80-120 Ω (FMR/PMR).",
+            "E": "Mide resistencia MGB con rangos específicos según el tipo de máquina.",
+            "D": "Admite no tener datos de MGB y sugiere revisar el manual del fabricante."
+          }
+        },
+        {
+          "id_pregunta": 6,
+          "codigo": "Q081",
+          "categoria": "ubicacion",
+          "texto": "¿Dónde se ubica físicamente la HMI en el sistema Bionic 5 (3300 sin cuarto de máquinas)?",
+          "configuracion_referencia": "A2 (B5)",
+          "resumen_respuestas": {
+            "A2 (B5)": "La HMI está integrada en la LDU del ascensor.",
+            "E": "La HMI está en la LDU, parte frontal con LEDs y pulsadores.",
+            "D": "No responde ubicación; sugiere escuchar sonidos inusuales al encender."
+          }
+        },
+        {
+          "id_pregunta": 7,
+          "codigo": "Q085",
+          "categoria": "medicion",
+          "texto": "Identificación visual de pines para contacto KB cerrado (Freno PML 200).",
+          "configuracion_referencia": "A2 (B5)",
+          "resumen_respuestas": {
+            "A2 (B5)": "Mide resistencia en cable KB entre pines 1-2; debe ser 0 Ω.",
+            "E": "Mide resistencia en cable KB entre pines 1-2; debe ser aprox. 0 Ω.",
+            "D": "Verifica LEDs del freno: KB debe estar ON y KB1/KB3 apagados."
+          }
+        }
+      ],
+
+      "evaluadores": [
+        {
+          "codigo": "T-82E0",
+          "nombre": "Pedro Felix Castro Peña",
+          "email": "Pedrocastro486@hotmail.com",
+          "experiencia_anios": 23,
+          "hash_identificador": "AUUGPR",
+          "fecha_evaluacion": "2026-06-09",
+          "evaluaciones": [
+            {"id_pregunta": 1, "codigo": "Q002", "A2 (B5)": {"utilidad": 4, "preferida": false}, "E": {"utilidad": 5, "preferida": true}, "D": {"utilidad": 3, "preferida": false}},
+            {"id_pregunta": 2, "codigo": "Q010", "A2 (B5)": {"utilidad": 4, "preferida": false}, "E": {"utilidad": 5, "preferida": false}, "D": {"utilidad": 5, "preferida": true}},
+            {"id_pregunta": 3, "codigo": "Q021", "A2 (B5)": {"utilidad": 5, "preferida": true}, "E": {"utilidad": 3, "preferida": false}, "D": {"utilidad": 3, "preferida": false}},
+            {"id_pregunta": 4, "codigo": "Q042", "A2 (B5)": {"utilidad": 4, "preferida": false}, "E": {"utilidad": 3, "preferida": false}, "D": {"utilidad": 5, "preferida": true}},
+            {"id_pregunta": 5, "codigo": "Q062", "A2 (B5)": {"utilidad": 4, "preferida": false}, "E": {"utilidad": 3, "preferida": false}, "D": {"utilidad": 5, "preferida": true}},
+            {"id_pregunta": 6, "codigo": "Q081", "A2 (B5)": {"utilidad": 5, "preferida": false}, "E": {"utilidad": 5, "preferida": true}, "D": {"utilidad": 3, "preferida": false}},
+            {"id_pregunta": 7, "codigo": "Q085", "A2 (B5)": {"utilidad": 4, "preferida": false}, "E": {"utilidad": 3, "preferida": false}, "D": {"utilidad": 5, "preferida": true}}
+          ]
+        },
+        {
+          "codigo": "T-4WJZ",
+          "nombre": "Walt Miguel Mont",
+          "email": "w_montoyap@yahoo.com.pe",
+          "experiencia_anios": 20,
+          "hash_identificador": "W4QOOP",
+          "fecha_evaluacion": "2026-06-09",
+          "evaluaciones": [
+            {"id_pregunta": 1, "codigo": "Q002", "A2 (B5)": {"utilidad": 1, "preferida": false}, "E": {"utilidad": 3, "preferida": false}, "D": {"utilidad": 5, "preferida": true}},
+            {"id_pregunta": 2, "codigo": "Q010", "A2 (B5)": {"utilidad": 5, "preferida": true}, "E": {"utilidad": 1, "preferida": false}, "D": {"utilidad": 1, "preferida": false}},
+            {"id_pregunta": 3, "codigo": "Q021", "A2 (B5)": {"utilidad": 3, "preferida": false}, "E": {"utilidad": 5, "preferida": true}, "D": {"utilidad": 2, "preferida": false}},
+            {"id_pregunta": 4, "codigo": "Q042", "A2 (B5)": {"utilidad": 5, "preferida": true}, "E": {"utilidad": 3, "preferida": false}, "D": {"utilidad": 3, "preferida": false}},
+            {"id_pregunta": 5, "codigo": "Q062", "A2 (B5)": {"utilidad": 1, "preferida": false}, "E": {"utilidad": 3, "preferida": false}, "D": {"utilidad": 5, "preferida": true}},
+            {"id_pregunta": 6, "codigo": "Q081", "A2 (B5)": {"utilidad": 2, "preferida": false}, "E": {"utilidad": 5, "preferida": true}, "D": {"utilidad": 2, "preferida": false}},
+            {"id_pregunta": 7, "codigo": "Q085", "A2 (B5)": {"utilidad": 5, "preferida": true}, "E": {"utilidad": 3, "preferida": false}, "D": {"utilidad": 3, "preferida": false}}
+          ]
+        },
+        {
+          "codigo": "T-0FDI",
+          "nombre": "José Mejia Bernal",
+          "email": "josemejiab1973@gmail.com",
+          "experiencia_anios": 20,
+          "hash_identificador": "SQWI6C",
+          "fecha_evaluacion": "2026-06-09",
+          "evaluaciones": [
+            {"id_pregunta": 1, "codigo": "Q002", "A2 (B5)": {"utilidad": 3, "preferida": false}, "E": {"utilidad": 5, "preferida": true}, "D": {"utilidad": 3, "preferida": false}},
+            {"id_pregunta": 2, "codigo": "Q010", "A2 (B5)": {"utilidad": 5, "preferida": true}, "E": {"utilidad": 2, "preferida": false}, "D": {"utilidad": 3, "preferida": false}},
+            {"id_pregunta": 3, "codigo": "Q021", "A2 (B5)": {"utilidad": 4, "preferida": false}, "E": {"utilidad": 5, "preferida": true}, "D": {"utilidad": 4, "preferida": false}},
+            {"id_pregunta": 4, "codigo": "Q042", "A2 (B5)": {"utilidad": 5, "preferida": true}, "E": {"utilidad": 3, "preferida": false}, "D": {"utilidad": 2, "preferida": false}},
+            {"id_pregunta": 5, "codigo": "Q062", "A2 (B5)": {"utilidad": 5, "preferida": true}, "E": {"utilidad": 4, "preferida": false}, "D": {"utilidad": 3, "preferida": false}},
+            {"id_pregunta": 6, "codigo": "Q081", "A2 (B5)": {"utilidad": 5, "preferida": true}, "E": {"utilidad": 3, "preferida": false}, "D": {"utilidad": 3, "preferida": false}},
+            {"id_pregunta": 7, "codigo": "Q085", "A2 (B5)": {"utilidad": 5, "preferida": true}, "E": {"utilidad": 4, "preferida": false}, "D": {"utilidad": 3, "preferida": false}}
+          ]
+        },
+        {
+          "codigo": "T-6BQ8",
+          "nombre": "Jack Wilmer Cavero Alvites",
+          "email": "jackzcavero@gmail.com",
+          "experiencia_anios": 6,
+          "hash_identificador": "MLCRCM",
+          "fecha_evaluacion": "2026-06-09",
+          "evaluaciones": [
+            {"id_pregunta": 1, "codigo": "Q002", "A2 (B5)": {"utilidad": 3, "preferida": false}, "E": {"utilidad": 5, "preferida": true}, "D": {"utilidad": 3, "preferida": false}},
+            {"id_pregunta": 2, "codigo": "Q010", "A2 (B5)": {"utilidad": 5, "preferida": true}, "E": {"utilidad": 2, "preferida": false}, "D": {"utilidad": 3, "preferida": false}},
+            {"id_pregunta": 3, "codigo": "Q021", "A2 (B5)": {"utilidad": 4, "preferida": false}, "E": {"utilidad": 5, "preferida": true}, "D": {"utilidad": 3, "preferida": false}},
+            {"id_pregunta": 4, "codigo": "Q042", "A2 (B5)": {"utilidad": 5, "preferida": true}, "E": {"utilidad": 3, "preferida": false}, "D": {"utilidad": 3, "preferida": false}},
+            {"id_pregunta": 5, "codigo": "Q062", "A2 (B5)": {"utilidad": 4, "preferida": false}, "E": {"utilidad": 3, "preferida": false}, "D": {"utilidad": 5, "preferida": true}},
+            {"id_pregunta": 6, "codigo": "Q081", "A2 (B5)": {"utilidad": 5, "preferida": false}, "E": {"utilidad": 5, "preferida": true}, "D": {"utilidad": 3, "preferida": false}},
+            {"id_pregunta": 7, "codigo": "Q085", "A2 (B5)": {"utilidad": 5, "preferida": true}, "E": {"utilidad": 3, "preferida": false}, "D": {"utilidad": 3, "preferida": false}}
+          ]
+        }
+      ],
+
+      "resultados_tecnicos": {
+        "total_evaluadores": 4,
+        "experiencia_promedio_anios": 17.25,
+        "total_evaluaciones": 84,
+        "metricas_por_configuracion": {
+          "A2 (B5)": {
+            "utilidad_promedio": 4.21,
+            "veces_preferida": 12,
+            "tasa_preferencia": "42.9%"
+          },
+          "E": {
+            "utilidad_promedio": 3.64,
+            "veces_preferida": 8,
+            "tasa_preferencia": "28.6%"
+          },
+          "D": {
+            "utilidad_promedio": 3.29,
+            "veces_preferida": 8,
+            "tasa_preferencia": "28.6%"
+          }
+        },
+        "metricas_por_pregunta": [
+          {"id_pregunta": 1, "codigo": "Q002", "categoria": "falla", "config_preferida": "E", "frecuencia_preferencia": "3/4"},
+          {"id_pregunta": 2, "codigo": "Q010", "categoria": "falla", "config_preferida": "A2 (B5)", "frecuencia_preferencia": "3/4"},
+          {"id_pregunta": 3, "codigo": "Q021", "categoria": "falla", "config_preferida": "E", "frecuencia_preferencia": "2/4"},
+          {"id_pregunta": 4, "codigo": "Q042", "categoria": "procedimiento", "config_preferida": "A2 (B5)", "frecuencia_preferencia": "3/4"},
+          {"id_pregunta": 5, "codigo": "Q062", "categoria": "medicion", "config_preferida": "A2 (B5)", "frecuencia_preferencia": "2/4"},
+          {"id_pregunta": 6, "codigo": "Q081", "categoria": "ubicacion", "config_preferida": "E", "frecuencia_preferencia": "3/4"},
+          {"id_pregunta": 7, "codigo": "Q085", "categoria": "medicion", "config_preferida": "A2 (B5)", "frecuencia_preferencia": "3/4"}
+        ],
+        "distribucion_preferencias_por_categoria": {
+          "falla": {"A2 (B5)": 4, "E": 5, "D": 2, "total": 11},
+          "procedimiento": {"A2 (B5)": 3, "E": 0, "D": 1, "total": 4},
+          "medicion": {"A2 (B5)": 4, "E": 1, "D": 3, "total": 8},
+          "ubicacion": {"A2 (B5)": 1, "E": 2, "D": 1, "total": 4}
+        }
+      }
+    }
+  ]
+}

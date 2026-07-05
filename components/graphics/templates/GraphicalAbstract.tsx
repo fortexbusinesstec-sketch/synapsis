@@ -1,12 +1,18 @@
-interface GraphicalAbstractProps {
-  primaryColor?: string;
-}
-
 export default function GraphicalAbstract({
   primaryColor = "#2563eb",
-}: GraphicalAbstractProps) {
+}: {
+  primaryColor?: string;
+}) {
   const w = 1328;
   const h = 531;
+
+  function headerPath(w: number) {
+    return `M 0 16 Q 0 0 16 0 L ${w - 16} 0 Q ${w} 0 ${w} 16 L ${w} 40 L 0 40 Z`;
+  }
+
+  function bodyPath(w: number, h: number) {
+    return `M 0 40 L 0 ${h - 16} Q 0 ${h} 16 ${h} L ${w - 16} ${h} Q ${w} ${h} ${w} ${h - 16} L ${w} 40`;
+  }
 
   return (
     <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} xmlns="http://www.w3.org/2000/svg" style={{ fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif" }}>
@@ -15,182 +21,157 @@ export default function GraphicalAbstract({
           <stop offset="0%" stopColor="#f8fafc" />
           <stop offset="100%" stopColor="#f1f5f9" />
         </linearGradient>
-        <linearGradient id="g-blue" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={primaryColor} />
-          <stop offset="100%" stopColor="#1e40af" />
+        <linearGradient id="g-emerald" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#059669" />
+          <stop offset="100%" stopColor="#065f46" />
         </linearGradient>
         <linearGradient id="g-amber" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#d97706" />
           <stop offset="100%" stopColor="#92400e" />
-        </linearGradient>
-        <linearGradient id="g-emerald" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#059669" />
-          <stop offset="100%" stopColor="#065f46" />
         </linearGradient>
         <linearGradient id="g-violet" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#7c3aed" />
           <stop offset="100%" stopColor="#5b21b6" />
         </linearGradient>
         <filter id="sh">
-          <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.12" />
+          <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.1" />
         </filter>
-        <marker id="arr-blue" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto">
-          <polygon points="0 0, 10 4, 0 8" fill="#60a5fa" />
-        </marker>
-        <marker id="arr-emerald" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto">
-          <polygon points="0 0, 10 4, 0 8" fill="#34d399" />
-        </marker>
-        <marker id="arr-violet" markerWidth="10" markerHeight="8" refX="10" refY="4" orient="auto">
-          <polygon points="0 0, 10 4, 0 8" fill="#a78bfa" />
+        <marker id="arr" markerWidth="12" markerHeight="10" refX="12" refY="5" orient="auto">
+          <polygon points="0 0, 12 5, 0 10" fill="#cbd5e1" />
         </marker>
       </defs>
 
       <rect width={w} height={h} fill="url(#bg)" rx={0} />
 
-      {/* ─── SECTION 1: INPUT ─── */}
-      <g transform="translate(36, 36)">
-        <rect x={0} y={0} width={180} height={459} rx={14} fill="white" stroke="#e2e8f0" strokeWidth={1.5} filter="url(#sh)" />
-        <rect x={0} y={0} width={180} height={44} rx={14} fill="url(#g-blue)" />
-        <rect x={0} y={30} width={180} height={14} fill="url(#g-blue)" />
-        <text x={90} y={29} textAnchor="middle" fontSize={18} fontWeight="800" fill="white" letterSpacing={0.5}>INPUT</text>
+      {/* ─── PANEL 1: PROBLEM ─── */}
+      <g transform="translate(28, 40)">
+        <rect x={0} y={0} width={290} height={451} rx={16} fill="white" filter="url(#sh)" />
+        <path d={bodyPath(290, 451)} fill="none" stroke={primaryColor} strokeWidth={2} />
+        <path d={headerPath(290)} fill={primaryColor} />
+        <text x={145} y={27} textAnchor="middle" fontSize={16} fontWeight="800" fill="white" letterSpacing={1}>PROBLEM</text>
 
-        {[0, 1, 2].map((i) => (
-          <g key={i}>
-            <rect x={36 + i * 2} y={68 + i * 8} width={108} height={90} rx={5} fill={i === 0 ? "#e2e8f0" : "#f1f5f9"} stroke="#cbd5e1" strokeWidth={1} />
-            {i === 0 && (
-              <>
-                <rect x={48} y={84} width={84} height={5} rx={1.5} fill={primaryColor} opacity={0.35} />
-                <rect x={48} y={96} width={64} height={5} rx={1.5} fill={primaryColor} opacity={0.2} />
-                <rect x={48} y={108} width={74} height={5} rx={1.5} fill={primaryColor} opacity={0.2} />
-                <rect x={48} y={126} width={36} height={20} rx={3} fill={primaryColor} opacity={0.08} />
-                <text x={66} y={140} fontSize={9} fill={primaryColor} fontWeight="700" opacity={0.5}>PDF</text>
-              </>
-            )}
-          </g>
-        ))}
+        <g transform="translate(121, 56)">
+          <circle cx={12} cy={12} r={10} fill="none" stroke={primaryColor} strokeWidth={2} />
+          <circle cx={12} cy={12} r={3} fill={primaryColor} />
+          <line x1={12} y1={17} x2={12} y2={24} stroke={primaryColor} strokeWidth={2} strokeLinecap="round" />
+        </g>
 
-        <text x={90} y={230} textAnchor="middle" fontSize={18} fontWeight="700" fill="#1e293b">Technical</text>
-        <text x={90} y={252} textAnchor="middle" fontSize={18} fontWeight="700" fill="#1e293b">Manuals</text>
+        <text x={145} y={130} textAnchor="middle" fontSize={12} fontWeight="700" fill={primaryColor}>Input: 16 technical manuals</text>
+
+        <text x={22} y={175} fontSize={11} fill="#334155" fontWeight="500">Junior technicians lack experience</text>
+        <text x={22} y={195} fontSize={11} fill="#334155" fontWeight="500">→ 500 s diagnosis time</text>
+        <text x={22} y={230} fontSize={11} fill="#334155" fontWeight="500">Dependence on scarce senior experts</text>
+        <text x={22} y={250} fontSize={11} fill="#334155" fontWeight="500">limits scalability of field maintenance</text>
+
+        <rect x={22} y={290} width={246} height={54} rx={8} fill="#fef2f2" stroke="#fecaca" strokeWidth={1.5} />
+        <text x={145} y={314} textAnchor="middle" fontSize={12} fontWeight="700" fill="#b91c1c">Need:</text>
+        <text x={145} y={334} textAnchor="middle" fontSize={12} fontWeight="700" fill="#b91c1c">faster, scalable support</text>
       </g>
 
       {/* Arrow 1→2 */}
-      <line x1={216} y1={265} x2={264} y2={265} stroke="#60a5fa" strokeWidth={3} markerEnd="url(#arr-blue)" strokeDasharray="8,4" />
+      <line x1={318} y1={265} x2={344} y2={265} stroke="#cbd5e1" strokeWidth={3} markerEnd="url(#arr)" />
 
-      {/* ─── SECTION 2: INDEXING SWARM ─── */}
-      <g transform="translate(270, 36)">
-        <rect x={0} y={0} width={216} height={459} rx={14} fill="white" stroke="#bfdbfe" strokeWidth={1.5} filter="url(#sh)" />
-        <rect x={0} y={0} width={216} height={44} rx={14} fill="url(#g-blue)" />
-        <rect x={0} y={30} width={216} height={14} fill="url(#g-blue)" />
-        <text x={108} y={29} textAnchor="middle" fontSize={17} fontWeight="800" fill="white" letterSpacing={0.3}>INDEXING</text>
+      {/* ─── PANEL 2: EXPERIMENT 1 — Ablation ─── */}
+      <g transform="translate(350, 40)">
+        <rect x={0} y={0} width={290} height={451} rx={16} fill="white" filter="url(#sh)" />
+        <path d={bodyPath(290, 451)} fill="none" stroke="#059669" strokeWidth={2} />
+        <path d={headerPath(290)} fill="url(#g-emerald)" />
+        <text x={145} y={27} textAnchor="middle" fontSize={14} fontWeight="800" fill="white" letterSpacing={0.5}>EXPERIMENT 1 — Ablation</text>
 
-        {[
-          { n: "01", label: "OCR", y: 66 },
-          { n: "02", label: "CHUNK", y: 156 },
-          { n: "03", label: "EMBED", y: 246 },
-        ].map((s, i) => (
-          <g key={s.label}>
-            <rect x={14} y={s.y} width={188} height={72} rx={8} fill={i % 2 === 0 ? "#f8fafc" : "#eff6ff"} stroke="#bfdbfe" />
-            <rect x={14} y={s.y} width={52} height={72} rx={8} fill={primaryColor} />
-            <text x={40} y={s.y + 42} textAnchor="middle" fontSize={18} fontWeight="800" fill="white">{s.n}</text>
-            <text x={82} y={s.y + 34} fontSize={15} fontWeight="700" fill="#1e293b">{s.label}</text>
-            {i < 2 && <line x1={108} y1={s.y + 72} x2={108} y2={s.y + 84} stroke="#bfdbfe" strokeWidth={2} />}
-          </g>
-        ))}
+        <g transform="translate(115, 56)">
+          <rect x={2} y={8} width={4} height={16} rx={1} fill="none" stroke="#059669" strokeWidth={1.5} />
+          <rect x={8} y={4} width={4} height={20} rx={1} fill="none" stroke="#059669" strokeWidth={1.5} />
+          <rect x={14} y={12} width={4} height={12} rx={1} fill="none" stroke="#059669" strokeWidth={1.5} />
+          <rect x={2} y={8} width={4} height={8} rx={1} fill="#059669" opacity={0.3} />
+          <rect x={8} y={4} width={4} height={12} rx={1} fill="#059669" opacity={0.3} />
+          <rect x={14} y={12} width={4} height={6} rx={1} fill="#059669" opacity={0.3} />
+          <line x1={0} y1={0} x2={20} y2={0} stroke="#059669" strokeWidth={1.5} strokeLinecap="round" />
+          <line x1={10} y1={0} x2={10} y2={-6} stroke="#059669" strokeWidth={1.5} strokeLinecap="round" />
+        </g>
 
-        {[0, 1, 2, 3, 4].map((i) => (
-          <rect key={i} x={36 + i * 28} y={344} width={20} height={16} rx={3} fill={primaryColor} opacity={0.15 + i * 0.07} />
-        ))}
+        <text x={145} y={130} textAnchor="middle" fontSize={12} fontWeight="700" fill="#065f46">50 fault scenarios · 4 configurations</text>
+
+        <rect x={16} y={170} width={258} height={100} rx={8} fill="#f0fdf4" stroke="#a7f3d0" strokeWidth={1.5} />
+        <text x={22} y={194} fontSize={12} fontWeight="800" fill="#065f46">Key result:</text>
+        <text x={22} y={218} fontSize={12} fontWeight="700" fill="#059669">Config B (no planner)</text>
+        <text x={22} y={242} fontSize={11} fill="#065f46" fontWeight="600">outperforms full pipeline</text>
+        <text x={22} y={260} fontSize={11} fill="#065f46" fontWeight="600">in 5 out of 6 categories</text>
+
+        <rect x={16} y={300} width={258} height={52} rx={8} fill="#fef2f2" stroke="#fecaca" strokeWidth={1.5} />
+        <text x={145} y={324} textAnchor="middle" fontSize={11} fill="#b91c1c" fontWeight="600">Removing clarifier harms</text>
+        <text x={145} y={342} textAnchor="middle" fontSize={11} fill="#b91c1c" fontWeight="600">ambiguous & multi-hop cases</text>
       </g>
 
       {/* Arrow 2→3 */}
-      <line x1={486} y1={265} x2={524} y2={265} stroke="#60a5fa" strokeWidth={3} markerEnd="url(#arr-blue)" strokeDasharray="8,4" />
+      <line x1={640} y1={265} x2={666} y2={265} stroke="#cbd5e1" strokeWidth={3} markerEnd="url(#arr)" />
 
-      {/* ─── SECTION 3: VECTOR DB ─── */}
-      <g transform="translate(530, 36)">
-        <rect x={0} y={0} width={180} height={459} rx={14} fill="#fffbeb" stroke="#fde68a" strokeWidth={1.5} filter="url(#sh)" />
-        <rect x={0} y={0} width={180} height={44} rx={14} fill="url(#g-amber)" />
-        <rect x={0} y={30} width={180} height={14} fill="url(#g-amber)" />
-        <text x={90} y={29} textAnchor="middle" fontSize={17} fontWeight="800" fill="white" letterSpacing={0.3}>VECTOR DB</text>
+      {/* ─── PANEL 3: EXPERIMENTS 2 & 3 ─── */}
+      <g transform="translate(672, 40)">
+        <rect x={0} y={0} width={290} height={451} rx={16} fill="white" filter="url(#sh)" />
+        <path d={bodyPath(290, 451)} fill="none" stroke="#d97706" strokeWidth={2} />
+        <path d={headerPath(290)} fill="url(#g-amber)" />
+        <text x={145} y={27} textAnchor="middle" fontSize={14} fontWeight="800" fill="white" letterSpacing={0.5}>EXPERIMENTS 2 & 3</text>
 
-        <ellipse cx={90} cy={96} rx={60} ry={18} fill="#fef3c7" stroke="#f59e0b" strokeWidth={2} />
-        <rect x={30} y={96} width={120} height={100} fill="#fef3c7" stroke="#f59e0b" strokeWidth={2} />
-        <ellipse cx={90} cy={196} rx={60} ry={18} fill="#fef3c7" stroke="#f59e0b" strokeWidth={2} />
-        <ellipse cx={90} cy={96} rx={60} ry={18} fill="#fde68a" stroke="none" />
+        <g transform="translate(115, 56)">
+          <path d="M 6 2 L 10 2 L 10 18 L 6 18 Z" fill="none" stroke="#d97706" strokeWidth={1.5} />
+          <line x1={10} y1={6} x2={18} y2={6} stroke="#d97706" strokeWidth={1.5} />
+          <line x1={10} y1={10} x2={18} y2={10} stroke="#d97706" strokeWidth={1.5} />
+          <line x1={10} y1={14} x2={14} y2={14} stroke="#d97706" strokeWidth={1.5} />
+          <rect x={2} y={18} width={16} height={3} rx={1} fill="none" stroke="#d97706" strokeWidth={1.5} />
+          <path d="M 0 21 L 20 21" stroke="#d97706" strokeWidth={1.5} strokeLinecap="round" />
+          <circle cx={4} cy={3} r={2.5} fill="none" stroke="#d97706" strokeWidth={1.5} />
+          <line x1={4} y1={5.5} x2={4} y2={11} stroke="#d97706" strokeWidth={1.5} strokeLinecap="round" />
+        </g>
 
-        {[0, 1, 2, 3].map((i) => (
-          <rect key={i} x={44} y={114 + i * 20} width={92} height={12} rx={3} fill="white" opacity={0.7} />
-        ))}
-        <text x={90} y={148} textAnchor="middle" fontSize={14} fontWeight="700" fill="#92400e">Chunks</text>
-        <text x={90} y={168} textAnchor="middle" fontSize={14} fontWeight="700" fill="#92400e">Embeddings</text>
+        <text x={145} y={130} textAnchor="middle" fontSize={12} fontWeight="700" fill="#92400e">100 queries · 4 experts</text>
 
-        <rect x={34} y={230} width={112} height={32} rx={6} fill="#fef3c7" stroke="#f59e0b" strokeWidth={1.5} />
-        <text x={90} y={250} textAnchor="middle" fontSize={14} fontWeight="700" fill="#92400e">Turso</text>
+        <text x={16} y={165} fontSize={12} fontWeight="800" fill="#92400e">Exp 2 — Benchmark:</text>
+        <text x={22} y={187} fontSize={11} fontWeight="700" fill="#d97706">Synapsis B: 0.458 score</text>
+        <text x={22} y={205} fontSize={11} fill="#334155" fontWeight="500">Latency: 12.3 s · Cost: $0.000145/query</text>
+        <text x={22} y={223} fontSize={11} fill="#334155" fontWeight="500">BM25+BERT: 0.162 reasoning score</text>
+        <text x={22} y={241} fontSize={11} fill="#334155" fontWeight="500">GOMS: 497 s → 97.5 % latency reduction</text>
 
-        <text x={90} y={310} textAnchor="middle" fontSize={15} fontWeight="600" fill="#b45309">Cosine similarity</text>
-        <text x={90} y={340} textAnchor="middle" fontSize={13} fontWeight="600" fill="#b45309">Composite score</text>
+        <rect x={16} y={270} width={258} height={54} rx={8} fill="#fffbeb" stroke="#fde68a" strokeWidth={1.5} />
+        <text x={22} y={292} fontSize={12} fontWeight="800" fill="#92400e">Exp 3 — Human validation:</text>
+        <text x={22} y={314} fontSize={11} fill="#78350f" fontWeight="600">Utility: 4.11/5 (4 experts, 6–23 yr exp)</text>
+
+        <rect x={16} y={350} width={258} height={68} rx={8} fill="#fef2f2" stroke="#fecaca" strokeWidth={1.5} />
+        <text x={145} y={373} textAnchor="middle" fontSize={11} fontWeight="800" fill="#b91c1c">GPT-4o vs human:</text>
+        <text x={145} y={393} textAnchor="middle" fontSize={11} fontWeight="700" fill="#b91c1c">Spearman ρ = -0.07</text>
+        <text x={145} y={410} textAnchor="middle" fontSize={11} fontWeight="600" fill="#b91c1c">(no significant correlation)</text>
       </g>
 
       {/* Arrow 3→4 */}
-      <line x1={710} y1={265} x2={748} y2={265} stroke="#34d399" strokeWidth={3} markerEnd="url(#arr-emerald)" strokeDasharray="8,4" />
+      <line x1={962} y1={265} x2={988} y2={265} stroke="#cbd5e1" strokeWidth={3} markerEnd="url(#arr)" />
 
-      {/* ─── SECTION 4: CONVERSATIONAL SWARM ─── */}
-      <g transform="translate(754, 36)">
-        <rect x={0} y={0} width={246} height={459} rx={14} fill="white" stroke="#a7f3d0" strokeWidth={1.5} filter="url(#sh)" />
-        <rect x={0} y={0} width={246} height={44} rx={14} fill="url(#g-emerald)" />
-        <rect x={0} y={30} width={246} height={14} fill="url(#g-emerald)" />
-        <text x={123} y={29} textAnchor="middle" fontSize={15} fontWeight="800" fill="white" letterSpacing={0.3}>CONVERSATION</text>
+      {/* ─── PANEL 4: IMPACT ─── */}
+      <g transform="translate(994, 40)">
+        <rect x={0} y={0} width={306} height={451} rx={16} fill="white" filter="url(#sh)" />
+        <path d={bodyPath(306, 451)} fill="none" stroke="#7c3aed" strokeWidth={2} />
+        <path d={headerPath(306)} fill="url(#g-violet)" />
+        <text x={153} y={27} textAnchor="middle" fontSize={16} fontWeight="800" fill="white" letterSpacing={1}>IMPACT</text>
 
-        {[
-          { n: "P", label: "Plan", y: 66 },
-          { n: "S", label: "Search", y: 146 },
-          { n: "S", label: "Select", y: 226 },
-          { n: "A", label: "Analyze", y: 306 },
-        ].map((s, i) => (
-          <g key={s.label + i}>
-            <rect x={14} y={s.y} width={218} height={62} rx={8} fill={i % 2 === 0 ? "#f0fdf4" : "#f8fafc"} stroke="#a7f3d0" />
-            <rect x={14} y={s.y} width={46} height={62} rx={8} fill="#047857" />
-            <text x={37} y={s.y + 38} textAnchor="middle" fontSize={20} fontWeight="800" fill="white">{s.n}</text>
-            <text x={76} y={s.y + 36} fontSize={16} fontWeight="700" fill="#1e293b">{s.label}</text>
-          </g>
-        ))}
+        <g transform="translate(129, 56)">
+          <path d="M 12 2 L 22 8 L 22 16 L 12 22 L 2 16 L 2 8 Z" fill="none" stroke="#7c3aed" strokeWidth={1.5} />
+          <polyline points="8,12 11,15 16,9" fill="none" stroke="#7c3aed" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+        </g>
 
-        <rect x={36} y={396} width={174} height={32} rx={16} fill="#f1f5f9" stroke="#e2e8f0" strokeWidth={1.5} />
-        <text x={123} y={417} textAnchor="middle" fontSize={12} fill="#475569" fontStyle="italic">"Error code E015?"</text>
+        <text x={153} y={130} textAnchor="middle" fontSize={12} fontWeight="700" fill="#5b21b6">Output: verified diagnosis</text>
 
-        {/* Thick loop arrow */}
-        <path d="M 246 100 L 272 100 Q 284 100 284 112 L 284 272 Q 284 284 272 284 L 260 284" fill="none" stroke="#10b981" strokeWidth={3} strokeDasharray="6,4" />
-        <polygon points="260 280, 260 288, 252 284" fill="#10b981" />
-        <text x={286} y={196} fontSize={14} fontWeight="700" fill="#047857">Loop</text>
-      </g>
+        <rect x={16} y={165} width={274} height={80} rx={8} fill="#f5f3ff" stroke="#ddd6fe" strokeWidth={1.5} filter="url(#sh)" />
+        <text x={153} y={190} textAnchor="middle" fontSize={12} fontWeight="800" fill="#4c1d95">Pruned multi-agent RAG</text>
+        <text x={153} y={212} textAnchor="middle" fontSize={11} fontWeight="600" fill="#6d28d9">reduces expert dependence while</text>
+        <text x={153} y={232} textAnchor="middle" fontSize={11} fontWeight="600" fill="#6d28d9">maintaining diagnostic quality</text>
 
-      {/* Arrow 4→5 */}
-      <line x1={1000} y1={265} x2={1038} y2={265} stroke="#a78bfa" strokeWidth={3} markerEnd="url(#arr-violet)" strokeDasharray="8,4" />
+        <text x={16} y={285} fontSize={12} fill="#334155" fontWeight="500">Safe, fast, low-cost diagnostic</text>
+        <text x={16} y={305} fontSize={12} fill="#334155" fontWeight="500">tool for field technicians</text>
 
-      {/* ─── SECTION 5: DIAGNOSIS ─── */}
-      <g transform="translate(1044, 36)">
-        <rect x={0} y={0} width={248} height={459} rx={14} fill="white" stroke="#e2e8f0" strokeWidth={1.5} filter="url(#sh)" />
-        <rect x={0} y={0} width={248} height={44} rx={14} fill="url(#g-violet)" />
-        <rect x={0} y={30} width={248} height={14} fill="url(#g-violet)" />
-        <text x={124} y={29} textAnchor="middle" fontSize={16} fontWeight="800" fill="white" letterSpacing={0.3}>DIAGNOSIS</text>
-
-        <circle cx={124} cy={110} r={28} fill="#f1f5f9" stroke="#e2e8f0" strokeWidth={1.5} />
-        <circle cx={124} cy={102} r={11} fill="#94a3b8" />
-        <path d="M104 134 Q124 148 144 134" fill="#94a3b8" />
-
-        <text x={124} y={170} textAnchor="middle" fontSize={18} fontWeight="700" fill="#1e293b">Field</text>
-        <text x={124} y={192} textAnchor="middle" fontSize={18} fontWeight="700" fill="#1e293b">Technician</text>
-
-        <rect x={27} y={224} width={194} height={82} rx={10} fill="#f0fdf4" stroke="#a7f3d0" strokeWidth={2} />
-        <rect x={27} y={224} width={8} height={82} rx={4} fill="#059669" />
-        <text x={50} y={256} fontSize={18} fontWeight="700" fill="#166534">Verified</text>
-        <text x={50} y={280} fontSize={18} fontWeight="700" fill="#166534">Diagnosis</text>
-        <text x={50} y={298} fontSize={12} fontWeight="600" fill="#047857">Real-time</text>
-
-        <rect x={49} y={330} width={150} height={28} rx={14} fill="#f0fdf4" stroke="#a7f3d0" strokeWidth={1.5} />
-        <text x={124} y={349} textAnchor="middle" fontSize={13} fontWeight="700" fill="#166534">Multi-Agent RAG</text>
-
-        <text x={124} y={410} textAnchor="middle" fontSize={14} fontWeight="600" fill="#475569">3 models</text>
-        <text x={124} y={432} textAnchor="middle" fontSize={14} fontWeight="600" fill="#475569">11 agents</text>
+        <rect x={16} y={345} width={274} height={85} rx={8} fill="#f0fdf4" stroke="#a7f3d0" strokeWidth={1.5} />
+        <text x={153} y={370} textAnchor="middle" fontSize={12} fontWeight="700" fill="#065f46">Key achievements:</text>
+        <circle cx={30} cy={392} r={3} fill="#059669" />
+        <text x={38} y={396} fontSize={11} fill="#475569">500 s → 12.3 s latency (97.5 %↓)</text>
+        <circle cx={30} cy={414} r={3} fill="#059669" />
+        <text x={38} y={418} fontSize={11} fill="#475569">Human utility score: 4.11/5</text>
       </g>
     </svg>
   );

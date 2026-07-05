@@ -1,0 +1,816 @@
+{
+  "experimento": {
+    "id": "exp5_benchmarking_singleturn",
+    "descripcion": "100 preguntas del experimento 2 con ground_truth para base de datos vectorial",
+    "total_preguntas": 100,
+    "categorias": {
+      "diagnostico_tecnico": 20,
+      "ambigua": 20,
+      "secuencial": 20,
+      "enriquecimiento": 20,
+      "visual": 20
+    }
+  },
+  "preguntas": [
+    {
+      "id": "Q001",
+      "category": "diagnostico_tecnico",
+      "question_text": "¿Qué significa el código 0020 en el SMLCD o HMI?",
+      "ground_truth": "E_ELEVATOR_S_CHAIN_BRIDGED_PERMANENT. Circuito de seguridad puenteado permanentemente.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q002",
+      "category": "diagnostico_tecnico",
+      "question_text": "Aparece BatFlt en el display del 5500. ¿Qué falla?",
+      "ground_truth": "Fallo en la batería de alimentación de emergencia (PEBO).",
+      "difficulty": "easy",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q003",
+      "category": "diagnostico_tecnico",
+      "question_text": "HMI arroja error 1514. ¿Cuál es la temperatura límite superada?",
+      "ground_truth": "E_FC_CONVERTER_OVERTEMPERATURE. Supera los +75°C en el disipador.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q004",
+      "category": "diagnostico_tecnico",
+      "question_text": "Equipo 5500 bloqueado con mensaje AccTBlk. ¿Qué significa?",
+      "ground_truth": "Bloqueo temporal porque el ascensor está realizando o finalizando un Test de Aceptación.",
+      "difficulty": "easy",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q005",
+      "category": "diagnostico_tecnico",
+      "question_text": "SMLCD indica SB Fault al intentar arrancar. ¿Qué componente revisar?",
+      "ground_truth": "Fallo en el contactor del freno de la máquina. Revisar bobinas MGB.",
+      "difficulty": "hard",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q006",
+      "category": "diagnostico_tecnico",
+      "question_text": "¿Qué indica el mensaje LMSnRdy?",
+      "ground_truth": "El sistema de medición de la carga (LMS / LMG) no está listo o no comunica.",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q007",
+      "category": "diagnostico_tecnico",
+      "question_text": "Aparece PEBOFlt en el histórico. ¿A qué sistema corresponde?",
+      "ground_truth": "Fallo en el dispositivo PEBO (sistema electrónico de evacuación/baterías).",
+      "difficulty": "medium",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q008",
+      "category": "diagnostico_tecnico",
+      "question_text": "Ascensor viaja pero el display marca Creep de forma sostenida.",
+      "ground_truth": "La maniobra no encuentra el piso y está finalizando un viaje forzado con el encoder de velocidad a micro-velocidad.",
+      "difficulty": "hard",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q009",
+      "category": "diagnostico_tecnico",
+      "question_text": "Equipo marca BMIni y no arranca tras un reinicio.",
+      "ground_truth": "El monitor de parada de emergencia o freno está inicializándose. Esperar o revisar switches KBA.",
+      "difficulty": "medium",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q010",
+      "category": "diagnostico_tecnico",
+      "question_text": "Error RdvBVR fijo en pantalla. ¿Qué ocurrió?",
+      "ground_truth": "Limitador de velocidad actuado o detecta GBP_RESET abierto. Requiere reset manual y eléctrico.",
+      "difficulty": "hard",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q011",
+      "category": "diagnostico_tecnico",
+      "question_text": "Circuito de seguridad abre en KNE. ¿Dónde está el problema?",
+      "ground_truth": "Activación del contacto de límite final superior o inferior por sobre-recorrido.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q012",
+      "category": "diagnostico_tecnico",
+      "question_text": "Falla KSKB registrada en el operador de puertas.",
+      "ground_truth": "Limitador de fuerza de cierre actuado. Obstáculo mecánico pesado o fricción en el riel de puertas.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q013",
+      "category": "diagnostico_tecnico",
+      "question_text": "Fusible SIH de la placa principal quemado. ¿Qué protege?",
+      "ground_truth": "Fusible SIH en la placa principal SMIC/SCIC. Protege el circuito de alimentación de control de 24VDC. Si se quema, todo el sistema de control pierde energía y el ascensor queda muerto.",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q014",
+      "category": "diagnostico_tecnico",
+      "question_text": "¿Qué falla se asocia al sensor KTHM?",
+      "ground_truth": "Sobretemperatura en el cuarto de máquinas o cubo del ascensor.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q015",
+      "category": "diagnostico_tecnico",
+      "question_text": "Display LDU marca Ovrload con cabina vacía. Causa más probable.",
+      "ground_truth": "Descalibración del sensor de pesacargas LMG o fricción extrema en guías.",
+      "difficulty": "medium",
+      "equipment_model": "3300"
+    },
+    {
+      "id": "Q016",
+      "category": "diagnostico_tecnico",
+      "question_text": "Ascensor no hace la llamada de fase 1 de bomberos. Placa apagada.",
+      "ground_truth": "Falla de alimentación en la placa AS (Options AS). Revisar fusible F1.",
+      "difficulty": "medium",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q017",
+      "category": "diagnostico_tecnico",
+      "question_text": "Falla de comunicación CAN entre SCIC y SDIC. Síntoma principal.",
+      "ground_truth": "Pérdida total de funciones de cabina (puertas, botones, display).",
+      "difficulty": "hard",
+      "equipment_model": "3300"
+    },
+    {
+      "id": "Q018",
+      "category": "diagnostico_tecnico",
+      "question_text": "Display marca Correct. ¿Es una falla crítica?",
+      "ground_truth": "No, es un estado normal. El ascensor está realizando un viaje de corrección/aprendizaje.",
+      "difficulty": "easy",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q019",
+      "category": "diagnostico_tecnico",
+      "question_text": "Contacto KSS abierto en foso. Causa física.",
+      "ground_truth": "Interruptor de aflojamiento de cables activado (Slack Rope). Cables destensados o contrapeso apoyado.",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q020",
+      "category": "diagnostico_tecnico",
+      "question_text": "Variodyn ACVF reinicia al arrancar en subida.",
+      "ground_truth": "Caída abrupta del DC Link. Condensadores del drive secos o dañados.",
+      "difficulty": "hard",
+      "equipment_model": "3300"
+    },
+    {
+      "id": "Q021",
+      "category": "ambigua",
+      "question_text": "Técnico dice: \"El ascensor está muerto\".",
+      "ground_truth": "Preguntar: ¿Hay voltaje en llave JH? ¿Están encendidos los LEDs de la SCIC? ¿Fusibles SIH ok?",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q022",
+      "category": "ambigua",
+      "question_text": "Reportan \"ruido raro al llegar al primer piso\".",
+      "ground_truth": "Preguntar: ¿Es ruido metálico bajo la cabina? Descartar faldón/tolva rozando amortiguador.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q023",
+      "category": "ambigua",
+      "question_text": "Técnico: \"No me funcionan los botones nuevos que instalé\".",
+      "ground_truth": "Preguntar: ¿Realizó el registro CF00 en la maniobra? ¿Configuró los dip switches de las LOP?",
+      "difficulty": "medium",
+      "equipment_model": "3300"
+    },
+    {
+      "id": "Q024",
+      "category": "ambigua",
+      "question_text": "Cliente reporta: \"La puerta intenta cerrar pero se regresa sola repetidamente\".",
+      "ground_truth": "Preguntar: ¿Está el LED RPHT encendido fijo en rojo en el techo? Revisar cortina óptica.",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q025",
+      "category": "ambigua",
+      "question_text": "Técnico en techo: \"Muevo el joystick de revisión y no hace nada\".",
+      "ground_truth": "Preguntar: ¿Apretó el botón de hombre muerto junto con el direccional? ¿Está el STOP presionado?",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q026",
+      "category": "ambigua",
+      "question_text": "Técnico: \"El equipo resbala al frenar\".",
+      "ground_truth": "Preguntar: ¿Ocurre en subida o bajada? ¿Se activa KNE? Revisar compresión de resortes de MGB.",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q027",
+      "category": "ambigua",
+      "question_text": "Reportan \"luces de pasillo parpadean aleatoriamente\".",
+      "ground_truth": "Preguntar: ¿Falta el jumper de terminación en la última placa LON de la serie?",
+      "difficulty": "hard",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q028",
+      "category": "ambigua",
+      "question_text": "Ascensor no abre la puerta al llegar a un piso específico.",
+      "ground_truth": "Preguntar: ¿El LED LUET enciende en ese piso? Si no, falta imán o el PHS está ciego.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q029",
+      "category": "ambigua",
+      "question_text": "Técnico: \"La flecha de piso marca al revés de lo que viaja\".",
+      "ground_truth": "Preguntar: ¿Conectó el cable plano del módulo TDIF invertido 180 grados?",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q030",
+      "category": "ambigua",
+      "question_text": "Técnico: \"Saltó el diferencial de luz del edificio al usar el ascensor\".",
+      "ground_truth": "Preguntar: ¿Ocurrió justo al abrir puertas? Megar motor de puertas por posible fuga a tierra.",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q031",
+      "category": "ambigua",
+      "question_text": "Reporte: \"La cabina se mueve sola a velocidad hiper lenta\".",
+      "ground_truth": "Preguntar: ¿El SMLCD indica Creep? Posible deslizamiento mecánico del encoder de velocidad.",
+      "difficulty": "hard",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q032",
+      "category": "ambigua",
+      "question_text": "Técnico: \"La evacuación manual avanza a golpes muy fuertes\".",
+      "ground_truth": "Aclarar: Es normal, el PEBO abre frenos por impulsos mediante DEM. Continuar hasta ver LUET.",
+      "difficulty": "medium",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q033",
+      "category": "ambigua",
+      "question_text": "Cliente: \"El ascensor se va al piso 4 a cada rato vacío\".",
+      "ground_truth": "Preguntar: ¿Hay algún botón trabado físicamente en la COP o LOP de ese piso?",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q034",
+      "category": "ambigua",
+      "question_text": "Técnico: \"No puedo descargar el software al Variodyn\".",
+      "ground_truth": "Preguntar: ¿Está bien insertada la tarjeta de memoria? ¿Usa el archivo L7 correcto?",
+      "difficulty": "medium",
+      "equipment_model": "3300"
+    },
+    {
+      "id": "Q035",
+      "category": "ambigua",
+      "question_text": "Reporte: \"El intercomunicador no suena en cabina\".",
+      "ground_truth": "Preguntar: ¿Está bien conectado el nodo de audio GNT a la red LON?",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q036",
+      "category": "ambigua",
+      "question_text": "Técnico: \"Puse la placa SCIC nueva y marca puros errores de motor\".",
+      "ground_truth": "Preguntar: ¿Instaló el chip de memoria original o sincronizó parámetros con Drv End Commis?",
+      "difficulty": "medium",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q037",
+      "category": "ambigua",
+      "question_text": "Reporte: \"El ascensor huele a laca de bobina quemada\".",
+      "ground_truth": "Instruir: Apagar inmediato JH. Medir resistencia de bobinas MGB para descartar cortocircuito.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q038",
+      "category": "ambigua",
+      "question_text": "Técnico: \"Me piden medir el microswitch de freno pero no tengo esquemas\".",
+      "ground_truth": "Preguntar: ¿Es una máquina PML 200? Si sí, el contacto cerrado KB son los pines 1 y 2.",
+      "difficulty": "hard",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q039",
+      "category": "ambigua",
+      "question_text": "Cliente: \"Vi el ascensor pasar con mi puerta de pasillo abierta\".",
+      "ground_truth": "Instruir: RIESGO VITAL. Cortar energía. Buscar puenteos ilegales en serie KTS inmediatamente.",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q040",
+      "category": "ambigua",
+      "question_text": "Técnico: \"El motor de la puerta gira pero las hojas ni se mueven\".",
+      "ground_truth": "Preguntar: ¿Revisó visualmente si la correa dentada de tracción del operador está rota?",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q041",
+      "category": "secuencial",
+      "question_text": "¿Cuál es la secuencia para evacuar con PEBO en 5500?",
+      "ground_truth": "1. Desconectar JH. 2. Activar JEM. 3. Presionar DEM a pulsos hasta encender LUET. 4. Desactivar JEM.",
+      "difficulty": "medium",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q042",
+      "category": "secuencial",
+      "question_text": "Procedimiento para registrar LOPs (Botoneras) en el 3300.",
+      "ground_truth": "1. Menú 40 (1). 2. Ir a CF00. 3. Pulsar OK. 4. Seleccionar LE00. 5. Pulsar OK y esperar fin LC. 6. Menú 40 (0).",
+      "difficulty": "medium",
+      "equipment_model": "3300"
+    },
+    {
+      "id": "Q043",
+      "category": "secuencial",
+      "question_text": "Pasos para calibrar el CERO del pesacargas (LMG).",
+      "ground_truth": "1. Vaciar cabina. 2. Entrar menú 40. 3. Seleccionar CF98. 4. Pulsar OK y esperar cuenta de 5 a 1.",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q044",
+      "category": "secuencial",
+      "question_text": "Pasos para calibrar el PESO DE REFERENCIA (LMG).",
+      "ground_truth": "1. Subir peso conocido. 2. Entrar a CF99. 3. Ingresar el valor del peso en kg. 4. Pulsar OK y esperar.",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q045",
+      "category": "secuencial",
+      "question_text": "Procedimiento para resetear fallo complejo PEBOFlt.",
+      "ground_truth": "1. Desconectar JH. 2. Quitar conector BAT. 3. Encender JH. 4. Conectar BAT. 5. Ejecutar Doble Reset en placa.",
+      "difficulty": "hard",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q046",
+      "category": "secuencial",
+      "question_text": "¿Cómo guardar parámetros del motor tras cambio de drive en 5500?",
+      "ground_truth": "1. Entrar menú de comandos de Drive. 2. Ejecutar \"Drv End Commis\" (Send settings to FC). 3. Esperar reinicio.",
+      "difficulty": "hard",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q047",
+      "category": "secuencial",
+      "question_text": "Secuencia de Reset de Test de Aceptación (AccTBlk).",
+      "ground_truth": "1. Entrar menú principal. 2. Buscar submenú de Acceptance Tests. 3. Finalizar explícitamente el test en curso. 4. Reset normal.",
+      "difficulty": "medium",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q048",
+      "category": "secuencial",
+      "question_text": "Secuencia para calibrar par previo (Menú 123) en 3300.",
+      "ground_truth": "1. Entrar Menú 10 -> 123. 2. Cambiar a 1. Cabina baja a LDU. 3. Pulsar OK. Cabina hace viaje completo. 4. Cambiar a 0.",
+      "difficulty": "hard",
+      "equipment_model": "3300"
+    },
+    {
+      "id": "Q049",
+      "category": "secuencial",
+      "question_text": "Descarga de SW al Inversor ACVF (DR07049).",
+      "ground_truth": "1. Insertar tarjeta SD con archivo L7. 2. Iniciar modo bootloader. 3. Confirmar escritura. 4. Reiniciar maniobra. 5. Hacer CF00.",
+      "difficulty": "hard",
+      "equipment_model": "3300"
+    },
+    {
+      "id": "Q050",
+      "category": "secuencial",
+      "question_text": "Reset manual de límite de velocidad RdvBVR.",
+      "ground_truth": "1. Viaje recuperación a foso. 2. Desenclavar paracaídas mecánicamente. 3. Mandar señal GBP_RESET desde panel. 4. Reset normal.",
+      "difficulty": "hard",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q051",
+      "category": "secuencial",
+      "question_text": "Procedimiento seguro para medir MGB.",
+      "ground_truth": "1. Apagar JH. 2. Desconectar conector MGB de placa. 3. Medir con multímetro en bornes libres. 4. Reconectar antes de encender.",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q052",
+      "category": "secuencial",
+      "question_text": "Ajuste de microswitch de freno KBA.",
+      "ground_truth": "1. Energizar bobina para abrir freno. 2. Ajustar contratuerca del perno a cero gap. 3. Desenergizar y verificar liberación del switch.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q053",
+      "category": "secuencial",
+      "question_text": "Limpieza preventiva de fotocélula PHS.",
+      "ground_truth": "1. Parar cabina a nivel ergonómico. 2. Cortar energía. 3. Pasar paño seco por ranura de herradura. 4. Energizar y probar nivel.",
+      "difficulty": "easy",
+      "equipment_model": "3300"
+    },
+    {
+      "id": "Q054",
+      "category": "secuencial",
+      "question_text": "Acortamiento de cables por activación KSS.",
+      "ground_truth": "1. Suspender/asegurar cabina a guías. 2. Elevar contrapeso. 3. Cortar y rehacer terminales de cable. 4. Liberar e igualar tensiones.",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q055",
+      "category": "secuencial",
+      "question_text": "Diagnóstico de sobrecorriente motor (Corto a tierra).",
+      "ground_truth": "1. Desconectar fases U,V,W del drive. 2. Medir cada fase contra tierra con Megger. 3. Si R < 1 MOhm, motor dañado.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q056",
+      "category": "secuencial",
+      "question_text": "Instalación correcta del faldón de cabina.",
+      "ground_truth": "1. Presentar tolva bajo pisadera. 2. Colocar tornillos de fijación. 3. Ajustar ángulos verticales. 4. Verificar no roce con foso.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q057",
+      "category": "secuencial",
+      "question_text": "Reseteo básico de maniobra (Doble Reset).",
+      "ground_truth": "1. Presionar botón RESET una vez. 2. Esperar pitido inicial. 3. Presionar RESET segunda vez. 4. Esperar arranque completo software.",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q058",
+      "category": "secuencial",
+      "question_text": "Procedimiento tras puenteo ilegal detectado.",
+      "ground_truth": "1. Apagar llave JH. 2. Retirar cable puente. 3. Localizar cerradura fallida física. 4. Reparar mecánica de puerta antes de encender.",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q059",
+      "category": "secuencial",
+      "question_text": "Revisión de placa AS por falla incendio.",
+      "ground_truth": "1. Medir voltaje entrada Main Supply (230V). 2. Medir salida 24V. 3. Comprobar fusible F1. 4. Aislar corto en lazos de detectores.",
+      "difficulty": "medium",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q060",
+      "category": "secuencial",
+      "question_text": "Aprendizaje de hueco (Viaje de reconocimiento).",
+      "ground_truth": "1. Activar menú comando aprendizaje. 2. Cabina viaja a extremo inferior a baja velocidad. 3. Sube a extremo superior mapeando imanes. 4. Guarda datos.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q061",
+      "category": "enriquecimiento",
+      "question_text": "¿Cuál es el valor nominal de resistencia del bus CAN?",
+      "ground_truth": "Aproximadamente 120 ohmios, medidos entre CAN-H y CAN-L sin energía.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q062",
+      "category": "enriquecimiento",
+      "question_text": "Valor nominal de resistencia para bobinas de freno MGB.",
+      "ground_truth": "El rango operativo válido es entre 190 y 1700 ohmios.",
+      "difficulty": "medium",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q063",
+      "category": "enriquecimiento",
+      "question_text": "Especificaciones exigidas para el multímetro de diagnóstico CO SC 1.0.",
+      "ground_truth": "Sensibilidad superior a 25 kOhm/V y rango de voltaje DC hasta 1000V.",
+      "difficulty": "easy",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q064",
+      "category": "enriquecimiento",
+      "question_text": "Significado de la sigla KTC en el esquema eléctrico.",
+      "ground_truth": "Contact Door Car (Contacto de seguridad de la puerta de cabina). Es el microswitch que prueba que la puerta de cabina está cerrada y enclavada; forma parte del circuito de seguridad serie.",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q065",
+      "category": "enriquecimiento",
+      "question_text": "Significado de la sigla KTS en el esquema eléctrico.",
+      "ground_truth": "Contact Door Hoistway (Contacto de seguridad de las puertas de pasillo/hueco). Es el microswitch que verifica que cada puerta de piso está cerrada y enclavada; si uno solo falla, el circuito de seguridad se abre y el ascensor no se mueve.",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q066",
+      "category": "enriquecimiento",
+      "question_text": "Corriente típica y voltaje del fusible SIH.",
+      "ground_truth": "Opera en el circuito de control de 24 VDC, comúnmente con fusibles rápidos de 6A o 10A.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q067",
+      "category": "enriquecimiento",
+      "question_text": "Significado de las siglas LMG en parámetros de configuración.",
+      "ground_truth": "Load Measurement Unit (Unidad sensora de pesacargas bajo la cabina).",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q068",
+      "category": "enriquecimiento",
+      "question_text": "Definición de \"Creep\" en el manual de control.",
+      "ground_truth": "Viaje a velocidad micro de renivelación porque el sistema no lee correctamente la zona de parada absoluta.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q069",
+      "category": "enriquecimiento",
+      "question_text": "¿Qué es el módulo PEBO?",
+      "ground_truth": "Power Evacuation Battery Operation. Sistema de baterías para rescate automático o manual sin red eléctrica.",
+      "difficulty": "easy",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q070",
+      "category": "enriquecimiento",
+      "question_text": "Significado de SCIC.",
+      "ground_truth": "CPU PCB (Placa principal del microprocesador de control del ascensor).",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q071",
+      "category": "enriquecimiento",
+      "question_text": "Significado de SDIC.",
+      "ground_truth": "CCU Main PCB (Placa de interconexión principal situada en el techo de la cabina).",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q072",
+      "category": "enriquecimiento",
+      "question_text": "¿Qué función cumple la red LON en la arquitectura del 5500?",
+      "ground_truth": "Es el bus de comunicaciones utilizado preferentemente para botoneras, indicadores y opciones de edificio.",
+      "difficulty": "medium",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q073",
+      "category": "enriquecimiento",
+      "question_text": "Límites de temperatura E_FC_CONVERTER_OVERTEMPERATURE (Error 1514).",
+      "ground_truth": "Temperatura del disipador del inversor excediendo los +75 °C de forma sostenida.",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q074",
+      "category": "enriquecimiento",
+      "question_text": "Nomenclatura KNE.",
+      "ground_truth": "Contact final limit (Contacto de límite de seguridad eléctrico de recorrido en extremos).",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q075",
+      "category": "enriquecimiento",
+      "question_text": "¿Qué voltaje rectificado utiliza típicamente la bobina del freno (MGB)?",
+      "ground_truth": "Utiliza voltaje rectificado DC (comúnmente ~205VDC para excitación y un valor de mantenimiento menor).",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q076",
+      "category": "enriquecimiento",
+      "question_text": "Diferencia entre CF98 y CF99 en el Menú 40.",
+      "ground_truth": "CF98 establece la tara (cero Kg cabina vacía). CF99 calibra la pendiente introduciendo un peso de referencia conocido.",
+      "difficulty": "hard",
+      "equipment_model": "3300"
+    },
+    {
+      "id": "Q077",
+      "category": "enriquecimiento",
+      "question_text": "Función del jumper terminador en red CAN/LON.",
+      "ground_truth": "Evita la reflexión de onda (rebote) al final de la línea física, acoplando la impedancia característica del cable.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q078",
+      "category": "enriquecimiento",
+      "question_text": "¿Por qué la ausencia de la tolva es riesgo fatal según el Manual de Seguridad (pág 68)?",
+      "ground_truth": "Permite que un pasajero que intente evacuar se deslice bajo la cabina cayendo al fondo del foso.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q079",
+      "category": "enriquecimiento",
+      "question_text": "Definición de \"AccTBlk\".",
+      "ground_truth": "Bloqueo de seguridad post-test de aceptación. Requiere orden explícita para retornar equipo a normal.",
+      "difficulty": "easy",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q080",
+      "category": "enriquecimiento",
+      "question_text": "Rango de operación seguro del multímetro Fluke certificado para Schindler.",
+      "ground_truth": "Clasificación CAT III 1000V o CAT IV 600V para soportar transitorios del inversor DC Link.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q081",
+      "category": "visual",
+      "question_text": "¿Dónde se ubica físicamente la HMI en el sistema Bionic 5 (3300 sin cuarto)?",
+      "ground_truth": "En la LDU (Landing Door Unit), oculta dentro del marco/jamba de la puerta del último piso.",
+      "difficulty": "easy",
+      "equipment_model": "3300"
+    },
+    {
+      "id": "Q082",
+      "category": "visual",
+      "question_text": "Color y función del LED LUET en placa SMICHMI / SDIC.",
+      "ground_truth": "Color Azul. Indica que la cabina está físicamente en zona de puertas (nivelada).",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q083",
+      "category": "visual",
+      "question_text": "Color y función del LED RPHT en techo de cabina.",
+      "ground_truth": "Color Rojo. Indica interrupción/bloqueo del haz de la cortina óptica de puertas.",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q084",
+      "category": "visual",
+      "question_text": "¿Dónde está alojada la caja de baterías TSU en el 3300?",
+      "ground_truth": "Sujeta a los rieles del contrapeso, cerca del piso superior en el hueco del ascensor.",
+      "difficulty": "medium",
+      "equipment_model": "3300"
+    },
+    {
+      "id": "Q085",
+      "category": "visual",
+      "question_text": "Identificación visual de pines para contacto KB cerrado (Freno PML 200).",
+      "ground_truth": "Los pines 1 y 2 del conector del microswitch deben mostrar continuidad al cerrar.",
+      "difficulty": "hard",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q086",
+      "category": "visual",
+      "question_text": "¿Qué buscar visualmente si el display de pasillo (TDIF) marca dirección contraria?",
+      "ground_truth": "Verificar si el cable plano gris en la parte trasera del display está enchufado girado 180 grados.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q087",
+      "category": "visual",
+      "question_text": "Ubicación de los LEDs de comunicación CAN en placa SCIC.",
+      "ground_truth": "Fila de LEDs verdes intermitentes etiquetados Rx/Tx cerca de los puertos modulares RJ45.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q088",
+      "category": "visual",
+      "question_text": "¿Cómo saber si el freno MGB no está abriendo a simple vista?",
+      "ground_truth": "El brazo de la zapata/pastilla no se separa del rotor y no presiona el perno del microswitch KBA.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q089",
+      "category": "visual",
+      "question_text": "Inspección visual de desgaste de tracción en polea principal.",
+      "ground_truth": "Observar si las cuerdas/cintas asientan profundamente en las gargantas generando polvo de poliuretano/metal.",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q090",
+      "category": "visual",
+      "question_text": "Revisión del estado del contacto KNE en riel.",
+      "ground_truth": "Es un switch tipo rodillo mecánico instalado en el extremo del riel guía superior/inferior. Ver si el patín lo ha pisado.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q091",
+      "category": "visual",
+      "question_text": "¿Cómo luce físicamente una placa SCIC con falla térmica grave?",
+      "ground_truth": "Relés plásticos deformados o pistas de cobre ennegrecidas/levantadas alrededor del área de salidas de potencia.",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q092",
+      "category": "visual",
+      "question_text": "Identificar falta de faldón o tolva bajo cabina.",
+      "ground_truth": "Al mirar bajo la pisadera de cabina, falta la placa metálica vertical ranurada (guardapiés). Riesgo visible al foso.",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q093",
+      "category": "visual",
+      "question_text": "Aspecto de un condensador DC Link dañado en Variodyn.",
+      "ground_truth": "Cilindros de aluminio grandes hinchados en la parte superior (abombados) o con líquido/electrolito seco en la base.",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q094",
+      "category": "visual",
+      "question_text": "Ubicación visual del fusible F1 en Placa Options AS.",
+      "ground_truth": "Cilindro de vidrio transparente ubicado generalmente en la esquina inferior cerca del conector de entrada 24V.",
+      "difficulty": "medium",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q095",
+      "category": "visual",
+      "question_text": "Verificación de la cortina óptica PHS (Herradura de nivelación).",
+      "ground_truth": "Caja de plástico negra con ranura en \"U\" sobre el techo. Buscar obstrucciones de polvo o telarañas en la brecha interna.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q096",
+      "category": "visual",
+      "question_text": "¿Cómo se indica visualmente un cortocircuito en el bus CAN desde la maniobra?",
+      "ground_truth": "Los LEDs Rx/Tx de la red en la SCIC se quedan fijos (rojos o verdes) sin parpadeo de transmisión de paquetes.",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q097",
+      "category": "visual",
+      "question_text": "¿Dónde se enchufa la herramienta de PC o CADI en el 5500?",
+      "ground_truth": "En el puerto serial RS232 o USB tipo B en la placa principal SMIC/SCIC del panel de control.",
+      "difficulty": "medium",
+      "equipment_model": "5500"
+    },
+    {
+      "id": "Q098",
+      "category": "visual",
+      "question_text": "Identificación visual de interruptor JH principal.",
+      "ground_truth": "Llave selectora giratoria grande, comúnmente roja y amarilla, en la caja LDU o panel de control exterior.",
+      "difficulty": "easy",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q099",
+      "category": "visual",
+      "question_text": "¿Cómo se ve el sensor LMG montado?",
+      "ground_truth": "Caja o disco metálico apernado a la estructura inferior del piso de la cabina, o en las gomas de aislamiento de la bancada.",
+      "difficulty": "medium",
+      "equipment_model": "general"
+    },
+    {
+      "id": "Q100",
+      "category": "visual",
+      "question_text": "Chequeo visual de contactos de puerta KTS flojos.",
+      "ground_truth": "La pala/espadín de la puerta no encastra profundo en la cerradura del pasillo; las platinas de cobre apenas se tocan.",
+      "difficulty": "hard",
+      "equipment_model": "general"
+    }
+  ]
+}

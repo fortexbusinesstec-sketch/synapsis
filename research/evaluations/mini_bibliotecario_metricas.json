@@ -1,0 +1,146 @@
+{
+  "experimento": {
+    "id": "mini_bibliotecario_eval",
+    "descripcion": "Evaluación del agente MiniBibliotecario contra 100 preguntas con ground_truth",
+    "fecha": "2026-06-14T08:18:29.480Z",
+    "total_preguntas": 100,
+    "threshold_relevance": 0.45
+  },
+  "metricas_globales": {
+    "total": 100,
+    "precision_at_3": {
+      "mean": 0.08333333333333331,
+      "sd": 0.17326986665059038
+    },
+    "precision_at_5": {
+      "mean": 0.07600000000000003,
+      "sd": 0.14982818442631163
+    },
+    "precision_at_10": {
+      "mean": 0.09899999999999996,
+      "sd": 0.1459867158755247
+    },
+    "recall_at_3": 0.21,
+    "recall_at_5": 0.25,
+    "recall_at_10": 0.43,
+    "mrr": {
+      "mean": 0.16182936507936507,
+      "sd": 0.276120895676317
+    },
+    "f1_at_3": {
+      "mean": 0.117,
+      "sd": 0.23443678478559216
+    },
+    "f1_at_5": {
+      "mean": 0.11249999999999999,
+      "sd": 0.21020086479223526
+    },
+    "f1_at_10": {
+      "mean": 0.15276806526806527,
+      "sd": 0.20972555633661635
+    },
+    "por_categoria": [
+      {
+        "category": "diagnostico_tecnico",
+        "n": 20,
+        "precision_at_3": 0.08333333333333333,
+        "precision_at_5": 0.09,
+        "precision_at_10": 0.12499999999999997,
+        "recall_at_3": 0.2,
+        "recall_at_5": 0.3,
+        "recall_at_10": 0.5,
+        "mrr": 0.18531746031746033,
+        "f1_at_3": 0.11499999999999999,
+        "f1_at_5": 0.13571428571428573,
+        "f1_at_10": 0.19082584082584084
+      },
+      {
+        "category": "ambigua",
+        "n": 20,
+        "precision_at_3": 0.06666666666666667,
+        "precision_at_5": 0.05,
+        "precision_at_10": 0.049999999999999996,
+        "recall_at_3": 0.15,
+        "recall_at_5": 0.2,
+        "recall_at_10": 0.25,
+        "mrr": 0.13999999999999999,
+        "f1_at_3": 0.09,
+        "f1_at_5": 0.07857142857142858,
+        "f1_at_10": 0.07727272727272728
+      },
+      {
+        "category": "secuencial",
+        "n": 20,
+        "precision_at_3": 0.08333333333333333,
+        "precision_at_5": 0.07999999999999999,
+        "precision_at_10": 0.10500000000000001,
+        "recall_at_3": 0.25,
+        "recall_at_5": 0.3,
+        "recall_at_10": 0.5,
+        "mrr": 0.1592857142857143,
+        "f1_at_3": 0.125,
+        "f1_at_5": 0.12083333333333335,
+        "f1_at_10": 0.16633366633366634
+      },
+      {
+        "category": "enriquecimiento",
+        "n": 20,
+        "precision_at_3": 0.08333333333333333,
+        "precision_at_5": 0.06999999999999999,
+        "precision_at_10": 0.13500000000000004,
+        "recall_at_3": 0.25,
+        "recall_at_5": 0.25,
+        "recall_at_10": 0.55,
+        "mrr": 0.20525793650793647,
+        "f1_at_3": 0.125,
+        "f1_at_5": 0.10416666666666667,
+        "f1_at_10": 0.20524891774891776
+      },
+      {
+        "category": "visual",
+        "n": 20,
+        "precision_at_3": 0.09999999999999999,
+        "precision_at_5": 0.09,
+        "precision_at_10": 0.08,
+        "recall_at_3": 0.2,
+        "recall_at_5": 0.2,
+        "recall_at_10": 0.35,
+        "mrr": 0.11928571428571429,
+        "f1_at_3": 0.13,
+        "f1_at_5": 0.12321428571428572,
+        "f1_at_10": 0.12415917415917417
+      }
+    ],
+    "por_fuente": [
+      {
+        "source": "image",
+        "n": 701,
+        "relevant_rate": 0.10413694721825963,
+        "avg_score": 0.5021339950905037
+      },
+      {
+        "source": "document_chunk",
+        "n": 97,
+        "relevant_rate": 0.061855670103092786,
+        "avg_score": 0.49147829757523276
+      },
+      {
+        "source": "enrichment",
+        "n": 202,
+        "relevant_rate": 0.09900990099009901,
+        "avg_score": 0.5037467732435409
+      }
+    ],
+    "warning_analysis": {
+      "with_warning": {
+        "n": 972,
+        "relevant_rate": 0.09156378600823045
+      },
+      "without_warning": {
+        "n": 28,
+        "relevant_rate": 0.35714285714285715
+      }
+    },
+    "spearman_score_relevance": 0.02558826158826155
+  }
+}

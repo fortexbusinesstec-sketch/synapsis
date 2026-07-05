@@ -30,7 +30,7 @@ interface Template {
 
 const TEMPLATES: Template[] = [
   { id: "graphical-abstract", label: "Graphical Abstract", description: "1328×531 · Journal TOC graphic (2.5:1)", width: 1328, height: 531 },
-  { id: "architecture", label: "System Architecture", description: "Full MAS architecture", width: 1200, height: 800 },
+  { id: "architecture", label: "System Architecture", description: "Full MAS architecture", width: 1200, height: 920 },
   { id: "pipeline", label: "Agent Pipelines", description: "Dual pipeline diagram", width: 1200, height: 800 },
   { id: "blank", label: "Blank Canvas", description: "Build from scratch", width: 800, height: 600 },
 ];

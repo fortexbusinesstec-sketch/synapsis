@@ -72,7 +72,9 @@ export default async function EncuestasLanding({
             <p>
               Los resultados de esta encuesta serán utilizados exclusivamente con fines de investigación académica.
               Forman parte de un estudio que busca medir la calidad del sistema Synapsis y podrían ser publicados
-              en la revista internacional <strong>Applied Soft Computing (Elsevier)</strong>.
+              en revistas como <strong>Applied Soft Computing (Elsevier)</strong>,
+              <strong> Engineering Technology &amp; Applied Science Research</strong> y
+              <strong> Universidad Peruana de Ciencias Aplicadas</strong>.
             </p>
             <p>
               En dicha publicación no aparecerán nombres, apellidos ni ningún dato personal que permita identificarle

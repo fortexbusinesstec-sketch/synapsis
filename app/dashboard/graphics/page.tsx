@@ -47,7 +47,7 @@ const TEMPLATES: Template[] = [
     label: "System Architecture",
     description: "Full MAS architecture with Indexing Swarm, Conversational Swarm, and Infrastructure",
     width: 1200,
-    height: 800,
+    height: 920,
     icon: "🏗️",
   },
   {

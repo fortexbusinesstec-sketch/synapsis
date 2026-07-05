@@ -1,119 +1,500 @@
-interface ArchitectureDiagramProps {
+interface IndexingPipelineProps {
   primaryColor?: string;
-  secondaryColor?: string;
 }
 
-export default function ArchitectureDiagram({
-  primaryColor = "#2563eb",
-  secondaryColor = "#dc2626",
-}: ArchitectureDiagramProps) {
+export default function IndexingPipeline({ primaryColor = "#2563eb" }: IndexingPipelineProps) {
   return (
-    <svg viewBox="0 0 1200 800" width={1200} height={800} xmlns="http://www.w3.org/2000/svg" style={{ fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif" }}>
+    <svg
+      viewBox="0 0 1200 920"
+      width={1200}
+      height={920}
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ fontFamily: "'Inter', 'Helvetica', 'Arial', sans-serif" }}
+    >
       <defs>
         <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#f8fafc" />
-          <stop offset="100%" stopColor="#e2e8f0" />
+          <stop offset="0%" stopColor="#fafafa" />
+          <stop offset="100%" stopColor="#f0f0f0" />
         </linearGradient>
-        <linearGradient id="g-blue" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor={primaryColor} />
-          <stop offset="100%" stopColor="#1d4ed8" />
-        </linearGradient>
-        <linearGradient id="g-red" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor={secondaryColor} />
-          <stop offset="100%" stopColor="#b91c1c" />
-        </linearGradient>
-        <linearGradient id="g-green" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#059669" />
-          <stop offset="100%" stopColor="#047857" />
-        </linearGradient>
-        <filter id="sh">
-          <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.1" />
+        <filter id="sh" x="-5%" y="-5%" width="110%" height="110%">
+          <feDropShadow dx="0" dy="3" stdDeviation="4" floodOpacity="0.12" />
         </filter>
-        <marker id="arr" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-          <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8" />
+        <marker id="arr-solid" markerWidth="12" markerHeight="8" refX="11" refY="4" orient="auto">
+          <polygon points="0 0, 12 4, 0 8" fill="#334155" />
+        </marker>
+        <marker id="arr-dashed" markerWidth="12" markerHeight="8" refX="11" refY="4" orient="auto">
+          <polygon points="0 0, 12 4, 0 8" fill="#64748b" />
         </marker>
       </defs>
 
-      <rect width={1200} height={800} fill="url(#bg)" rx={16} />
+      <rect width={1200} height={920} fill="url(#bg)" rx={16} />
 
-      {/* ─── INDEXING SWARM ─── */}
-      <g transform="translate(32, 28)">
-        <rect x={0} y={0} width={356} height={290} rx={14} fill="white" stroke="#e2e8f0" filter="url(#sh)" />
-        <rect x={0} y={0} width={356} height={48} rx={14} fill="url(#g-blue)" />
-        <rect x={0} y={34} width={356} height={14} fill="url(#g-blue)" />
-        <text x={178} y={32} textAnchor="middle" fontSize={20} fontWeight="800" fill="white" letterSpacing={0.3}>INDEXING SWARM</text>
-
-        {["Orchestrator", "OCR", "Chunker", "Embedder", "Curioso Agent"].map((label, i) => (
-          <g key={label}>
-            <rect x={16} y={66 + i * 44} width={324} height={34} rx={6} fill={i === 4 ? "#fef3c7" : "#f8fafc"} stroke="#e2e8f0" />
-            <text x={28} y={89 + i * 44} fontSize={15} fontWeight="700" fill="#1e293b">{label}</text>
-            {i < 4 && <line x1={178} y1={100 + i * 44} x2={178} y2={110 + i * 44} stroke="#cbd5e1" strokeWidth={2} markerEnd="url(#arr)" />}
-          </g>
-        ))}
-      </g>
-
-      {/* arrow */}
-      <line x1={388} y1={173} x2={414} y2={173} stroke="#94a3b8" strokeWidth={2} strokeDasharray="4,3" markerEnd="url(#arr)" />
-
-      {/* ─── CONVERSATIONAL SWARM ─── */}
-      <g transform="translate(420, 28)">
-        <rect x={0} y={0} width={356} height={290} rx={14} fill="white" stroke="#a7f3d0" filter="url(#sh)" />
-        <rect x={0} y={0} width={356} height={48} rx={14} fill="url(#g-green)" />
-        <rect x={0} y={34} width={356} height={14} fill="url(#g-green)" />
-        <text x={178} y={32} textAnchor="middle" fontSize={20} fontWeight="800" fill="white" letterSpacing={0.3}>CONVERSATIONAL SWARM</text>
-
-        {["Clarificador", "Planificador", "Bibliotecario", "Analista", "Chief Engineer"].map((label, i) => (
-          <g key={label}>
-            <rect x={16} y={66 + i * 44} width={324} height={34} rx={6} fill={i === 4 ? "#dbeafe" : "#f8fafc"} stroke="#e2e8f0" />
-            <text x={28} y={89 + i * 44} fontSize={15} fontWeight="700" fill="#1e293b">{label}</text>
-            {i < 4 && <line x1={178} y1={100 + i * 44} x2={178} y2={110 + i * 44} stroke="#cbd5e1" strokeWidth={2} markerEnd="url(#arr)" />}
-          </g>
-        ))}
-      </g>
-
-      {/* arrow */}
-      <line x1={776} y1={173} x2={802} y2={173} stroke="#94a3b8" strokeWidth={2} strokeDasharray="4,3" markerEnd="url(#arr)" />
-
-      {/* ─── INFRASTRUCTURE ─── */}
-      <g transform="translate(808, 28)">
-        <rect x={0} y={0} width={360} height={290} rx={14} fill="white" stroke="#e2e8f0" filter="url(#sh)" />
-        <rect x={0} y={0} width={360} height={48} rx={14} fill="url(#g-red)" />
-        <rect x={0} y={34} width={360} height={14} fill="url(#g-red)" />
-        <text x={180} y={32} textAnchor="middle" fontSize={20} fontWeight="800" fill="white" letterSpacing={0.3}>INFRASTRUCTURE</text>
-
-        {["Turso Vector DB", "Cloudflare R2", "Vercel AI SDK", "Next.js 16", "Drizzle ORM"].map((label) => (
-          <g key={label}>
-            <rect x={16} y={66} width={328} height={34} rx={6} fill="#f8fafc" stroke="#e2e8f0" />
-            <text x={28} y={89} fontSize={15} fontWeight="700" fill="#1e293b">{label}</text>
-          </g>
-        ))}
-      </g>
-
-      {/* ─── HUMAN-IN-THE-LOOP ─── */}
-      <g transform="translate(200, 348)">
-        <rect x={0} y={0} width={800} height={90} rx={12} fill="white" stroke="#e2e8f0" filter="url(#sh)" />
-        <rect x={0} y={0} width={800} height={36} rx={12} fill="#f1f5f9" />
-        <rect x={0} y={24} width={800} height={12} fill="#f1f5f9" />
-        <text x={400} y={24} textAnchor="middle" fontSize={16} fontWeight="700" fill="#475569" letterSpacing={0.2}>HUMAN-IN-THE-LOOP</text>
-        <text x={400} y={62} textAnchor="middle" fontSize={14} fill="#64748b">
-          Curioso Agent detects knowledge gaps → Technical Expert reviews and enriches
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* STAGE 1 — TEXTUAL EXTRACTION                                   */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      <g transform="translate(30, 30)">
+        <rect
+          x={0}
+          y={0}
+          width={360}
+          height={520}
+          rx={12}
+          fill="#f1f5f9"
+          stroke="#cbd5e1"
+          strokeWidth={1}
+          filter="url(#sh)"
+        />
+        <rect x={0} y={0} width={360} height={60} rx={12} fill="#e2e8f0" />
+        <rect x={0} y={46} width={360} height={14} fill="#e2e8f0" />
+        <text x={180} y={40} textAnchor="middle" fontSize={30} fontWeight="700" fill="#1e293b">
+          Stage 1 — Textual Extraction
         </text>
-        <text x={400} y={80} textAnchor="middle" fontSize={13} fill="#64748b">
-          Enrichment cascade: Dedup → Exact term → Model+term → Semantic
+
+        {/* OCR Agent */}
+        <rect
+          x={20}
+          y={80}
+          width={320}
+          height={120}
+          rx={8}
+          fill="white"
+          stroke="#94a3b8"
+          strokeWidth={1.5}
+          filter="url(#sh)"
+        />
+        <text x={60} y={125} fontSize={40} fontWeight="700" fill="#0f172a">
+          OCR Agent
+        </text>
+        <text x={60} y={165} fontSize={20} fill="#64748b">
+          Mistral OCR — layout preservation
+        </text>
+        <circle cx={42} cy={112} r={16} fill="#f8fafc" stroke="#94a3b8" strokeWidth={1} />
+        <text x={42} y={118} textAnchor="middle" fontSize={18} fill="#64748b">
+          📄
+        </text>
+
+        <line
+          x1={180}
+          y1={200}
+          x2={180}
+          y2={220}
+          stroke="#64748b"
+          strokeWidth={2}
+          strokeDasharray="6,4"
+          markerEnd="url(#arr-dashed)"
+        />
+
+        {/* Vision Processing Agent */}
+        <rect
+          x={20}
+          y={230}
+          width={320}
+          height={120}
+          rx={8}
+          fill="white"
+          stroke="#94a3b8"
+          strokeWidth={1.5}
+          filter="url(#sh)"
+        />
+        <text x={60} y={275} fontSize={40} fontWeight="700" fill="#0f172a">
+          Vision Processing Agent
+        </text>
+        <text x={60} y={315} fontSize={20} fill="#64748b">
+          Pixtral-12B — diagram / table detection
+        </text>
+        <circle cx={42} cy={262} r={16} fill="#f8fafc" stroke="#94a3b8" strokeWidth={1} />
+        <text x={42} y={268} textAnchor="middle" fontSize={18} fill="#64748b">
+          👁
+        </text>
+
+        <line
+          x1={180}
+          y1={350}
+          x2={180}
+          y2={370}
+          stroke="#64748b"
+          strokeWidth={2}
+          strokeDasharray="6,4"
+          markerEnd="url(#arr-dashed)"
+        />
+
+        {/* Orchestration Agent */}
+        <rect
+          x={20}
+          y={380}
+          width={320}
+          height={120}
+          rx={8}
+          fill="white"
+          stroke="#94a3b8"
+          strokeWidth={1.5}
+          filter="url(#sh)"
+        />
+        <text x={60} y={425} fontSize={40} fontWeight="700" fill="#0f172a">
+          Orchestration Agent
+        </text>
+        <text x={60} y={465} fontSize={20} fill="#64748b">
+          task scheduling, error recovery
+        </text>
+        <circle cx={42} cy={412} r={16} fill="#f8fafc" stroke="#94a3b8" strokeWidth={1} />
+        <text x={42} y={418} textAnchor="middle" fontSize={18} fill="#64748b">
+          ⚙
         </text>
       </g>
 
-      {/* ─── DATA FLOW ─── */}
-      <g transform="translate(40, 468)">
-        <rect x={0} y={0} width={1120} height={80} rx={12} fill="white" stroke="#e2e8f0" filter="url(#sh)" />
-        <rect x={0} y={0} width={1120} height={36} rx={12} fill="#f1f5f9" />
-        <rect x={0} y={24} width={1120} height={12} fill="#f1f5f9" />
-        <text x={560} y={24} textAnchor="middle" fontSize={16} fontWeight="700" fill="#475569" letterSpacing={0.2}>DATA FLOW</text>
-        <text x={560} y={58} textAnchor="middle" fontSize={14} fill="#64748b">
-          PDF → OCR → Semantic Chunker → Embedder → Turso Vector Store
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* STAGE 2 — SEMANTIC PROCESSING                                  */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      <g transform="translate(420, 30)">
+        <rect
+          x={0}
+          y={0}
+          width={360}
+          height={520}
+          rx={12}
+          fill="#f1f5f9"
+          stroke="#cbd5e1"
+          strokeWidth={1}
+          filter="url(#sh)"
+        />
+        <rect x={0} y={0} width={360} height={60} rx={12} fill="#e2e8f0" />
+        <rect x={0} y={46} width={360} height={14} fill="#e2e8f0" />
+        <text x={180} y={40} textAnchor="middle" fontSize={30} fontWeight="700" fill="#1e293b">
+          Stage 2 — Semantic Processing
         </text>
-        <text x={560} y={74} textAnchor="middle" fontSize={14} fill="#64748b">
-          Query → Clarifier → Planner → Bibliotecario → Analista → Chief Engineer
+
+        {/* Diagram Reasoning Agent */}
+        <rect
+          x={20}
+          y={80}
+          width={320}
+          height={120}
+          rx={8}
+          fill="white"
+          stroke="#94a3b8"
+          strokeWidth={1.5}
+          filter="url(#sh)"
+        />
+        <text x={60} y={125} fontSize={40} fontWeight="700" fill="#0f172a">
+          Diagram Reasoning Agent
+        </text>
+        <text x={60} y={165} fontSize={20} fill="#64748b">
+          node-edge extraction, circuit topology
+        </text>
+        <circle cx={42} cy={112} r={16} fill="#f8fafc" stroke="#94a3b8" strokeWidth={1} />
+        <text x={42} y={118} textAnchor="middle" fontSize={18} fill="#64748b">
+          🔗
+        </text>
+
+        <line
+          x1={180}
+          y1={200}
+          x2={180}
+          y2={220}
+          stroke="#64748b"
+          strokeWidth={2}
+          strokeDasharray="6,4"
+          markerEnd="url(#arr-dashed)"
+        />
+
+        {/* Semantic Chunking Agent */}
+        <rect
+          x={20}
+          y={230}
+          width={320}
+          height={120}
+          rx={8}
+          fill="white"
+          stroke="#94a3b8"
+          strokeWidth={1.5}
+          filter="url(#sh)"
+        />
+        <text x={60} y={275} fontSize={40} fontWeight="700" fill="#0f172a">
+          Semantic Chunking Agent
+        </text>
+        <text x={60} y={315} fontSize={20} fill="#64748b">
+          500 tokens, 50-token overlap
+        </text>
+        <circle cx={42} cy={262} r={16} fill="#f8fafc" stroke="#94a3b8" strokeWidth={1} />
+        <text x={42} y={268} textAnchor="middle" fontSize={18} fill="#64748b">
+          ✂️
+        </text>
+
+        <line
+          x1={180}
+          y1={350}
+          x2={180}
+          y2={370}
+          stroke="#64748b"
+          strokeWidth={2}
+          strokeDasharray="6,4"
+          markerEnd="url(#arr-dashed)"
+        />
+
+        {/* Embedding Agent */}
+        <rect
+          x={20}
+          y={380}
+          width={320}
+          height={120}
+          rx={8}
+          fill="white"
+          stroke="#94a3b8"
+          strokeWidth={1.5}
+          filter="url(#sh)"
+        />
+        <text x={60} y={425} fontSize={40} fontWeight="700" fill="#0f172a">
+          Embedding Agent
+        </text>
+        <text x={60} y={465} fontSize={20} fill="#64748b">
+          text-embedding-3-small · 1536-dim vectors
+        </text>
+        <circle cx={42} cy={412} r={16} fill="#f8fafc" stroke="#94a3b8" strokeWidth={1} />
+        <text x={42} y={418} textAnchor="middle" fontSize={18} fill="#64748b">
+          📊
+        </text>
+      </g>
+
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* STAGE 3 — QUALITY CONTROL & ENRICHMENT                         */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      <g transform="translate(810, 30)">
+        <rect
+          x={0}
+          y={0}
+          width={360}
+          height={520}
+          rx={12}
+          fill="#f1f5f9"
+          stroke="#cbd5e1"
+          strokeWidth={1}
+          filter="url(#sh)"
+        />
+        <rect x={0} y={0} width={360} height={60} rx={12} fill="#e2e8f0" />
+        <rect x={0} y={46} width={360} height={14} fill="#e2e8f0" />
+        <text x={180} y={40} textAnchor="middle" fontSize={30} fontWeight="700" fill="#1e293b">
+          Stage 3 — Quality Control & Enrichment
+        </text>
+
+        {/* HITL Quality Assurance */}
+        <rect
+          x={20}
+          y={80}
+          width={320}
+          height={140}
+          rx={8}
+          fill="white"
+          stroke="#94a3b8"
+          strokeWidth={1.5}
+          filter="url(#sh)"
+        />
+        <text x={60} y={125} fontSize={40} fontWeight="700" fill="#0f172a">
+          HITL Quality Assurance
+        </text>
+        <text x={60} y={165} fontSize={20} fill="#64748b">
+          expert verification
+        </text>
+        <text x={60} y={190} fontSize={20} fill="#64748b">
+          OCR correction, safety annotation
+        </text>
+        <circle cx={42} cy={112} r={16} fill="#f8fafc" stroke="#94a3b8" strokeWidth={1} />
+        <text x={42} y={118} textAnchor="middle" fontSize={18} fill="#64748b">
+          ✓
+        </text>
+
+        <line
+          x1={180}
+          y1={220}
+          x2={180}
+          y2={240}
+          stroke="#64748b"
+          strokeWidth={2}
+          strokeDasharray="6,4"
+          markerEnd="url(#arr-dashed)"
+        />
+
+        {/* Curiosity Agent */}
+        <rect
+          x={20}
+          y={260}
+          width={320}
+          height={200}
+          rx={8}
+          fill="white"
+          stroke="#94a3b8"
+          strokeWidth={1.5}
+          filter="url(#sh)"
+        />
+        <text x={60} y={305} fontSize={40} fontWeight="700" fill="#0f172a">
+          Curiosity Agent
+        </text>
+        <text x={60} y={345} fontSize={20} fill="#64748b">
+          gap detection
+        </text>
+        <text x={60} y={375} fontSize={20} fill="#64748b">
+          acronyms, error codes
+        </text>
+        <text x={60} y={405} fontSize={20} fill="#64748b">
+          undefined concepts
+        </text>
+        <circle cx={42} cy={292} r={16} fill="#f8fafc" stroke="#94a3b8" strokeWidth={1} />
+        <text x={42} y={298} textAnchor="middle" fontSize={18} fill="#64748b">
+          💡
+        </text>
+      </g>
+
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* INTER-STAGE ARROWS (main pipeline)                             */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      <line
+        x1={390}
+        y1={290}
+        x2={420}
+        y2={290}
+        stroke="#334155"
+        strokeWidth={3}
+        markerEnd="url(#arr-solid)"
+      />
+      <line
+        x1={780}
+        y1={290}
+        x2={810}
+        y2={290}
+        stroke="#334155"
+        strokeWidth={3}
+        markerEnd="url(#arr-solid)"
+      />
+      <line
+        x1={990}
+        y1={420}
+        x2={990}
+        y2={560}
+        stroke="#334155"
+        strokeWidth={3}
+        markerEnd="url(#arr-solid)"
+      />
+
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* FEEDBACK LOOPS (dashed)                                        */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      <line
+        x1={830}
+        y1={580}
+        x2={390}
+        y2={580}
+        stroke="#64748b"
+        strokeWidth={2.5}
+        strokeDasharray="8,5"
+        markerEnd="url(#arr-dashed)"
+      />
+      <rect
+        x={510}
+        y={564}
+        width={190}
+        height={34}
+        rx={6}
+        fill="white"
+        stroke="#94a3b8"
+        strokeWidth={1}
+      />
+      <text x={605} y={587} textAnchor="middle" fontSize={18} fontWeight="600" fill="#475569">
+        Feedback — correction
+      </text>
+
+      <line
+        x1={830}
+        y1={610}
+        x2={600}
+        y2={610}
+        stroke="#64748b"
+        strokeWidth={2.5}
+        strokeDasharray="8,5"
+        markerEnd="url(#arr-dashed)"
+      />
+      <rect
+        x={640}
+        y={594}
+        width={190}
+        height={34}
+        rx={6}
+        fill="white"
+        stroke="#94a3b8"
+        strokeWidth={1}
+      />
+      <text x={735} y={617} textAnchor="middle" fontSize={18} fontWeight="600" fill="#475569">
+        Feedback — verification
+      </text>
+
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* VECTOR KNOWLEDGE BASE                                          */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      <g transform="translate(30, 640)">
+        <rect
+          x={0}
+          y={0}
+          width={1140}
+          height={130}
+          rx={12}
+          fill="#e2e8f0"
+          stroke="#cbd5e1"
+          strokeWidth={1}
+          filter="url(#sh)"
+        />
+        <text x={570} y={50} textAnchor="middle" fontSize={32} fill="#475569">
+          🗄
+        </text>
+        <text x={570} y={85} textAnchor="middle" fontSize={28} fontWeight="700" fill="#1e293b">
+          Vector Knowledge Base — Turso (LibSQL)
+        </text>
+        <text x={570} y={115} textAnchor="middle" fontSize={20} fill="#64748b">
+          3,070 chunks · 839 images · 385 enrichments · 98.7% verified
+        </text>
+      </g>
+
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* LEGEND — CENTRADA BAJO TODA LA FIGURA (x=30, width=1140)       */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      <g transform="translate(30, 790)">
+        <rect
+          x={0}
+          y={0}
+          width={1140}
+          height={100}
+          rx={10}
+          fill="white"
+          stroke="#cbd5e1"
+          strokeWidth={1}
+          filter="url(#sh)"
+        />
+        <text x={570} y={40} textAnchor="middle" fontSize={24} fontWeight="700" fill="#1e293b">
+          Legend
+        </text>
+
+        <line
+          x1={200}
+          y1={70}
+          x2={270}
+          y2={70}
+          stroke="#334155"
+          strokeWidth={3}
+          markerEnd="url(#arr-solid)"
+        />
+        <text x={290} y={76} fontSize={20} fontWeight="600" fill="#475569">
+          Data flow (main pipeline)
+        </text>
+
+        <line
+          x1={600}
+          y1={70}
+          x2={670}
+          y2={70}
+          stroke="#64748b"
+          strokeWidth={2.5}
+          strokeDasharray="8,5"
+          markerEnd="url(#arr-dashed)"
+        />
+        <text x={690} y={76} fontSize={20} fontWeight="600" fill="#475569">
+          HITL feedback loop (quality correction)
         </text>
       </g>
     </svg>

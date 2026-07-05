@@ -20,6 +20,7 @@ import { useState } from "react";
 const NAV_LINKS = [
   { label: "Home", href: "/dashboard/home", Icon: Home },
   { label: "Documentación", href: "/dashboard/documentacion", Icon: FileText },
+
   { label: "Synapsis Go", href: "/dashboard/go", Icon: Activity },
   { label: "Ablación", href: "/dashboard/ablation", Icon: FlaskConical },
   { label: "Juicio de Expertos", href: "/dashboard/juicio/perfil", Icon: FlaskConical },

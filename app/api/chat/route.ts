@@ -129,6 +129,13 @@ export async function POST(req: Request) {
     return new Response(JSON.stringify({ error: 'Sin consulta.' }), { status: 400 });
   }
 
+  /* ── Historial conversacional (últimos 10 mensajes) ──────────────────── */
+  const MAX_HISTORY = 10;
+  const historyMessages = messages.slice(-(MAX_HISTORY + 1), -1);
+  const historyContext = historyMessages
+    .map(m => `${m.role === 'user' ? 'Usuario' : 'Asistente'}: ${typeof m.content === 'string' ? m.content : ''}`)
+    .join('\n');
+
   // Persistir el mensaje del usuario si estamos en modo 'record'
   if (sessionId && sessionMode === 'record') {
     saveChatMessage(sessionId, 'user', userQuery, 'record')
@@ -147,7 +154,7 @@ export async function POST(req: Request) {
       const clarification = await runClarifier({
         userQuery,
         equipmentModel,
-        historyContext: '',
+        historyContext,
         modo,
       });
       queryIntent = clarification.intent;
@@ -269,7 +276,7 @@ export async function POST(req: Request) {
       groundTruth,
       imageContext: '',
       intent: queryIntent,
-      historyContext: '',
+      historyContext,
       loopIndex,
       modo,
       componentMismatch,
@@ -405,6 +412,15 @@ export async function POST(req: Request) {
       ? `⚠️ ATENCIÓN: El técnico está atascado. ${atrapamientoInfo.razon}. NO pidas que revise lo mismo. Cambia de hipótesis o indica que necesita un especialista.\n\n`
       : '';
 
+    // Construir mensajes con historial conversacional (hasta 10 mensajes anteriores)
+    const MAX_LLM_HISTORY = 10;
+    const historyTurns = messages.slice(-(MAX_LLM_HISTORY + 1), -1)
+      .filter(m => m.role === 'user' || m.role === 'assistant')
+      .map(m => ({
+        role: m.role as 'user' | 'assistant',
+        content: typeof m.content === 'string' ? m.content : '',
+      }));
+
     const result = streamText({
       model: openai('gpt-4o-mini'),
       messages: [
@@ -414,6 +430,7 @@ export async function POST(req: Request) {
             ? `${PROMPT_DIAGNOSTICO}`
             : `${PROMPT_MENTOR_V2}`,
         },
+        ...historyTurns,
         {
           role: 'user',
           content:
